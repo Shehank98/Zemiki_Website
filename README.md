@@ -48,6 +48,11 @@ Then open:
 The first boot creates all tables, seeds default categories, and creates the admin user
 from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 
+> **Admin password:** the admin login is kept in sync with `ADMIN_PASSWORD` on every boot.
+> If you change `ADMIN_PASSWORD` (e.g. in Railway Variables) and redeploy, the new password
+> takes effect automatically. If you never set it, the default is **`admin` / `admin123`** —
+> change it for production.
+
 ---
 
 ## Deploying to Railway

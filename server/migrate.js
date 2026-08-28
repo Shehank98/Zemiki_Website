@@ -131,23 +131,43 @@ async function seedCategories() {
 async function seedAdmin() {
   const username = process.env.ADMIN_USERNAME || 'admin';
   const password = process.env.ADMIN_PASSWORD || 'admin123';
+  const passwordExplicit = Boolean(process.env.ADMIN_PASSWORD);
 
   const { rows } = await query(
-    'SELECT id FROM admin_users WHERE username = $1',
+    'SELECT id, password_hash FROM admin_users WHERE username = $1',
     [username]
   );
-  if (rows.length > 0) return;
 
-  const hash = await bcrypt.hash(password, 10);
-  await query(
-    'INSERT INTO admin_users (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
-    [username, hash]
-  );
-  console.log(`[migrate] Seeded admin user "${username}".`);
-  if (!process.env.ADMIN_PASSWORD) {
-    console.warn(
-      '[migrate] WARNING: ADMIN_PASSWORD not set — using default "admin123". Change it!'
+  // New install — create the admin user.
+  if (rows.length === 0) {
+    const hash = await bcrypt.hash(password, 10);
+    await query(
+      'INSERT INTO admin_users (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
+      [username, hash]
     );
+    console.log(`[migrate] Seeded admin user "${username}".`);
+    if (!passwordExplicit) {
+      console.warn(
+        '[migrate] WARNING: ADMIN_PASSWORD not set — using default "admin123". Change it!'
+      );
+    }
+    return;
+  }
+
+  // Admin already exists. Keep the password in sync with ADMIN_PASSWORD so the
+  // deployment's env var is the single source of truth — changing it and
+  // redeploying updates the login. Only rehash/write when it actually differs
+  // (keeps boot idempotent).
+  if (passwordExplicit) {
+    const matches = await bcrypt.compare(password, rows[0].password_hash);
+    if (!matches) {
+      const hash = await bcrypt.hash(password, 10);
+      await query('UPDATE admin_users SET password_hash = $1 WHERE username = $2', [
+        hash,
+        username,
+      ]);
+      console.log('[migrate] Updated admin password from ADMIN_PASSWORD.');
+    }
   }
 }
 
