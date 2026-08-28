@@ -1,16 +1,16 @@
-# Zemiki — Jewelry E-commerce Store
+# Zemiki - Jewelry E-commerce Store
 
 An elegant jewelry storefront with a full admin panel, built with **Node.js + Express**,
-**PostgreSQL**, and a **plain HTML/CSS/JS** frontend — ready to deploy on **Railway**.
+**PostgreSQL**, and a **plain HTML/CSS/JS** frontend - ready to deploy on **Railway**.
 
 - 🛍️ Modern storefront: home, shop (filter/search/sort), product pages with image galleries, cart & checkout
 - 🔐 Admin panel at `/admin`: products, categories, multiple images per product, orders & enquiries
-- 🖼️ Product images by **Google Drive link** — just paste the share link, no uploads
+- 🖼️ Product images by **Google Drive link** - just paste the share link, no uploads
 - 💳 Payments: **KOKO** & **Mintpay** (Buy Now Pay Later), **PayHere** (card), **Cash on Delivery**, and **WhatsApp** ordering
 - 🇱🇰 Prices in **LKR**, islandwide delivery, WhatsApp enquiries
 
 Payment providers are **scaffolded** and run in a safe **TEST mode** until you add real
-merchant keys — so nothing breaks before you go live.
+merchant keys - so nothing breaks before you go live.
 
 ---
 
@@ -34,7 +34,7 @@ npm install
 
 # 2. Configure environment
 cp .env.example .env
-#    then edit .env — at minimum set DATABASE_URL, JWT_SECRET, ADMIN_PASSWORD
+#    then edit .env - at minimum set DATABASE_URL, JWT_SECRET, ADMIN_PASSWORD
 
 # 3. Start (runs DB migration + seed automatically on boot)
 npm start
@@ -50,7 +50,7 @@ from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 
 > **Admin password:** the admin login is kept in sync with `ADMIN_PASSWORD` on every boot.
 > If you change `ADMIN_PASSWORD` (e.g. in Railway Variables) and redeploy, the new password
-> takes effect automatically. If you never set it, the default is **`admin` / `admin123`** —
+> takes effect automatically. If you never set it, the default is **`admin` / `admin123`** -
 > change it for production.
 
 ---
@@ -60,7 +60,7 @@ from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 1. **Push this repo to GitHub** and create a new Railway project from it
    (*New Project → Deploy from GitHub repo*).
 2. **Add a PostgreSQL database**: in the project, *New → Database → PostgreSQL*.
-   Railway sets a `DATABASE_URL` variable automatically — reference it in your service.
+   Railway sets a `DATABASE_URL` variable automatically - reference it in your service.
 3. **Set environment variables** on the web service (Variables tab). See the list below.
    At minimum set `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `WHATSAPP_NUMBER`.
 4. **Deploy.** Railway runs `npm start`; the app migrates the database on boot and starts
@@ -97,19 +97,19 @@ from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
    more **Google Drive image links**. Toggle *Featured* to show it on the homepage.
 
 > **Sample products:** a fresh store is auto-seeded with 8 example products (some already
-> discounted) so it doesn't look empty. Delete or edit them any time — they're only seeded
+> discounted) so it doesn't look empty. Delete or edit them any time - they're only seeded
 > once, on a store that has no products yet.
 
 ### Discounts
 
 To put a product on sale, either type a **Discount %** or a **Sale price** in the product
-form — each field updates the other, and the "% off" is shown live. Leave both blank for no
+form - each field updates the other, and the "% off" is shown live. Leave both blank for no
 discount. The storefront then shows the sale price with the original price struck through.
 
 ### Shipping
 
 Go to **Admin → Settings** to set your **flat shipping fee** and an optional **free-shipping
-threshold** (orders at or above it ship free). These apply immediately to checkout — no
+threshold** (orders at or above it ship free). These apply immediately to checkout - no
 redeploy needed.
 
 ### Using Google Drive for images
@@ -133,7 +133,7 @@ order is recorded, marked with a clear "TEST MODE" note. To accept real payments
 
 > The provider adapters live in `server/payments/`. Each is a small, isolated module
 > (`koko.js`, `mintpay.js`, `payhere.js`). When you receive each provider's exact endpoint
-> and signature spec on onboarding, adjust that one file — the rest of the app is unchanged.
+> and signature spec on onboarding, adjust that one file - the rest of the app is unchanged.
 
 ---
 

@@ -44,7 +44,7 @@ function createSession(order, ctx) {
       mode: 'sandbox',
       provider: id,
       message:
-        'PayHere is not configured yet — completing in TEST mode. Add PAYHERE_MERCHANT_ID and PAYHERE_SECRET to go live.',
+        'PayHere is not configured yet - completing in TEST mode. Add PAYHERE_MERCHANT_ID and PAYHERE_SECRET to go live.',
       redirect: returnUrl,
     };
   }

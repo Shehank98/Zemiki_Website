@@ -76,7 +76,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// GET /api/products/:slug — single product detail
+// GET /api/products/:slug - single product detail
 router.get('/:slug', async (req, res, next) => {
   try {
     const { rows } = await query(

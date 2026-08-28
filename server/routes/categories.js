@@ -5,7 +5,7 @@ const { query } = require('../db');
 
 const router = express.Router();
 
-// GET /api/categories — public list with product counts
+// GET /api/categories - public list with product counts
 router.get('/', async (req, res, next) => {
   try {
     const { rows } = await query(

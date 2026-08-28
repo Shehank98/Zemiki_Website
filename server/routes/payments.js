@@ -25,7 +25,7 @@ async function markPaid(orderNumber, providerRef) {
   );
 }
 
-// GET /api/payments/methods — available methods + live/test status
+// GET /api/payments/methods - available methods + live/test status
 router.get('/methods', (req, res) => {
   res.json(listMethods());
 });
@@ -55,7 +55,7 @@ router.post('/:provider/init', async (req, res, next) => {
 });
 
 /**
- * Sandbox completion — the front-end calls this to finalize a TEST-mode
+ * Sandbox completion - the front-end calls this to finalize a TEST-mode
  * order when the provider has no real credentials yet.
  * POST /api/payments/:provider/sandbox-complete  body: { order_number }
  */

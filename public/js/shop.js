@@ -1,4 +1,4 @@
-/* Shop page — category filter, search, sort */
+/* Shop page - category filter, search, sort */
 (function () {
   'use strict';
 

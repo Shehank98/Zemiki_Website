@@ -1,4 +1,4 @@
-/* Cart state — persisted in localStorage (Zemiki storefront) */
+/* Cart state - persisted in localStorage (Zemiki storefront) */
 (function () {
   'use strict';
 

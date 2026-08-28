@@ -100,7 +100,7 @@
     // Breadcrumb
     document.getElementById('breadcrumb').innerHTML =
       `<a href="/">Home</a> / <a href="/shop.html">Shop</a> / ${Z.escapeHtml(p.name)}`;
-    document.title = `${p.name} — Zemiki`;
+    document.title = `${p.name} - Zemiki`;
   }
 
   function renderRelated(list) {

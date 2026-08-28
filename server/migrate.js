@@ -141,7 +141,7 @@ const SAMPLE_PRODUCTS = [
     description: 'A statement peacock-motif necklace with intricate gold detailing.',
     images: ['https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1000&q=80'] },
   { name: 'Kundan Bridal Necklace Set', category: 'bridal-sets', price: 24500, sale_price: 19999, featured: true, stock: 4,
-    description: 'Complete bridal set with matching earrings — timeless Kundan craftsmanship.',
+    description: 'Complete bridal set with matching earrings - timeless Kundan craftsmanship.',
     images: ['https://images.unsplash.com/photo-1602752250015-52934bc45613?auto=format&fit=crop&w=1000&q=80'] },
   { name: 'Rose Gold Jhumka Earrings', category: 'earrings', price: 4500, sale_price: 3999, featured: false, stock: 15,
     description: 'Classic jhumka silhouette in a warm rose-gold finish.',
@@ -212,7 +212,7 @@ async function seedAdmin() {
     [username]
   );
 
-  // New install — create the admin user.
+  // New install - create the admin user.
   if (rows.length === 0) {
     const hash = await bcrypt.hash(password, 10);
     await query(
@@ -222,14 +222,14 @@ async function seedAdmin() {
     console.log(`[migrate] Seeded admin user "${username}".`);
     if (!passwordExplicit) {
       console.warn(
-        '[migrate] WARNING: ADMIN_PASSWORD not set — using default "admin123". Change it!'
+        '[migrate] WARNING: ADMIN_PASSWORD not set - using default "admin123". Change it!'
       );
     }
     return;
   }
 
   // Admin already exists. Keep the password in sync with ADMIN_PASSWORD so the
-  // deployment's env var is the single source of truth — changing it and
+  // deployment's env var is the single source of truth - changing it and
   // redeploying updates the login. Only rehash/write when it actually differs
   // (keeps boot idempotent).
   if (passwordExplicit) {

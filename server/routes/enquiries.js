@@ -6,7 +6,7 @@ const { query } = require('../db');
 const router = express.Router();
 
 /**
- * POST /api/enquiries — contact form / WhatsApp fallback message.
+ * POST /api/enquiries - contact form / WhatsApp fallback message.
  * body: { name, phone, email, message, product_id }
  */
 router.post('/', async (req, res, next) => {

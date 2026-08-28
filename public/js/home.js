@@ -1,4 +1,4 @@
-/* Home page — load categories + featured products */
+/* Home page - load categories + featured products */
 (function () {
   'use strict';
 

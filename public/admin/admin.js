@@ -1,4 +1,4 @@
-/* Zemiki admin panel — auth, navigation, CRUD */
+/* Zemiki admin panel - auth, navigation, CRUD */
 (function () {
   'use strict';
 
@@ -205,7 +205,7 @@
         productsCache.map((p) => `<tr>
           <td>${thumb(p.images && p.images[0], p.name)}</td>
           <td><strong>${esc(p.name)}</strong></td>
-          <td>${esc(p.category_name || '—')}</td>
+          <td>${esc(p.category_name || '-')}</td>
           <td>${p.sale_price != null ? `<strong>${money(p.sale_price)}</strong> <s style="color:#999">${money(p.price)}</s>` : money(p.price)}</td>
           <td>${p.stock}</td>
           <td>${p.featured ? '<span class="pill gold">Featured</span> ' : ''}${p.active ? '<span class="pill green">Active</span>' : '<span class="pill grey">Hidden</span>'}</td>
@@ -222,7 +222,7 @@
 
   function productForm(p) {
     p = p || {};
-    const catOptions = ['<option value="">— Select category —</option>']
+    const catOptions = ['<option value="">- Select category -</option>']
       .concat(categoriesCache.map((c) => `<option value="${c.id}" ${p.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`))
       .join('');
     const images = (p.images && p.images.length ? p.images : ['']);
@@ -235,7 +235,7 @@
         <div class="field"><label>Sale price (Rs.)</label><input id="pSale" type="number" step="0.01" value="${p.sale_price != null ? p.sale_price : ''}" placeholder="optional">
           <div class="hint" id="discHint"></div></div>
       </div>
-      <div class="hint" style="margin:-6px 0 14px">Set a <strong>Discount %</strong> or type a <strong>Sale price</strong> — each updates the other. Leave both blank for no discount.</div>
+      <div class="hint" style="margin:-6px 0 14px">Set a <strong>Discount %</strong> or type a <strong>Sale price</strong> - each updates the other. Leave both blank for no discount.</div>
       <div class="grid-3">
         <div class="field"><label>Category</label><select id="pCat">${catOptions}</select></div>
         <div class="field"><label>Stock</label><input id="pStock" type="number" value="${p.stock != null ? p.stock : 0}"></div>
@@ -429,7 +429,7 @@
           <td><strong>${esc(e.name)}</strong></td>
           <td style="font-size:.85rem">${esc(e.phone || '')}<br>${esc(e.email || '')}</td>
           <td style="max-width:320px">${esc(e.message)}</td>
-          <td>${esc(e.product_name || '—')}</td>
+          <td>${esc(e.product_name || '-')}</td>
           <td style="font-size:.82rem">${fmtDate(e.created_at)}</td>
           <td><button class="btn btn-outline btn-sm" data-toggle-enq="${e.id}" data-handled="${e.handled}">${e.handled ? 'Reopen' : 'Mark done'}</button></td></tr>`).join('')}</tbody></table>`
         : '<div class="empty">No enquiries yet.</div>';

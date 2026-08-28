@@ -33,7 +33,7 @@ function createSession(order, ctx) {
       mode: 'sandbox',
       provider: id,
       message:
-        'Mintpay is not configured yet — completing in TEST mode. Add MINTPAY_MERCHANT_ID and MINTPAY_API_KEY to go live.',
+        'Mintpay is not configured yet - completing in TEST mode. Add MINTPAY_MERCHANT_ID and MINTPAY_API_KEY to go live.',
       redirect: returnUrl,
     };
   }

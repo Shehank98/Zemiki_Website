@@ -1,4 +1,4 @@
-/* Checkout — customer form, payment method, order placement + payment flow */
+/* Checkout - customer form, payment method, order placement + payment flow */
 (function () {
   'use strict';
 
@@ -122,7 +122,7 @@
   async function handlePayment(method, order, customer) {
     const cfg = window.__cfg || {};
 
-    // WhatsApp — send order details to the store chat.
+    // WhatsApp - send order details to the store chat.
     if (method === 'whatsapp') {
       Cart.clear();
       const lines = 'New order ' + order.order_number + '\n' +
@@ -134,7 +134,7 @@
       return;
     }
 
-    // Cash on delivery — straight to confirmation.
+    // Cash on delivery - straight to confirmation.
     if (method === 'cod') {
       Cart.clear();
       window.location.href = '/order-confirmation.html?order=' + encodeURIComponent(order.order_number);

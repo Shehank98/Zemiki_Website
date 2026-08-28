@@ -37,7 +37,7 @@ function createSession(order, ctx) {
       mode: 'sandbox',
       provider: id,
       message:
-        'KOKO is not configured yet — completing in TEST mode. Add KOKO_MERCHANT_ID and KOKO_API_KEY to go live.',
+        'KOKO is not configured yet - completing in TEST mode. Add KOKO_MERCHANT_ID and KOKO_API_KEY to go live.',
       redirect: returnUrl,
     };
   }

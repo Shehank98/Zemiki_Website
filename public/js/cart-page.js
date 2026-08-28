@@ -1,4 +1,4 @@
-/* Cart page — list, update quantities, summary */
+/* Cart page - list, update quantities, summary */
 (function () {
   'use strict';
 
