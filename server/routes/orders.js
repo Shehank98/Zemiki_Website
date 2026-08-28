@@ -2,6 +2,7 @@
 
 const express = require('express');
 const { query, withTransaction } = require('../db');
+const { computeShipping } = require('../settings');
 
 const router = express.Router();
 
@@ -12,13 +13,6 @@ function genOrderNumber() {
   ).padStart(2, '0')}`;
   const rand = Math.floor(1000 + Math.random() * 9000);
   return `ZM${ymd}-${rand}`;
-}
-
-function computeShipping(subtotal) {
-  const flat = Number(process.env.SHIPPING_FLAT_LKR || 350);
-  const freeOver = Number(process.env.FREE_SHIPPING_OVER_LKR || 0);
-  if (freeOver > 0 && subtotal >= freeOver) return 0;
-  return flat;
 }
 
 const VALID_METHODS = ['koko', 'mintpay', 'payhere', 'cod', 'whatsapp'];
@@ -65,7 +59,7 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'No valid items in cart' });
     }
 
-    const shipping = computeShipping(subtotal);
+    const shipping = await computeShipping(subtotal);
     const total = subtotal + shipping;
     const orderNumber = genOrderNumber();
 

@@ -8,6 +8,7 @@ const cookieParser = require('cookie-parser');
 
 const { migrate } = require('./migrate');
 const { listMethods } = require('./payments');
+const { getSettings } = require('./settings');
 
 const app = express();
 
@@ -20,16 +21,21 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
 /* ------------------------- Public config ------------------------ */
 // Non-secret settings the storefront needs (store name, WhatsApp, etc.)
-app.get('/api/config', (req, res) => {
-  res.json({
-    store_name: process.env.STORE_NAME || 'Zemiki',
-    whatsapp_number: process.env.WHATSAPP_NUMBER || '',
-    currency: 'LKR',
-    currency_symbol: 'Rs.',
-    shipping_flat: Number(process.env.SHIPPING_FLAT_LKR || 350),
-    free_shipping_over: Number(process.env.FREE_SHIPPING_OVER_LKR || 0),
-    payment_methods: listMethods(),
-  });
+app.get('/api/config', async (req, res, next) => {
+  try {
+    const settings = await getSettings();
+    res.json({
+      store_name: process.env.STORE_NAME || 'Zemiki',
+      whatsapp_number: process.env.WHATSAPP_NUMBER || '',
+      currency: 'LKR',
+      currency_symbol: 'Rs.',
+      shipping_flat: settings.shipping_flat,
+      free_shipping_over: settings.free_shipping_over,
+      payment_methods: listMethods(),
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));

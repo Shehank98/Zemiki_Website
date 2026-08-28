@@ -34,6 +34,7 @@
       <button class="nav-item" data-view="categories">☰ Categories</button>
       <button class="nav-item" data-view="orders">🛍 Orders <span class="badge" id="ordersBadge" hidden></span></button>
       <button class="nav-item" data-view="enquiries">✉ Enquiries <span class="badge" id="enqBadge" hidden></span></button>
+      <button class="nav-item" data-view="settings">⚙ Settings</button>
       <div class="sidebar-foot">
         <button class="btn btn-outline btn-block" id="logoutBtn">Sign Out</button>
       </div>
@@ -89,6 +90,26 @@
         <div class="panel">
           <div class="panel-head"><h2>Enquiries</h2></div>
           <div id="enquiriesTable"><div class="empty">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section class="view" id="view-settings">
+        <div class="panel">
+          <div class="panel-head"><h2>Shipping &amp; Delivery</h2></div>
+          <div style="padding:22px;max-width:520px">
+            <div class="field">
+              <label>Flat shipping fee (Rs.)</label>
+              <input id="setFlat" type="number" min="0" step="1">
+              <div class="hint">Charged on every order below the free-shipping threshold.</div>
+            </div>
+            <div class="field">
+              <label>Free shipping over (Rs.)</label>
+              <input id="setFree" type="number" min="0" step="1">
+              <div class="hint">Orders at or above this subtotal ship free. Set to 0 to always charge the flat fee.</div>
+            </div>
+            <button class="btn btn-primary" id="saveSettings">Save Settings</button>
+          </div>
         </div>
       </section>
     </main>

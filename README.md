@@ -80,8 +80,8 @@ from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 | `WHATSAPP_NUMBER` | ✅ | International format, no `+`, e.g. `94771234567` |
 | `STORE_NAME` | – | Defaults to `Zemiki` |
 | `PUBLIC_BASE_URL` | – | Your Railway domain, used for payment return URLs |
-| `SHIPPING_FLAT_LKR` | – | Flat shipping fee (default 350) |
-| `FREE_SHIPPING_OVER_LKR` | – | Free shipping threshold (default 15000) |
+| `SHIPPING_FLAT_LKR` | – | Initial flat shipping fee (default 350). Editable later in **Admin → Settings**. |
+| `FREE_SHIPPING_OVER_LKR` | – | Initial free-shipping threshold (default 0 = always charge). Editable in **Admin → Settings**. |
 | `KOKO_MERCHANT_ID`, `KOKO_API_KEY` | – | Leave blank → KOKO runs in test mode |
 | `MINTPAY_MERCHANT_ID`, `MINTPAY_API_KEY` | – | Leave blank → Mintpay runs in test mode |
 | `PAYHERE_MERCHANT_ID`, `PAYHERE_SECRET` | – | Leave blank → PayHere runs in test mode |
@@ -93,9 +93,24 @@ from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 
 1. Go to `/admin` and sign in.
 2. **Categories** → add your categories (a starter set is seeded for you).
-3. **Products → + Add Product** → fill in name, price, optional sale price, stock,
-   category, and paste one or more **Google Drive image links**. Toggle *Featured* to show
-   it on the homepage.
+3. **Products → + Add Product** → fill in name, price, stock, category, and paste one or
+   more **Google Drive image links**. Toggle *Featured* to show it on the homepage.
+
+> **Sample products:** a fresh store is auto-seeded with 8 example products (some already
+> discounted) so it doesn't look empty. Delete or edit them any time — they're only seeded
+> once, on a store that has no products yet.
+
+### Discounts
+
+To put a product on sale, either type a **Discount %** or a **Sale price** in the product
+form — each field updates the other, and the "% off" is shown live. Leave both blank for no
+discount. The storefront then shows the sale price with the original price struck through.
+
+### Shipping
+
+Go to **Admin → Settings** to set your **flat shipping fee** and an optional **free-shipping
+threshold** (orders at or above it ship free). These apply immediately to checkout — no
+redeploy needed.
 
 ### Using Google Drive for images
 

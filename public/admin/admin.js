@@ -78,7 +78,7 @@
   });
 
   /* --------------------------- navigation ---------------------------- */
-  const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', orders: 'Orders', enquiries: 'Enquiries' };
+  const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', orders: 'Orders', enquiries: 'Enquiries', settings: 'Settings' };
   const loaders = {};
   $$('.nav-item[data-view]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -231,11 +231,14 @@
       <div class="field"><label>Description</label><textarea id="pDesc" rows="3" placeholder="Describe the piece…">${esc(p.description || '')}</textarea></div>
       <div class="grid-3">
         <div class="field"><label>Price (Rs.) *</label><input id="pPrice" type="number" step="0.01" value="${p.price != null ? p.price : ''}"></div>
-        <div class="field"><label>Sale price (Rs.)</label><input id="pSale" type="number" step="0.01" value="${p.sale_price != null ? p.sale_price : ''}" placeholder="optional"></div>
-        <div class="field"><label>Stock</label><input id="pStock" type="number" value="${p.stock != null ? p.stock : 0}"></div>
+        <div class="field"><label>Discount %</label><input id="pDiscount" type="number" min="0" max="100" step="1" placeholder="e.g. 20"></div>
+        <div class="field"><label>Sale price (Rs.)</label><input id="pSale" type="number" step="0.01" value="${p.sale_price != null ? p.sale_price : ''}" placeholder="optional">
+          <div class="hint" id="discHint"></div></div>
       </div>
-      <div class="grid-2">
+      <div class="hint" style="margin:-6px 0 14px">Set a <strong>Discount %</strong> or type a <strong>Sale price</strong> — each updates the other. Leave both blank for no discount.</div>
+      <div class="grid-3">
         <div class="field"><label>Category</label><select id="pCat">${catOptions}</select></div>
+        <div class="field"><label>Stock</label><input id="pStock" type="number" value="${p.stock != null ? p.stock : 0}"></div>
         <div class="field"><label>SKU (optional)</label><input id="pSku" value="${esc(p.sku || '')}"></div>
       </div>
       <div class="field">
@@ -254,6 +257,39 @@
       <input class="img-input" value="${esc(url || '')}" placeholder="https://drive.google.com/file/d/…">
       <button type="button" class="btn btn-danger btn-sm rm-img">✕</button>
     </div>`;
+  }
+
+  // Two-way binding between Discount % and Sale price, relative to Price.
+  function wireDiscount() {
+    const priceEl = $('#pPrice'), saleEl = $('#pSale'), discEl = $('#pDiscount'), hint = $('#discHint');
+    const round = (n) => Math.round(n);
+    function pctFromSale() {
+      const price = parseFloat(priceEl.value), sale = parseFloat(saleEl.value);
+      if (price > 0 && sale >= 0 && sale < price) {
+        const pct = round((1 - sale / price) * 100);
+        discEl.value = pct;
+        hint.textContent = pct + '% off';
+      } else {
+        discEl.value = '';
+        hint.textContent = sale && price && sale >= price ? 'Sale price must be below price' : '';
+      }
+    }
+    function saleFromPct() {
+      const price = parseFloat(priceEl.value), pct = parseFloat(discEl.value);
+      if (price > 0 && pct > 0 && pct <= 100) {
+        const sale = round(price * (1 - pct / 100));
+        saleEl.value = sale;
+        hint.textContent = pct + '% off';
+      } else if (!discEl.value) {
+        // clearing the % clears the sale price
+        saleEl.value = '';
+        hint.textContent = '';
+      }
+    }
+    priceEl.addEventListener('input', pctFromSale);
+    saleEl.addEventListener('input', pctFromSale);
+    discEl.addEventListener('input', saleFromPct);
+    pctFromSale(); // initialise from any existing sale price
   }
 
   function wireImageList() {
@@ -280,6 +316,7 @@
       `<button class="btn btn-outline" onclick="document.getElementById('modalBackdrop').classList.remove('open')">Cancel</button>
        <button class="btn btn-primary" id="saveProd">Save Product</button>`);
     wireImageList();
+    wireDiscount();
     $('#saveProd').addEventListener('click', () => saveProduct(null));
   });
 
@@ -290,6 +327,7 @@
         `<button class="btn btn-outline" onclick="document.getElementById('modalBackdrop').classList.remove('open')">Cancel</button>
          <button class="btn btn-primary" id="saveProd">Save Changes</button>`);
       wireImageList();
+      wireDiscount();
       $('#saveProd').addEventListener('click', () => saveProduct(id));
     } catch (e) { toast(e.message, 'error'); }
   }
@@ -405,6 +443,27 @@
   async function refreshBadges() {
     try { const s = await api('/stats'); updateBadges(s.orders, s.open_enquiries); } catch (e) {}
   }
+
+  /* ----------------------------- settings ---------------------------- */
+  loaders.settings = async function () {
+    try {
+      const s = await api('/settings');
+      $('#setFlat').value = s.shipping_flat;
+      $('#setFree').value = s.free_shipping_over;
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  $('#saveSettings').addEventListener('click', async () => {
+    const btn = $('#saveSettings'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await api('/settings', { method: 'PUT', body: {
+        shipping_flat: parseFloat($('#setFlat').value) || 0,
+        free_shipping_over: parseFloat($('#setFree').value) || 0,
+      } });
+      toast('Shipping settings saved', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Save Settings';
+  });
 
   /* ------------------------------ boot ------------------------------- */
   async function boot() {

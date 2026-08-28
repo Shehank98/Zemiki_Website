@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const { query, withTransaction } = require('../db');
 const { slugify } = require('../migrate');
 const { normalizeImageUrl } = require('../utils/driveImage');
+const { getSettings, updateSettings } = require('../settings');
 const {
   requireAdmin,
   signToken,
@@ -67,6 +68,25 @@ router.get('/stats', async (req, res, next) => {
       open_enquiries: enquiries.rows[0].c,
       recent_orders: recent.rows,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ---------------------------- Settings -------------------------- */
+
+router.get('/settings', async (req, res, next) => {
+  try {
+    res.json(await getSettings());
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/settings', async (req, res, next) => {
+  try {
+    const updated = await updateSettings(req.body || {});
+    res.json(updated);
   } catch (err) {
     next(err);
   }
