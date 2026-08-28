@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop — Zemiki</title>
+  <meta name="description" content="Browse all Zemiki jewelry — necklaces, earrings, bangles, rings and bridal sets." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <main>
+    <section class="page-hero">
+      <div class="wrap">
+        <h1 id="shopTitle">Our Collection</h1>
+        <p id="shopSubtitle">Timeless pieces, crafted with love</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap shop-layout">
+        <aside class="shop-sidebar">
+          <h4>Categories</h4>
+          <div class="filter-list" id="filterList"><div class="loading" style="padding:20px 0"><div class="spinner"></div></div></div>
+        </aside>
+        <div>
+          <div class="shop-toolbar">
+            <div class="count" id="resultCount">Loading…</div>
+            <div>
+              <label for="sortSelect" style="display:inline;margin-right:8px;">Sort</label>
+              <select id="sortSelect">
+                <option value="">Newest</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="name">Name A–Z</option>
+              </select>
+            </div>
+          </div>
+          <div class="product-grid" id="shopGrid"><div class="loading"><div class="spinner"></div>Loading products…</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/cart.js"></script>
+  <script src="/js/components.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/shop.js"></script>
+</body>
+</html>

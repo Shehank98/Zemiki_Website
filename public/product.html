@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product — Zemiki</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <main>
+    <section class="section">
+      <div class="wrap">
+        <div class="breadcrumb" id="breadcrumb"><a href="/">Home</a> / <a href="/shop.html">Shop</a></div>
+        <div id="pdpRoot">
+          <div class="loading"><div class="spinner"></div>Loading product…</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="background:#fff;padding-top:0;" id="relatedSection" hidden>
+      <div class="wrap">
+        <div class="section-head"><h2>You may also like</h2></div>
+        <div class="product-grid" id="relatedGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/cart.js"></script>
+  <script src="/js/components.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/product.js"></script>
+</body>
+</html>

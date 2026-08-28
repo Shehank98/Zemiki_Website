@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zemiki Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+  <!-- Login screen -->
+  <div class="login-wrap" id="loginScreen" style="display:none">
+    <div class="login-card">
+      <h1>Zemiki Admin</h1>
+      <p>Sign in to manage your store</p>
+      <div class="err" id="loginErr"></div>
+      <form id="loginForm">
+        <div class="field"><label>Username</label><input name="username" autocomplete="username" required></div>
+        <div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top:6px;padding:.7rem">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin app -->
+  <div class="admin" id="adminApp" style="display:none">
+    <aside class="sidebar">
+      <div class="logo">✦ Zem<span>iki</span></div>
+      <button class="nav-item active" data-view="dashboard">▤ Dashboard</button>
+      <button class="nav-item" data-view="products">◆ Products</button>
+      <button class="nav-item" data-view="categories">☰ Categories</button>
+      <button class="nav-item" data-view="orders">🛍 Orders <span class="badge" id="ordersBadge" hidden></span></button>
+      <button class="nav-item" data-view="enquiries">✉ Enquiries <span class="badge" id="enqBadge" hidden></span></button>
+      <div class="sidebar-foot">
+        <button class="btn btn-outline btn-block" id="logoutBtn">Sign Out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h1 id="viewTitle">Dashboard</h1>
+        <a class="view-site" href="/" target="_blank" rel="noopener">View storefront ↗</a>
+      </div>
+
+      <!-- Dashboard -->
+      <section class="view active" id="view-dashboard">
+        <div class="stat-grid" id="statGrid"></div>
+        <div class="panel">
+          <div class="panel-head"><h2>Recent Orders</h2></div>
+          <div id="recentOrders"><div class="empty">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- Products -->
+      <section class="view" id="view-products">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Products</h2>
+            <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
+          </div>
+          <div id="productsTable"><div class="empty">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- Categories -->
+      <section class="view" id="view-categories">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Categories</h2>
+            <button class="btn btn-primary" id="addCategoryBtn">+ Add Category</button>
+          </div>
+          <div id="categoriesTable"><div class="empty">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- Orders -->
+      <section class="view" id="view-orders">
+        <div class="panel">
+          <div class="panel-head"><h2>Orders</h2></div>
+          <div id="ordersTable"><div class="empty">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- Enquiries -->
+      <section class="view" id="view-enquiries">
+        <div class="panel">
+          <div class="panel-head"><h2>Enquiries</h2></div>
+          <div id="enquiriesTable"><div class="empty">Loading…</div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-head"><h2 id="modalTitle">Edit</h2><button class="x-btn" id="modalClose">×</button></div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

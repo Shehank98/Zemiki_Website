@@ -1,0 +1,148 @@
+# Zemiki — Jewelry E-commerce Store
+
+An elegant jewelry storefront with a full admin panel, built with **Node.js + Express**,
+**PostgreSQL**, and a **plain HTML/CSS/JS** frontend — ready to deploy on **Railway**.
+
+- 🛍️ Modern storefront: home, shop (filter/search/sort), product pages with image galleries, cart & checkout
+- 🔐 Admin panel at `/admin`: products, categories, multiple images per product, orders & enquiries
+- 🖼️ Product images by **Google Drive link** — just paste the share link, no uploads
+- 💳 Payments: **KOKO** & **Mintpay** (Buy Now Pay Later), **PayHere** (card), **Cash on Delivery**, and **WhatsApp** ordering
+- 🇱🇰 Prices in **LKR**, islandwide delivery, WhatsApp enquiries
+
+Payment providers are **scaffolded** and run in a safe **TEST mode** until you add real
+merchant keys — so nothing breaks before you go live.
+
+---
+
+## Tech stack
+
+| Layer     | Choice |
+|-----------|--------|
+| Backend   | Node.js + Express |
+| Database  | PostgreSQL (`pg`) |
+| Auth      | JWT cookie + bcrypt (single admin user) |
+| Frontend  | Vanilla HTML / CSS / JS (no build step) |
+| Images    | Google Drive share links (auto-converted to direct URLs) |
+
+---
+
+## Local development
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Configure environment
+cp .env.example .env
+#    then edit .env — at minimum set DATABASE_URL, JWT_SECRET, ADMIN_PASSWORD
+
+# 3. Start (runs DB migration + seed automatically on boot)
+npm start
+```
+
+Then open:
+
+- Storefront → http://localhost:3000
+- Admin panel → http://localhost:3000/admin
+
+The first boot creates all tables, seeds default categories, and creates the admin user
+from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
+
+---
+
+## Deploying to Railway
+
+1. **Push this repo to GitHub** and create a new Railway project from it
+   (*New Project → Deploy from GitHub repo*).
+2. **Add a PostgreSQL database**: in the project, *New → Database → PostgreSQL*.
+   Railway sets a `DATABASE_URL` variable automatically — reference it in your service.
+3. **Set environment variables** on the web service (Variables tab). See the list below.
+   At minimum set `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `WHATSAPP_NUMBER`.
+4. **Deploy.** Railway runs `npm start`; the app migrates the database on boot and starts
+   serving. Open the generated domain, then sign in at `/admin`.
+
+> Railway provides `PORT` and `DATABASE_URL` automatically. SSL to Postgres is enabled
+> automatically in production.
+
+### Environment variables
+
+| Variable | Required | Notes |
+|----------|----------|-------|
+| `DATABASE_URL` | ✅ | Postgres connection string (Railway provides this) |
+| `JWT_SECRET` | ✅ | Long random string for admin sessions |
+| `ADMIN_USERNAME` | ✅ | Admin login username |
+| `ADMIN_PASSWORD` | ✅ | Admin login password (set a strong one!) |
+| `WHATSAPP_NUMBER` | ✅ | International format, no `+`, e.g. `94771234567` |
+| `STORE_NAME` | – | Defaults to `Zemiki` |
+| `PUBLIC_BASE_URL` | – | Your Railway domain, used for payment return URLs |
+| `SHIPPING_FLAT_LKR` | – | Flat shipping fee (default 350) |
+| `FREE_SHIPPING_OVER_LKR` | – | Free shipping threshold (default 15000) |
+| `KOKO_MERCHANT_ID`, `KOKO_API_KEY` | – | Leave blank → KOKO runs in test mode |
+| `MINTPAY_MERCHANT_ID`, `MINTPAY_API_KEY` | – | Leave blank → Mintpay runs in test mode |
+| `PAYHERE_MERCHANT_ID`, `PAYHERE_SECRET` | – | Leave blank → PayHere runs in test mode |
+| `PAYHERE_SANDBOX` | – | `true` uses PayHere's sandbox endpoint |
+
+---
+
+## Adding products (admin)
+
+1. Go to `/admin` and sign in.
+2. **Categories** → add your categories (a starter set is seeded for you).
+3. **Products → + Add Product** → fill in name, price, optional sale price, stock,
+   category, and paste one or more **Google Drive image links**. Toggle *Featured* to show
+   it on the homepage.
+
+### Using Google Drive for images
+
+1. Upload the image to Google Drive.
+2. Right-click → **Share** → set **"Anyone with the link"** → Copy link.
+3. Paste that link into the product's image field. The app converts it to a direct image
+   URL automatically. Any other image URL (Imgur, a CDN, etc.) also works as-is.
+
+---
+
+## Going live with payments
+
+The store works out of the box in **test mode**: customers can complete checkout and the
+order is recorded, marked with a clear "TEST MODE" note. To accept real payments:
+
+1. Get merchant credentials from **KOKO**, **Mintpay**, and/or **PayHere**.
+2. Add the corresponding environment variables in Railway (see table above).
+3. Redeploy. Each provider automatically switches from test mode to live once its keys are
+   present. Set `PUBLIC_BASE_URL` to your domain so payment return URLs resolve correctly.
+
+> The provider adapters live in `server/payments/`. Each is a small, isolated module
+> (`koko.js`, `mintpay.js`, `payhere.js`). When you receive each provider's exact endpoint
+> and signature spec on onboarding, adjust that one file — the rest of the app is unchanged.
+
+---
+
+## Project structure
+
+```
+server/
+  index.js            Express app, static hosting, startup migrate
+  db.js               Postgres pool
+  migrate.js          Schema + seed (idempotent)
+  middleware/auth.js  JWT admin guard
+  utils/driveImage.js Google Drive link → direct image URL
+  routes/             products, categories, orders, enquiries, payments, admin
+  payments/           koko, mintpay, payhere adapters + registry
+public/
+  index/shop/product/cart/checkout/...   storefront pages
+  css/styles.css      design system
+  js/                 api, cart, components, layout, per-page scripts
+  admin/              admin panel (index.html, admin.css, admin.js)
+```
+
+---
+
+## API overview
+
+**Public:** `GET /api/config`, `GET /api/categories`, `GET /api/products`,
+`GET /api/products/:slug`, `POST /api/orders`, `POST /api/enquiries`,
+`POST /api/payments/:provider/init`.
+
+**Admin (auth required):** `POST /api/admin/login`, products/categories CRUD,
+`GET /api/admin/orders`, `PATCH /api/admin/orders/:id`, `GET /api/admin/enquiries`,
+`GET /api/admin/stats`.

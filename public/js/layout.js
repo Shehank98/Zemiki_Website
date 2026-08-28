@@ -1,0 +1,152 @@
+/* Injects the shared header + footer into every storefront page.
+   Reads store config (name, WhatsApp) from /api/config. */
+(function () {
+  'use strict';
+
+  const brandMark =
+    '<svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">' +
+    '<path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.8 7.2 17l.9-5.4L4.2 7.7l5.4-.8z"/></svg>';
+
+  const NAV = [
+    { href: '/', label: 'Home' },
+    { href: '/shop.html', label: 'Shop' },
+    { href: '/shop.html?category=necklaces', label: 'Necklaces' },
+    { href: '/shop.html?category=earrings', label: 'Earrings' },
+    { href: '/about.html', label: 'About' },
+    { href: '/contact.html', label: 'Contact' },
+  ];
+
+  function icon(name) {
+    const paths = {
+      search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+      cart: '<circle cx="9" cy="21" r="1.5"/><circle cx="18" cy="21" r="1.5"/><path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.6L23 7H6"/>',
+      menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+      close: '<path d="M6 6l12 12M18 6L6 18"/>',
+      wa: '<path d="M12 2a9.8 9.8 0 0 0-8.4 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2zm5.3 14c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-1-.3-1.6-.6a9 9 0 0 1-3.5-3.1c-.3-.4-.8-1.2-.8-2.3s.6-1.6.8-1.8c.2-.2.4-.3.6-.3h.5c.2 0 .4 0 .6.5l.7 1.7c.1.2 0 .4-.1.5l-.3.4c-.1.1-.3.3-.1.5.1.3.6 1 1.3 1.6.9.8 1.6 1 1.8 1.1.2.1.4.1.5-.1l.6-.7c.2-.2.3-.2.5-.1l1.6.8c.2.1.4.2.4.3.1.1.1.5 0 .9z"/>',
+    };
+    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${paths[name] || ''}</svg>`;
+  }
+
+  function buildHeader(cfg) {
+    const path = location.pathname;
+    const navHtml = NAV.map((n) => {
+      const active = (n.href === '/' && path === '/') ||
+        (n.href !== '/' && n.href.split('?')[0] === path && !location.search) ? ' class="active"' : '';
+      return `<a href="${n.href}"${active}>${n.label}</a>`;
+    }).join('');
+
+    const header = document.createElement('div');
+    header.innerHTML = `
+      <div class="topbar">✨ Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay &amp; PayHere</div>
+      <header class="site-header">
+        <div class="wrap header-inner">
+          <a class="brand" href="/">${brandMark}${cfg.store_name || 'Zemiki'}</a>
+          <nav class="main-nav">${navHtml}</nav>
+          <div class="header-actions">
+            <button class="icon-btn" id="searchToggle" aria-label="Search">${icon('search')}</button>
+            <a class="icon-btn cart-btn" href="/cart.html" aria-label="Cart">${icon('cart')}<span class="cart-badge" id="cartBadge" hidden>0</span></a>
+            <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Menu">${icon('menu')}</button>
+          </div>
+        </div>
+        <div class="search-bar" id="searchBar">
+          <div class="wrap">
+            <form id="searchForm">
+              <input type="search" name="q" placeholder="Search for necklaces, earrings, rings..." aria-label="Search products" />
+              <button class="btn btn-primary" type="submit">Search</button>
+            </form>
+          </div>
+        </div>
+      </header>
+      <div class="drawer-backdrop" id="drawerBackdrop"></div>
+      <aside class="drawer" id="drawer">
+        <button class="icon-btn drawer-close" id="drawerClose" aria-label="Close">${icon('close')}</button>
+        ${NAV.map((n) => `<a href="${n.href}">${n.label}</a>`).join('')}
+      </aside>`;
+    document.body.insertBefore(header, document.body.firstChild);
+
+    // interactions
+    const searchBar = document.getElementById('searchBar');
+    document.getElementById('searchToggle').addEventListener('click', () => {
+      searchBar.classList.toggle('open');
+      if (searchBar.classList.contains('open')) searchBar.querySelector('input').focus();
+    });
+    document.getElementById('searchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const q = e.target.q.value.trim();
+      location.href = '/shop.html' + (q ? '?q=' + encodeURIComponent(q) : '');
+    });
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    const openD = () => { drawer.classList.add('open'); backdrop.classList.add('open'); };
+    const closeD = () => { drawer.classList.remove('open'); backdrop.classList.remove('open'); };
+    document.getElementById('menuToggle').addEventListener('click', openD);
+    document.getElementById('drawerClose').addEventListener('click', closeD);
+    backdrop.addEventListener('click', closeD);
+  }
+
+  function buildFooter(cfg) {
+    const year = new Date().getFullYear();
+    const wa = cfg.whatsapp_number
+      ? `<a href="${Z.whatsappUrl(cfg.whatsapp_number, 'Hi Zemiki, I have a question')}" target="_blank" rel="noopener">WhatsApp us</a>` : '';
+    const footer = document.createElement('footer');
+    footer.className = 'site-footer';
+    footer.innerHTML = `
+      <div class="wrap footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/">${brandMark}${cfg.store_name || 'Zemiki'}</a>
+          <p>Handcrafted jewelry that celebrates every moment. Ethically made, elegantly designed, delivered across Sri Lanka.</p>
+          <div class="social-row">
+            <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
+            <a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9z"/></svg></a>
+            ${cfg.whatsapp_number ? `<a href="${Z.whatsappUrl(cfg.whatsapp_number, 'Hi Zemiki')}" target="_blank" rel="noopener" aria-label="WhatsApp"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">${'<path d="M12 2a9.8 9.8 0 0 0-8.4 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2z"/>'}</svg></a>` : ''}
+          </div>
+        </div>
+        <div>
+          <h4>Shop</h4>
+          <a href="/shop.html">All Jewelry</a>
+          <a href="/shop.html?category=necklaces">Necklaces</a>
+          <a href="/shop.html?category=earrings">Earrings</a>
+          <a href="/shop.html?category=bangles">Bangles</a>
+          <a href="/shop.html?category=rings">Rings</a>
+        </div>
+        <div>
+          <h4>Help</h4>
+          <a href="/about.html">About Us</a>
+          <a href="/contact.html">Contact</a>
+          ${wa}
+          <a href="/shop.html">Shipping &amp; Returns</a>
+        </div>
+        <div>
+          <h4>Pay Your Way</h4>
+          <p style="font-size:.9rem">Split your purchase with <strong style="color:#e3c988">KOKO</strong> or <strong style="color:#e3c988">Mintpay</strong>, pay by card with <strong style="color:#e3c988">PayHere</strong>, or choose Cash on Delivery.</p>
+        </div>
+      </div>
+      <div class="footer-bottom">© ${year} ${cfg.store_name || 'Zemiki'}. All rights reserved. · Crafted with love in Sri Lanka</div>`;
+    document.body.appendChild(footer);
+  }
+
+  function refreshBadge() {
+    const badge = document.getElementById('cartBadge');
+    if (!badge) return;
+    const c = window.Cart ? Cart.count() : 0;
+    badge.textContent = c;
+    badge.hidden = c === 0;
+  }
+
+  async function init() {
+    let cfg = { store_name: 'Zemiki', whatsapp_number: '' };
+    try { cfg = await Z.getConfig(); } catch (e) {}
+    window.__cfg = cfg;
+    buildHeader(cfg);
+    buildFooter(cfg);
+    refreshBadge();
+    document.addEventListener('cart:changed', refreshBadge);
+    document.dispatchEvent(new CustomEvent('layout:ready', { detail: { config: cfg } }));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
