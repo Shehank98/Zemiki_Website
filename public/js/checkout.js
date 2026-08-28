@@ -3,13 +3,19 @@
   'use strict';
 
   const root = document.getElementById('checkoutRoot');
+  let districts = []; // [{district, fee}]
 
-  function shippingFor(subtotal, cfg) {
-    const flat = Number(cfg.shipping_flat || 350);
+  function feeForDistrict(name) {
+    const d = districts.find((x) => x.district === name);
+    return d ? Number(d.fee) : null;
+  }
+
+  function shippingFor(subtotal, cfg, district) {
     const free = Number(cfg.free_shipping_over || 0);
     if (subtotal <= 0) return 0;
     if (free > 0 && subtotal >= free) return 0;
-    return flat;
+    const fee = feeForDistrict(district);
+    return fee != null ? fee : Number(cfg.shipping_flat || 350);
   }
 
   function methodMeta(m) {
@@ -31,9 +37,15 @@
     }
 
     const subtotal = Cart.subtotal();
-    const shipping = shippingFor(subtotal, cfg);
+    const freeOver = Number(cfg.free_shipping_over || 0);
+    const isFreeEligible = freeOver > 0 && subtotal >= freeOver;
+    const shipping = shippingFor(subtotal, cfg, '');
     const total = subtotal + shipping;
     const methods = (cfg.payment_methods || []).filter((m) => m.kind === 'online' || m.id === 'cod' || m.id === 'whatsapp');
+
+    const districtOptions = ['<option value="">Select your district</option>']
+      .concat(districts.map((d) => `<option value="${Z.escapeHtml(d.district)}">${Z.escapeHtml(d.district)} (${Z.money(d.fee)})</option>`))
+      .join('');
 
     const summaryLines = items.map((i) =>
       `<div class="summary-row"><span>${Z.escapeHtml(i.name)} × ${i.qty}</span><span>${Z.money(i.price * i.qty)}</span></div>`
@@ -62,9 +74,10 @@
             <div class="field"><label>Email</label><input type="email" name="email" placeholder="you@example.com"></div>
             <div class="field"><label>Address *</label><input name="address" required placeholder="House no, street"></div>
             <div class="form-row">
-              <div class="field"><label>City *</label><input name="city" required></div>
-              <div class="field"><label>Notes (optional)</label><input name="notes" placeholder="Delivery instructions"></div>
+              <div class="field"><label>District *</label><select name="district" id="districtSel" required>${districtOptions}</select></div>
+              <div class="field"><label>City / Town *</label><input name="city" required placeholder="e.g. Nugegoda"></div>
             </div>
+            <div class="field"><label>Notes (optional)</label><input name="notes" placeholder="Delivery instructions"></div>
           </div>
 
           <div class="summary" style="position:static">
@@ -77,8 +90,8 @@
           <h3>Your Order</h3>
           ${summaryLines}
           <div class="summary-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px"><span>Subtotal</span><span>${Z.money(subtotal)}</span></div>
-          <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? 'Free' : Z.money(shipping)}</span></div>
-          <div class="summary-row total"><span>Total</span><span>${Z.money(total)}</span></div>
+          <div class="summary-row"><span>Shipping${isFreeEligible ? '' : ' <small style="color:var(--muted)">(select district)</small>'}</span><span id="shipVal">${isFreeEligible ? 'Free' : '-'}</span></div>
+          <div class="summary-row total"><span>Total</span><span id="totalVal">${isFreeEligible ? Z.money(subtotal) : Z.money(subtotal) + ' +'}</span></div>
           <button class="btn btn-primary btn-block btn-lg" id="placeBtn" style="margin-top:16px">Place Order</button>
           <p style="font-size:.78rem;color:var(--muted);text-align:center;margin-top:10px">By placing your order you agree to our terms. Your details are used only to process this order.</p>
         </div>
@@ -93,6 +106,23 @@
       });
     });
 
+    // Live shipping recompute when the district changes.
+    const sel = document.getElementById('districtSel');
+    function updateShipping() {
+      const chosen = sel.value;
+      const ship = shippingFor(subtotal, cfg, chosen);
+      const shipEl = document.getElementById('shipVal');
+      const totalEl = document.getElementById('totalVal');
+      if (!chosen && !isFreeEligible) {
+        shipEl.textContent = '-';
+        totalEl.textContent = Z.money(subtotal) + ' +';
+      } else {
+        shipEl.textContent = ship === 0 ? 'Free' : Z.money(ship);
+        totalEl.textContent = Z.money(subtotal + ship);
+      }
+    }
+    sel.addEventListener('change', updateShipping);
+
     document.getElementById('placeBtn').addEventListener('click', placeOrder);
   }
 
@@ -104,8 +134,10 @@
     const fd = new FormData(form);
     const customer = {
       name: fd.get('name'), phone: fd.get('phone'), email: fd.get('email'),
-      address: fd.get('address'), city: fd.get('city'), notes: fd.get('notes'),
+      address: fd.get('address'), city: fd.get('city'), district: fd.get('district'),
+      notes: fd.get('notes'),
     };
+    if (!customer.district) { Z.toast('Please select your district', 'error'); return; }
     const method = (root.querySelector('input[name="pay"]:checked') || {}).value || 'cod';
     const items = Cart.items().map((i) => ({ id: i.id, qty: i.qty }));
 
@@ -181,6 +213,11 @@
     f.submit();
   }
 
-  document.addEventListener('layout:ready', (e) => render(e.detail.config));
-  if (window.__cfg) render(window.__cfg);
+  async function boot(cfg) {
+    try { districts = await Z.getJSON('/api/shipping/districts'); } catch (e) { districts = []; }
+    render(cfg);
+  }
+
+  document.addEventListener('layout:ready', (e) => boot(e.detail.config));
+  if (window.__cfg) boot(window.__cfg);
 })();

@@ -142,6 +142,16 @@
     refreshBadge();
     document.addEventListener('cart:changed', refreshBadge);
     document.dispatchEvent(new CustomEvent('layout:ready', { detail: { config: cfg } }));
+    loadAnim();
+  }
+
+  // Load the animation/polish layer once, on every page that uses the layout.
+  function loadAnim() {
+    if (document.getElementById('zemiki-anim')) return;
+    const s = document.createElement('script');
+    s.id = 'zemiki-anim';
+    s.src = '/js/anim.js';
+    document.body.appendChild(s);
   }
 
   if (document.readyState === 'loading') {

@@ -37,7 +37,7 @@
   }
 
   async function loadProducts() {
-    grid.innerHTML = '<div class="loading"><div class="spinner"></div>Loading products…</div>';
+    grid.innerHTML = ZC.skeleton(8);
     const params = new URLSearchParams();
     if (state.category) params.set('category', state.category);
     if (state.q) params.set('q', state.q);
@@ -51,6 +51,7 @@
         return;
       }
       grid.innerHTML = products.map(ZC.productCard).join('');
+      if (window.Anim) Anim.retag();
     } catch (e) {
       grid.innerHTML = '<div class="empty-state"><p>Could not load products.</p></div>';
     }

@@ -4,15 +4,6 @@
 
   const root = document.getElementById('cartRoot');
 
-  function shippingFor(subtotal) {
-    const cfg = window.__cfg || {};
-    const flat = Number(cfg.shipping_flat || 350);
-    const free = Number(cfg.free_shipping_over || 0);
-    if (subtotal <= 0) return 0;
-    if (free > 0 && subtotal >= free) return 0;
-    return flat;
-  }
-
   function render() {
     const items = Cart.items();
     if (!items.length) {
@@ -27,8 +18,9 @@
     }
 
     const subtotal = Cart.subtotal();
-    const shipping = shippingFor(subtotal);
-    const total = subtotal + shipping;
+    const cfg = window.__cfg || {};
+    const freeOver = Number(cfg.free_shipping_over || 0);
+    const freeEligible = freeOver > 0 && subtotal >= freeOver;
 
     const lines = items.map((i) => {
       const media = i.image
@@ -59,8 +51,9 @@
         <div class="summary">
           <h3>Order Summary</h3>
           <div class="summary-row"><span>Subtotal</span><span>${Z.money(subtotal)}</span></div>
-          <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? 'Free' : Z.money(shipping)}</span></div>
-          <div class="summary-row total"><span>Total</span><span>${Z.money(total)}</span></div>
+          <div class="summary-row"><span>Shipping</span><span style="color:var(--muted)">${freeEligible ? 'Free' : 'At checkout'}</span></div>
+          <div class="summary-row total"><span>Total</span><span>${freeEligible ? Z.money(subtotal) : Z.money(subtotal) + '+'}</span></div>
+          ${freeEligible ? '' : '<p style="font-size:.78rem;color:var(--muted);margin:8px 0 0">Shipping is calculated by district at checkout.</p>'}
           <a class="btn btn-primary btn-block btn-lg" href="/checkout.html" style="margin-top:16px">Proceed to Checkout</a>
           <a class="btn btn-outline btn-block" href="/shop.html" style="margin-top:10px">Continue Shopping</a>
         </div>

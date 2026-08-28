@@ -60,7 +60,10 @@
         <div class="panel">
           <div class="panel-head">
             <h2>Products</h2>
-            <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input id="productSearch" class="admin-search" type="search" placeholder="Search products…">
+              <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
+            </div>
           </div>
           <div id="productsTable"><div class="empty">Loading…</div></div>
         </div>
@@ -79,8 +82,22 @@
 
       <!-- Orders -->
       <section class="view" id="view-orders">
+        <div id="orderSummary" class="order-summary"></div>
         <div class="panel">
-          <div class="panel-head"><h2>Orders</h2></div>
+          <div class="panel-head">
+            <h2>Orders</h2>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input id="orderSearch" class="admin-search" type="search" placeholder="Search order #, name, phone…">
+              <select id="orderStatusFilter">
+                <option value="">All statuses</option>
+                <option value="new">New</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
           <div id="ordersTable"><div class="empty">Loading…</div></div>
         </div>
       </section>
@@ -110,6 +127,15 @@
             </div>
             <button class="btn btn-primary" id="saveSettings">Save Settings</button>
           </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Delivery by District</h2>
+            <button class="btn btn-primary" id="saveDistricts">Save District Rates</button>
+          </div>
+          <div style="padding:14px 20px 4px"><div class="hint">Set a delivery fee for each district. Uncheck "Active" to hide a district at checkout. The free-shipping threshold above still overrides these.</div></div>
+          <div id="districtsTable"><div class="empty">Loading…</div></div>
         </div>
       </section>
     </main>

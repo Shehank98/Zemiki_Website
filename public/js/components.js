@@ -51,5 +51,11 @@
     } catch (err) {}
   });
 
-  window.ZC = { productCard, categoryCard };
+  // Skeleton placeholder grid shown while products load.
+  function skeleton(count) {
+    const card = '<div class="skeleton-card"><div class="sk-media"></div><div class="sk-line"></div><div class="sk-line short"></div></div>';
+    return '<div class="skeleton-grid">' + new Array(count || 8).fill(card).join('') + '</div>';
+  }
+
+  window.ZC = { productCard, categoryCard, skeleton };
 })();

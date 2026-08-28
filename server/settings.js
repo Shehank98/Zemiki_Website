@@ -32,16 +32,6 @@ async function getSettings() {
 }
 
 /**
- * Compute shipping for a given subtotal using current settings.
- */
-async function computeShipping(subtotal) {
-  const s = await getSettings();
-  if (subtotal <= 0) return 0;
-  if (s.free_shipping_over > 0 && subtotal >= s.free_shipping_over) return 0;
-  return s.shipping_flat;
-}
-
-/**
  * Persist a subset of settings (only known numeric keys).
  * @param {object} patch
  */
@@ -58,4 +48,88 @@ async function updateSettings(patch) {
   return getSettings();
 }
 
-module.exports = { getSettings, computeShipping, updateSettings };
+/* --------------------------- District shipping -------------------------- */
+
+/**
+ * All shipping districts (for the admin editor), ordered.
+ */
+async function getAllDistricts() {
+  try {
+    const { rows } = await query(
+      'SELECT district, fee, active, sort_order FROM shipping_rates ORDER BY sort_order, district'
+    );
+    return rows.map((r) => ({
+      district: r.district,
+      fee: Number(r.fee),
+      active: r.active,
+      sort_order: r.sort_order,
+    }));
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Active districts only, for the public checkout dropdown.
+ */
+async function getDistricts() {
+  const all = await getAllDistricts();
+  return all.filter((d) => d.active).map((d) => ({ district: d.district, fee: d.fee }));
+}
+
+/**
+ * Fee for a single district (null if not found / inactive).
+ */
+async function getDistrictFee(district) {
+  if (!district) return null;
+  try {
+    const { rows } = await query(
+      'SELECT fee FROM shipping_rates WHERE district = $1 AND active = true',
+      [district]
+    );
+    return rows.length ? Number(rows[0].fee) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Bulk upsert district rates from the admin editor.
+ * @param {Array<{district:string, fee:number, active:boolean}>} rows
+ */
+async function setDistricts(rows) {
+  if (!Array.isArray(rows)) return getAllDistricts();
+  for (const r of rows) {
+    if (!r || !r.district) continue;
+    const fee = Math.max(0, Number(r.fee) || 0);
+    const active = r.active === undefined ? true : Boolean(r.active);
+    await query(
+      `UPDATE shipping_rates SET fee = $2, active = $3 WHERE district = $1`,
+      [r.district, fee, active]
+    );
+  }
+  return getAllDistricts();
+}
+
+/**
+ * Compute shipping for a subtotal + chosen district.
+ * Uses the district fee when available, else the flat fallback; the
+ * free-shipping-over threshold overrides both.
+ */
+async function computeShipping(subtotal, district) {
+  if (subtotal <= 0) return 0;
+  const s = await getSettings();
+  if (s.free_shipping_over > 0 && subtotal >= s.free_shipping_over) return 0;
+  const districtFee = await getDistrictFee(district);
+  return districtFee != null ? districtFee : s.shipping_flat;
+}
+
+module.exports = {
+  getSettings,
+  updateSettings,
+  computeShipping,
+  getAllDistricts,
+  getDistricts,
+  getDistrictFee,
+  setDistricts,
+};

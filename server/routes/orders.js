@@ -59,16 +59,16 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'No valid items in cart' });
     }
 
-    const shipping = await computeShipping(subtotal);
+    const shipping = await computeShipping(subtotal, customer.district);
     const total = subtotal + shipping;
     const orderNumber = genOrderNumber();
 
     const order = await withTransaction(async (client) => {
       const { rows } = await client.query(
         `INSERT INTO orders
-           (order_number, customer_name, phone, email, address, city, notes,
+           (order_number, customer_name, phone, email, address, city, district, notes,
             subtotal, shipping, total, payment_method, payment_status, order_status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'new')
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pending','new')
          RETURNING *`,
         [
           orderNumber,
@@ -77,12 +77,12 @@ router.post('/', async (req, res, next) => {
           customer.email || null,
           customer.address || null,
           customer.city || null,
+          customer.district || null,
           customer.notes || null,
           subtotal,
           shipping,
           total,
           method,
-          method === 'cod' || method === 'whatsapp' ? 'pending' : 'pending',
         ]
       );
       const created = rows[0];

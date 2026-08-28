@@ -106,11 +106,23 @@ To put a product on sale, either type a **Discount %** or a **Sale price** in th
 form - each field updates the other, and the "% off" is shown live. Leave both blank for no
 discount. The storefront then shows the sale price with the original price struck through.
 
-### Shipping
+### Shipping (flat + per-district)
 
-Go to **Admin → Settings** to set your **flat shipping fee** and an optional **free-shipping
-threshold** (orders at or above it ship free). These apply immediately to checkout - no
-redeploy needed.
+Go to **Admin → Settings**:
+
+- **Shipping & Delivery** - a **flat fee** (fallback) and an optional **free-shipping
+  threshold** (orders at or above it ship free).
+- **Delivery by District** - a per-district fee for all **25 Sri Lankan districts**. Uncheck
+  *Active* to hide a district at checkout. At checkout the customer selects their district and
+  the shipping cost updates live; the free-shipping threshold still overrides the fee.
+
+All of this applies immediately to checkout - no redeploy needed.
+
+### Category images
+
+Category tiles automatically use a photo from a product in that category, so "Shop by
+Category" always shows real jewelry. To pin a specific image, set the category's own image
+link when editing it in **Admin → Categories**.
 
 ### Using Google Drive for images
 

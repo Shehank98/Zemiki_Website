@@ -93,6 +93,15 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT
 );
 
+CREATE TABLE IF NOT EXISTS shipping_rates (
+  district    TEXT PRIMARY KEY,
+  fee         NUMERIC(12,2) NOT NULL DEFAULT 0,
+  active      BOOLEAN NOT NULL DEFAULT true,
+  sort_order  INTEGER NOT NULL DEFAULT 0
+);
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS district TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured);
 CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
@@ -260,10 +269,47 @@ async function seedShippingDefaults() {
   }
 }
 
+// Sri Lanka's 25 administrative districts with sensible default delivery fees.
+// Western province (closer / higher volume) is cheaper by default; admins edit
+// every value in Admin -> Settings. Fees are in LKR.
+const SRI_LANKA_DISTRICTS = [
+  ['Colombo', 350], ['Gampaha', 350], ['Kalutara', 400],
+  ['Kandy', 450], ['Matale', 500], ['Nuwara Eliya', 550],
+  ['Galle', 450], ['Matara', 500], ['Hambantota', 550],
+  ['Jaffna', 650], ['Kilinochchi', 650], ['Mannar', 650],
+  ['Vavuniya', 600], ['Mullaitivu', 650], ['Batticaloa', 600],
+  ['Ampara', 600], ['Trincomalee', 600], ['Kurunegala', 450],
+  ['Puttalam', 500], ['Anuradhapura', 550], ['Polonnaruwa', 550],
+  ['Badulla', 550], ['Monaragala', 600], ['Ratnapura', 450],
+  ['Kegalle', 450],
+];
+
+// Seed district shipping rates once (guarded by a settings marker), so future
+// deploys never overwrite fees the admin has customised.
+async function seedShippingRates() {
+  const marker = await query("SELECT value FROM settings WHERE key = 'districts_seeded'");
+  if (marker.rows.length > 0) return;
+
+  for (let i = 0; i < SRI_LANKA_DISTRICTS.length; i++) {
+    const [district, fee] = SRI_LANKA_DISTRICTS[i];
+    await query(
+      `INSERT INTO shipping_rates (district, fee, active, sort_order)
+       VALUES ($1, $2, true, $3)
+       ON CONFLICT (district) DO NOTHING`,
+      [district, fee, i]
+    );
+  }
+  await query(
+    "INSERT INTO settings (key, value) VALUES ('districts_seeded','true') ON CONFLICT (key) DO UPDATE SET value = 'true'"
+  );
+  console.log(`[migrate] Seeded ${SRI_LANKA_DISTRICTS.length} district shipping rates.`);
+}
+
 async function migrate() {
   await query(SCHEMA_SQL);
   await seedCategories();
   await seedShippingDefaults();
+  await seedShippingRates();
   await seedSampleProducts();
   await seedAdmin();
   console.log('[migrate] Schema is up to date.');

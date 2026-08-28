@@ -195,30 +195,57 @@
 
   /* ---------------------------- products ----------------------------- */
   let productsCache = [];
+  const LOW_STOCK = 3;
   loaders.products = async function () {
     try {
       if (!categoriesCache.length) { try { categoriesCache = await api('/categories'); } catch (e) {} }
       productsCache = await api('/products');
-      const el = $('#productsTable');
-      el.innerHTML = productsCache.length ? `<table><thead><tr>
-        <th></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Flags</th><th></th></tr></thead><tbody>${
-        productsCache.map((p) => `<tr>
-          <td>${thumb(p.images && p.images[0], p.name)}</td>
-          <td><strong>${esc(p.name)}</strong></td>
-          <td>${esc(p.category_name || '-')}</td>
-          <td>${p.sale_price != null ? `<strong>${money(p.sale_price)}</strong> <s style="color:#999">${money(p.price)}</s>` : money(p.price)}</td>
-          <td>${p.stock}</td>
-          <td>${p.featured ? '<span class="pill gold">Featured</span> ' : ''}${p.active ? '<span class="pill green">Active</span>' : '<span class="pill grey">Hidden</span>'}</td>
-          <td style="text-align:right;white-space:nowrap">
-            <button class="btn btn-outline btn-sm" data-edit-prod="${p.id}">Edit</button>
-            <button class="btn btn-danger btn-sm" data-del-prod="${p.id}">Delete</button>
-          </td></tr>`).join('')}</tbody></table>`
-        : '<div class="empty">No products yet. Click “Add Product” to create your first listing.</div>';
-
-      $$('[data-edit-prod]', el).forEach((b) => b.addEventListener('click', () => editProduct(+b.dataset.editProd)));
-      $$('[data-del-prod]', el).forEach((b) => b.addEventListener('click', () => deleteProduct(+b.dataset.delProd)));
+      renderProducts();
     } catch (e) { toast(e.message, 'error'); }
   };
+
+  function toggleHtml(id, field, on) {
+    return `<label class="toggle"><input type="checkbox" data-toggle="${field}" data-pid="${id}" ${on ? 'checked' : ''}><span class="track"></span></label>`;
+  }
+
+  function renderProducts() {
+    const el = $('#productsTable');
+    const term = ($('#productSearch').value || '').trim().toLowerCase();
+    const list = term
+      ? productsCache.filter((p) => (p.name + ' ' + (p.category_name || '') + ' ' + (p.sku || '')).toLowerCase().includes(term))
+      : productsCache;
+
+    if (!productsCache.length) {
+      el.innerHTML = '<div class="empty">No products yet. Click “Add Product” to create your first listing.</div>';
+      return;
+    }
+    el.innerHTML = list.length ? `<table><thead><tr>
+      <th></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Featured</th><th>Active</th><th></th></tr></thead><tbody>${
+      list.map((p) => `<tr class="${p.stock <= LOW_STOCK ? 'low-stock' : ''}">
+        <td>${thumb(p.images && p.images[0], p.name)}</td>
+        <td><strong>${esc(p.name)}</strong></td>
+        <td>${esc(p.category_name || '-')}</td>
+        <td>${p.sale_price != null ? `<strong>${money(p.sale_price)}</strong> <s style="color:#999">${money(p.price)}</s>` : money(p.price)}</td>
+        <td class="${p.stock <= LOW_STOCK ? 'stock-low' : 'stock-ok'}">${p.stock}${p.stock <= LOW_STOCK ? ' ⚠' : ''}</td>
+        <td>${toggleHtml(p.id, 'featured', p.featured)}</td>
+        <td>${toggleHtml(p.id, 'active', p.active)}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="btn btn-outline btn-sm" data-edit-prod="${p.id}">Edit</button>
+          <button class="btn btn-danger btn-sm" data-del-prod="${p.id}">Delete</button>
+        </td></tr>`).join('')}</tbody></table>`
+      : '<div class="empty">No products match your search.</div>';
+
+    $$('[data-edit-prod]', el).forEach((b) => b.addEventListener('click', () => editProduct(+b.dataset.editProd)));
+    $$('[data-del-prod]', el).forEach((b) => b.addEventListener('click', () => deleteProduct(+b.dataset.delProd)));
+    $$('[data-toggle]', el).forEach((chk) => chk.addEventListener('change', async () => {
+      const pid = +chk.dataset.pid, field = chk.dataset.toggle;
+      try {
+        await api('/products/' + pid, { method: 'PATCH', body: { [field]: chk.checked } });
+        const prod = productsCache.find((x) => x.id === pid); if (prod) prod[field] = chk.checked;
+        toast('Updated', 'success');
+      } catch (e) { toast(e.message, 'error'); chk.checked = !chk.checked; }
+    }));
+  }
 
   function productForm(p) {
     p = p || {};
@@ -311,6 +338,8 @@
     });
   }
 
+  $('#productSearch').addEventListener('input', renderProducts);
+
   $('#addProductBtn').addEventListener('click', () => {
     modal.open('Add Product', productForm(),
       `<button class="btn btn-outline" onclick="document.getElementById('modalBackdrop').classList.remove('open')">Cancel</button>
@@ -369,32 +398,70 @@
   const ORDER_STATUSES = ['new', 'processing', 'shipped', 'delivered', 'cancelled'];
   const PAY_STATUSES = ['pending', 'paid', 'failed'];
 
+  let ordersCache = [];
   loaders.orders = async function () {
     try {
-      const orders = await api('/orders');
-      const el = $('#ordersTable');
-      el.innerHTML = orders.length ? `<table><thead><tr>
-        <th>Order</th><th>Customer</th><th>Total</th><th>Method</th><th>Payment</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>${
-        orders.map((o) => `<tr>
-          <td><strong>${esc(o.order_number)}</strong></td>
-          <td>${esc(o.customer_name)}<div style="color:#999;font-size:.8rem">${esc(o.phone)}</div></td>
-          <td>${money(o.total)}</td>
-          <td>${esc(o.payment_method)}</td>
-          <td><select data-pay="${o.id}">${PAY_STATUSES.map((s) => `<option ${s === o.payment_status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
-          <td><select data-status="${o.id}">${ORDER_STATUSES.map((s) => `<option ${s === o.order_status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
-          <td style="font-size:.82rem">${fmtDate(o.created_at)}</td>
-          <td><button class="btn btn-outline btn-sm" data-view-order="${o.id}">View</button></td></tr>`).join('')}</tbody></table>`
-        : '<div class="empty">No orders yet.</div>';
-
-      $$('[data-status]', el).forEach((s) => s.addEventListener('change', () => updateOrder(+s.dataset.status, { order_status: s.value })));
-      $$('[data-pay]', el).forEach((s) => s.addEventListener('change', () => updateOrder(+s.dataset.pay, { payment_status: s.value })));
-      $$('[data-view-order]', el).forEach((b) => b.addEventListener('click', () => viewOrder(+b.dataset.viewOrder)));
+      ordersCache = await api('/orders');
+      renderOrders();
     } catch (e) { toast(e.message, 'error'); }
   };
 
+  function renderOrderSummary() {
+    const counts = { new: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0 };
+    let revenue = 0;
+    ordersCache.forEach((o) => {
+      if (counts[o.order_status] !== undefined) counts[o.order_status]++;
+      if (o.payment_status === 'paid') revenue += Number(o.total);
+    });
+    $('#orderSummary').innerHTML =
+      `<div class="chip"><strong>${ordersCache.length}</strong>Total orders</div>` +
+      `<div class="chip"><strong>${counts.new}</strong>New</div>` +
+      `<div class="chip"><strong>${counts.processing}</strong>Processing</div>` +
+      `<div class="chip"><strong>${counts.delivered}</strong>Delivered</div>` +
+      `<div class="chip"><strong>${money(revenue)}</strong>Paid revenue</div>`;
+  }
+
+  function renderOrders() {
+    renderOrderSummary();
+    const el = $('#ordersTable');
+    const term = ($('#orderSearch').value || '').trim().toLowerCase();
+    const status = $('#orderStatusFilter').value;
+    const list = ordersCache.filter((o) => {
+      if (status && o.order_status !== status) return false;
+      if (term && !(o.order_number + ' ' + o.customer_name + ' ' + o.phone).toLowerCase().includes(term)) return false;
+      return true;
+    });
+
+    el.innerHTML = list.length ? `<table><thead><tr>
+      <th>Order</th><th>Customer</th><th>District</th><th>Total</th><th>Method</th><th>Payment</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>${
+      list.map((o) => `<tr>
+        <td><strong>${esc(o.order_number)}</strong></td>
+        <td>${esc(o.customer_name)}<div style="color:#999;font-size:.8rem">${esc(o.phone)}</div></td>
+        <td>${esc(o.district || '-')}</td>
+        <td>${money(o.total)}</td>
+        <td>${esc(o.payment_method)}</td>
+        <td><select data-pay="${o.id}">${PAY_STATUSES.map((s) => `<option ${s === o.payment_status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+        <td><select data-status="${o.id}">${ORDER_STATUSES.map((s) => `<option ${s === o.order_status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+        <td style="font-size:.82rem">${fmtDate(o.created_at)}</td>
+        <td><button class="btn btn-outline btn-sm" data-view-order="${o.id}">View</button></td></tr>`).join('')}</tbody></table>`
+      : '<div class="empty">No orders match.</div>';
+
+    $$('[data-status]', el).forEach((s) => s.addEventListener('change', () => updateOrder(+s.dataset.status, { order_status: s.value })));
+    $$('[data-pay]', el).forEach((s) => s.addEventListener('change', () => updateOrder(+s.dataset.pay, { payment_status: s.value })));
+    $$('[data-view-order]', el).forEach((b) => b.addEventListener('click', () => viewOrder(+b.dataset.viewOrder)));
+  }
+
+  $('#orderSearch').addEventListener('input', renderOrders);
+  $('#orderStatusFilter').addEventListener('change', renderOrders);
+
   async function updateOrder(id, body) {
-    try { await api('/orders/' + id, { method: 'PATCH', body }); toast('Order updated', 'success'); }
-    catch (e) { toast(e.message, 'error'); }
+    try {
+      await api('/orders/' + id, { method: 'PATCH', body });
+      const o = ordersCache.find((x) => x.id === id);
+      if (o) Object.assign(o, body);
+      renderOrderSummary();
+      toast('Order updated', 'success');
+    } catch (e) { toast(e.message, 'error'); }
   }
 
   async function viewOrder(id) {
@@ -451,7 +518,21 @@
       $('#setFlat').value = s.shipping_flat;
       $('#setFree').value = s.free_shipping_over;
     } catch (e) { toast(e.message, 'error'); }
+    loadDistricts();
   };
+
+  async function loadDistricts() {
+    const el = $('#districtsTable');
+    try {
+      const rows = await api('/shipping-rates');
+      el.innerHTML = `<table><thead><tr><th>District</th><th>Delivery fee (Rs.)</th><th>Active</th></tr></thead><tbody>${
+        rows.map((r) => `<tr>
+          <td><strong>${esc(r.district)}</strong></td>
+          <td><input type="number" min="0" step="1" data-dist-fee="${esc(r.district)}" value="${r.fee}"></td>
+          <td><label class="toggle"><input type="checkbox" data-dist-active="${esc(r.district)}" ${r.active ? 'checked' : ''}><span class="track"></span></label></td>
+        </tr>`).join('')}</tbody></table>`;
+    } catch (e) { el.innerHTML = '<div class="empty">Could not load districts.</div>'; }
+  }
 
   $('#saveSettings').addEventListener('click', async () => {
     const btn = $('#saveSettings'); btn.disabled = true; btn.textContent = 'Saving…';
@@ -463,6 +544,20 @@
       toast('Shipping settings saved', 'success');
     } catch (e) { toast(e.message, 'error'); }
     btn.disabled = false; btn.textContent = 'Save Settings';
+  });
+
+  $('#saveDistricts').addEventListener('click', async () => {
+    const btn = $('#saveDistricts'); btn.disabled = true; btn.textContent = 'Saving…';
+    const rows = $$('[data-dist-fee]').map((inp) => ({
+      district: inp.dataset.distFee,
+      fee: parseFloat(inp.value) || 0,
+      active: ($(`[data-dist-active="${CSS.escape(inp.dataset.distFee)}"]`) || {}).checked,
+    }));
+    try {
+      await api('/shipping-rates', { method: 'PUT', body: rows });
+      toast('District rates saved', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Save District Rates';
   });
 
   /* ------------------------------ boot ------------------------------- */

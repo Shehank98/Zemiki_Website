@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const { query, withTransaction } = require('../db');
 const { slugify } = require('../migrate');
 const { normalizeImageUrl } = require('../utils/driveImage');
-const { getSettings, updateSettings } = require('../settings');
+const { getSettings, updateSettings, getAllDistricts, setDistricts } = require('../settings');
 const {
   requireAdmin,
   signToken,
@@ -87,6 +87,24 @@ router.put('/settings', async (req, res, next) => {
   try {
     const updated = await updateSettings(req.body || {});
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// District delivery rates
+router.get('/shipping-rates', async (req, res, next) => {
+  try {
+    res.json(await getAllDistricts());
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/shipping-rates', async (req, res, next) => {
+  try {
+    const rows = Array.isArray(req.body) ? req.body : (req.body && req.body.rates) || [];
+    res.json(await setDistricts(rows));
   } catch (err) {
     next(err);
   }
@@ -282,6 +300,28 @@ async function insertImages(client, productId, images) {
     );
   }
 }
+
+// Lightweight partial update for inline toggles (featured / active / stock).
+router.patch('/products/:id', async (req, res, next) => {
+  try {
+    const fields = [];
+    const params = [];
+    const body = req.body || {};
+    if (body.featured !== undefined) { params.push(Boolean(body.featured)); fields.push(`featured=$${params.length}`); }
+    if (body.active !== undefined) { params.push(Boolean(body.active)); fields.push(`active=$${params.length}`); }
+    if (body.stock !== undefined) { params.push(parseInt(body.stock, 10) || 0); fields.push(`stock=$${params.length}`); }
+    if (fields.length === 0) return res.status(400).json({ error: 'Nothing to update' });
+    params.push(req.params.id);
+    const { rows } = await query(
+      `UPDATE products SET ${fields.join(', ')}, updated_at=now() WHERE id=$${params.length} RETURNING *`,
+      params
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.delete('/products/:id', async (req, res, next) => {
   try {
