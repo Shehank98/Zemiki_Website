@@ -120,10 +120,14 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.4rem); }
 /* mobile drawer */
 .drawer-backdrop { position: fixed; inset: 0; background: rgba(30,20,15,.5); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 60; }
 .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
-.drawer { position: fixed; top: 0; right: -320px; width: 300px; max-width: 85vw; height: 100%; background: var(--cream); z-index: 70; box-shadow: var(--shadow-lg); transition: right .25s ease; padding: 22px; display: flex; flex-direction: column; }
+.drawer { position: fixed; top: 0; right: -340px; width: 310px; max-width: 86vw; height: 100%; background: var(--cream); z-index: 70; box-shadow: var(--shadow-lg); transition: right .3s cubic-bezier(.3,.8,.3,1); padding: 18px 20px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; overflow-y: auto; }
 .drawer.open { right: 0; }
-.drawer a { padding: 14px 6px; border-bottom: 1px solid var(--line); font-weight: 500; }
-.drawer .drawer-close { align-self: flex-end; }
+.drawer .drawer-brand { font-family: var(--serif); font-weight: 700; font-size: 1.4rem; color: var(--maroon); padding: 6px 4px 14px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.drawer a { display: flex; align-items: center; min-height: 52px; padding: 6px 4px; border-bottom: 1px solid var(--line); font-weight: 500; font-size: 1.05rem; color: var(--ink); transition: color .15s, padding-left .15s; }
+.drawer a:hover, .drawer a:active { color: var(--maroon); padding-left: 10px; }
+.drawer .drawer-close { align-self: flex-end; width: 44px; height: 44px; }
+.drawer .drawer-cta { margin-top: auto; padding-top: 16px; }
+.drawer .drawer-cta .btn { width: 100%; }
 
 /* ------------------------------ Hero ------------------------------ */
 .hero {
@@ -315,6 +319,28 @@ label { font-weight: 600; font-size: .85rem; display: block; margin-bottom: .35r
   .footer-grid { grid-template-columns: 1fr; }
   .section { padding: 48px 0; }
   .header-inner { height: 64px; }
+
+  /* Two-up grids save space and read better on phones */
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .cat-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .skeleton-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .product-body { padding: 12px 12px 14px; }
+  .product-body h3 { font-size: .92rem; }
+  .product-body .btn { padding: .6rem 1rem; font-size: .85rem; }
+  .price .now { font-size: 1rem; }
+  .cat-card .cat-label { padding: 22px 12px 12px; font-size: 1rem; }
+
+  /* Bigger tap targets */
+  .icon-btn { padding: 10px; }
+  .header-actions { gap: 4px; }
+  .hero-cta .btn { flex: 1; }
+
+  /* Section headings tighter */
+  .section-head { margin-bottom: 30px; }
+}
+
+@media (max-width: 380px) {
+  .product-grid, .cat-grid, .skeleton-grid { grid-template-columns: 1fr; }
 }
 
 /* ============================================================

@@ -147,6 +147,13 @@ order is recorded, marked with a clear "TEST MODE" note. To accept real payments
 > (`koko.js`, `mintpay.js`, `payhere.js`). When you receive each provider's exact endpoint
 > and signature spec on onboarding, adjust that one file - the rest of the app is unchanged.
 
+### Turning payment methods on/off
+
+In **Admin → Settings → Payment Methods** you can enable or disable each method (KOKO,
+Mintpay, PayHere, Cash on Delivery, WhatsApp). Only enabled methods appear at checkout, and
+the server refuses an order that uses a disabled method. At least one method must stay
+enabled.
+
 ---
 
 ## Project structure

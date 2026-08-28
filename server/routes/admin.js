@@ -5,7 +5,8 @@ const bcrypt = require('bcryptjs');
 const { query, withTransaction } = require('../db');
 const { slugify } = require('../migrate');
 const { normalizeImageUrl } = require('../utils/driveImage');
-const { getSettings, updateSettings, getAllDistricts, setDistricts } = require('../settings');
+const { getSettings, updateSettings, getAllDistricts, setDistricts, getPaymentToggles, setPaymentToggles } = require('../settings');
+const { listMethods } = require('../payments');
 const {
   requireAdmin,
   signToken,
@@ -105,6 +106,24 @@ router.put('/shipping-rates', async (req, res, next) => {
   try {
     const rows = Array.isArray(req.body) ? req.body : (req.body && req.body.rates) || [];
     res.json(await setDistricts(rows));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Payment method visibility (which methods customers see at checkout)
+router.get('/payment-methods', async (req, res, next) => {
+  try {
+    const toggles = await getPaymentToggles();
+    res.json(listMethods().map((m) => ({ ...m, enabled: toggles[m.id] })));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/payment-methods', async (req, res, next) => {
+  try {
+    res.json(await setPaymentToggles(req.body || {}));
   } catch (err) {
     next(err);
   }

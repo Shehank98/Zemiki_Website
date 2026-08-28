@@ -8,7 +8,7 @@ const cookieParser = require('cookie-parser');
 
 const { migrate } = require('./migrate');
 const { listMethods } = require('./payments');
-const { getSettings } = require('./settings');
+const { getSettings, getPaymentToggles } = require('./settings');
 
 const app = express();
 
@@ -24,6 +24,9 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 app.get('/api/config', async (req, res, next) => {
   try {
     const settings = await getSettings();
+    const toggles = await getPaymentToggles();
+    // Only surface methods the admin has enabled.
+    const methods = listMethods().filter((m) => toggles[m.id]);
     res.json({
       store_name: process.env.STORE_NAME || 'Zemiki',
       whatsapp_number: process.env.WHATSAPP_NUMBER || '',
@@ -31,7 +34,7 @@ app.get('/api/config', async (req, res, next) => {
       currency_symbol: 'Rs.',
       shipping_flat: settings.shipping_flat,
       free_shipping_over: settings.free_shipping_over,
-      payment_methods: listMethods(),
+      payment_methods: methods,
     });
   } catch (err) {
     next(err);

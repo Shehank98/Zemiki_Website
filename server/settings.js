@@ -124,6 +124,44 @@ async function computeShipping(subtotal, district) {
   return districtFee != null ? districtFee : s.shipping_flat;
 }
 
+/* --------------------------- Payment methods -------------------------- */
+
+// The payment methods the storefront can offer. Admin toggles visibility.
+const PAYMENT_IDS = ['koko', 'mintpay', 'payhere', 'cod', 'whatsapp'];
+
+/**
+ * Which payment methods are enabled (visible to customers). Defaults to all
+ * enabled when nothing has been saved yet.
+ * @returns {Promise<Object<string, boolean>>}
+ */
+async function getPaymentToggles() {
+  const map = {};
+  try {
+    const { rows } = await query("SELECT key, value FROM settings WHERE key LIKE 'pm_%'");
+    rows.forEach((r) => { map[r.key] = r.value; });
+  } catch (e) { /* fall through to defaults */ }
+  const out = {};
+  PAYMENT_IDS.forEach((id) => {
+    out[id] = map['pm_' + id] !== undefined ? map['pm_' + id] === 'true' : true;
+  });
+  return out;
+}
+
+/**
+ * Persist which payment methods are enabled.
+ * @param {Object<string, boolean>} obj
+ */
+async function setPaymentToggles(obj) {
+  for (const id of PAYMENT_IDS) {
+    if (obj[id] === undefined) continue;
+    await query(
+      "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+      ['pm_' + id, obj[id] ? 'true' : 'false']
+    );
+  }
+  return getPaymentToggles();
+}
+
 module.exports = {
   getSettings,
   updateSettings,
@@ -132,4 +170,7 @@ module.exports = {
   getDistricts,
   getDistrictFee,
   setDistricts,
+  PAYMENT_IDS,
+  getPaymentToggles,
+  setPaymentToggles,
 };

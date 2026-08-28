@@ -60,7 +60,12 @@
       <div class="drawer-backdrop" id="drawerBackdrop"></div>
       <aside class="drawer" id="drawer">
         <button class="icon-btn drawer-close" id="drawerClose" aria-label="Close">${icon('close')}</button>
+        <div class="drawer-brand">${cfg.store_name || 'Zemiki'}</div>
         ${NAV.map((n) => `<a href="${n.href}">${n.label}</a>`).join('')}
+        <div class="drawer-cta">
+          <a class="btn btn-gold" href="/cart.html">View Cart</a>
+          ${cfg.whatsapp_number ? `<a class="btn btn-whatsapp" style="margin-top:10px" href="${Z.whatsappUrl(cfg.whatsapp_number, 'Hi Zemiki')}" target="_blank" rel="noopener">Chat on WhatsApp</a>` : ''}
+        </div>
       </aside>`;
     document.body.insertBefore(header, document.body.firstChild);
 

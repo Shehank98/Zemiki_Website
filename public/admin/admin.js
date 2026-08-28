@@ -518,8 +518,43 @@
       $('#setFlat').value = s.shipping_flat;
       $('#setFree').value = s.free_shipping_over;
     } catch (e) { toast(e.message, 'error'); }
+    loadPaymentMethods();
     loadDistricts();
   };
+
+  async function loadPaymentMethods() {
+    const el = $('#paymentsTable');
+    try {
+      const methods = await api('/payment-methods');
+      el.innerHTML = `<table><thead><tr><th>Method</th><th>Type</th><th>Status</th><th>Show at checkout</th></tr></thead><tbody>${
+        methods.map((m) => {
+          const status = m.kind === 'online'
+            ? (m.configured ? '<span class="pill green">Live</span>' : '<span class="pill gold">Test mode</span>')
+            : '<span class="pill blue">Always available</span>';
+          return `<tr>
+            <td><strong>${esc(m.label)}</strong></td>
+            <td>${m.kind === 'online' ? 'Online' : 'Offline'}</td>
+            <td>${status}</td>
+            <td><label class="toggle"><input type="checkbox" data-pm="${esc(m.id)}" ${m.enabled ? 'checked' : ''}><span class="track"></span></label></td>
+          </tr>`;
+        }).join('')}</tbody></table>`;
+    } catch (e) { el.innerHTML = '<div class="empty">Could not load payment methods.</div>'; }
+  }
+
+  $('#savePayments').addEventListener('click', async () => {
+    const btn = $('#savePayments'); btn.disabled = true; btn.textContent = 'Saving…';
+    const body = {};
+    $$('[data-pm]').forEach((chk) => { body[chk.dataset.pm] = chk.checked; });
+    if (!Object.values(body).some(Boolean)) {
+      toast('Enable at least one payment method', 'error');
+      btn.disabled = false; btn.textContent = 'Save Payment Methods'; return;
+    }
+    try {
+      await api('/payment-methods', { method: 'PUT', body });
+      toast('Payment methods saved', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Save Payment Methods';
+  });
 
   async function loadDistricts() {
     const el = $('#districtsTable');

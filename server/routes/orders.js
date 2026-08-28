@@ -2,7 +2,7 @@
 
 const express = require('express');
 const { query, withTransaction } = require('../db');
-const { computeShipping } = require('../settings');
+const { computeShipping, getPaymentToggles } = require('../settings');
 
 const router = express.Router();
 
@@ -33,6 +33,12 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'Cart is empty' });
     }
     const method = VALID_METHODS.includes(payment_method) ? payment_method : 'cod';
+
+    // Reject a method the admin has disabled.
+    const toggles = await getPaymentToggles();
+    if (!toggles[method]) {
+      return res.status(400).json({ error: 'That payment method is not available' });
+    }
 
     const ids = items.map((i) => parseInt(i.id, 10)).filter(Boolean);
     if (ids.length === 0) {

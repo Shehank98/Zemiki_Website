@@ -82,7 +82,7 @@
 
           <div class="summary" style="position:static">
             <h3>Payment Method</h3>
-            <div class="pay-methods">${payHtml}</div>
+            <div class="pay-methods">${payHtml || '<p style="color:var(--muted)">No payment methods are available right now. Please contact us to place your order.</p>'}</div>
           </div>
         </form>
 
@@ -96,6 +96,12 @@
           <p style="font-size:.78rem;color:var(--muted);text-align:center;margin-top:10px">By placing your order you agree to our terms. Your details are used only to process this order.</p>
         </div>
       </div>`;
+
+    // No enabled payment methods -> block ordering.
+    if (!methods.length) {
+      const pb = document.getElementById('placeBtn');
+      if (pb) { pb.disabled = true; pb.textContent = 'Ordering unavailable'; }
+    }
 
     // payment selection highlight
     root.querySelectorAll('.pay-method').forEach((el) => {
