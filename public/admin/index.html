@@ -113,6 +113,19 @@
       <!-- Settings -->
       <section class="view" id="view-settings">
         <div class="panel">
+          <div class="panel-head"><h2>Announcement Bar</h2></div>
+          <div style="padding:22px;max-width:640px">
+            <div class="check-row"><label class="toggle"><input type="checkbox" id="annEnabled"><span class="track"></span></label><label for="annEnabled" style="margin:0">Show the announcement bar at the top of every page</label></div>
+            <div class="field">
+              <label>Announcement text</label>
+              <input id="annText" type="text" maxlength="200" placeholder="e.g. Free islandwide delivery on orders over Rs. 15,000">
+              <div class="hint">Shown as a single line at the very top of the site. Keep it short.</div>
+            </div>
+            <button class="btn btn-primary" id="saveAnnouncement">Save Announcement</button>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="panel-head"><h2>Shipping &amp; Delivery</h2></div>
           <div style="padding:22px;max-width:520px">
             <div class="field">

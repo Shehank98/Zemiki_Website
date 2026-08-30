@@ -517,10 +517,24 @@
       const s = await api('/settings');
       $('#setFlat').value = s.shipping_flat;
       $('#setFree').value = s.free_shipping_over;
+      $('#annText').value = s.announcement_text || '';
+      $('#annEnabled').checked = !!s.announcement_enabled;
     } catch (e) { toast(e.message, 'error'); }
     loadPaymentMethods();
     loadDistricts();
   };
+
+  $('#saveAnnouncement').addEventListener('click', async () => {
+    const btn = $('#saveAnnouncement'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await api('/settings', { method: 'PUT', body: {
+        announcement_text: $('#annText').value,
+        announcement_enabled: $('#annEnabled').checked,
+      } });
+      toast('Announcement saved', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Save Announcement';
+  });
 
   async function loadPaymentMethods() {
     const el = $('#paymentsTable');

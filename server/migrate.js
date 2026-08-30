@@ -260,6 +260,9 @@ async function seedShippingDefaults() {
   const defaults = {
     shipping_flat: process.env.SHIPPING_FLAT_LKR || '350',
     free_shipping_over: process.env.FREE_SHIPPING_OVER_LKR || '0',
+    announcement_text:
+      'Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay & PayHere',
+    announcement_enabled: 'true',
   };
   for (const [key, value] of Object.entries(defaults)) {
     await query(

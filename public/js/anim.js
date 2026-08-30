@@ -6,13 +6,16 @@
   /* --- Scroll reveal ------------------------------------------------ */
   const REVEAL_SELECTORS = [
     '.section-head', '.product-card', '.cat-card', '.trust-item',
-    '.about-split > *', '.pay-chip', '.hero-copy', '.hero-art',
-    '.summary', '.confirm-card',
+    '.about-split > *', '.hero-copy', '.hero-art',
+    '.summary', '.confirm-card', '.testimonial', '.ig-tile',
   ];
 
   function tagReveal(root) {
     (root || document).querySelectorAll(REVEAL_SELECTORS.join(',')).forEach((el, i) => {
       if (el.classList.contains('reveal')) return;
+      // Don't reveal-hide cards inside a horizontal scroll row - off-screen
+      // ones would never intersect and would stay invisible.
+      if (el.closest('.scroll-row')) return;
       el.classList.add('reveal');
       // small stagger for grids
       el.style.setProperty('--reveal-delay', (Math.min(i % 8, 8) * 55) + 'ms');

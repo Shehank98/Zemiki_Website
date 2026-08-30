@@ -422,3 +422,55 @@ body { animation: pageFade .5s ease both; }
 .skeleton-card .sk-line.short { width: 50%; }
 .sk-media, .sk-line { background: linear-gradient(90deg, #efe8db 25%, #f7f2e9 37%, #efe8db 63%); background-size: 400% 100%; animation: skeleton 1.4s ease infinite; }
 @keyframes skeleton { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+/* ============================================================
+   Homepage engagement sections
+   ============================================================ */
+
+/* New Arrivals horizontal scroll row */
+.scroll-row {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr);
+  gap: 26px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 6px 4px 18px; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; scrollbar-color: var(--gold) transparent;
+}
+.scroll-row > .product-card { scroll-snap-align: start; }
+.scroll-row::-webkit-scrollbar { height: 8px; }
+.scroll-row::-webkit-scrollbar-thumb { background: var(--gold-soft); border-radius: 999px; }
+.scroll-row::-webkit-scrollbar-track { background: transparent; }
+
+/* Testimonials */
+.testimonials { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+.testimonial {
+  background: var(--cream); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 28px 26px; margin: 0; position: relative; box-shadow: var(--shadow-sm);
+}
+.testimonial .stars { color: var(--gold); letter-spacing: 3px; font-size: 1.05rem; margin-bottom: 12px; }
+.testimonial blockquote { margin: 0 0 18px; font-size: .98rem; line-height: 1.7; color: var(--ink); font-style: italic; }
+.testimonial figcaption { display: flex; flex-direction: column; gap: 2px; }
+.testimonial figcaption strong { font-family: var(--serif); color: var(--maroon); font-size: 1.05rem; }
+.testimonial figcaption span { color: var(--muted); font-size: .82rem; }
+.testimonial::before {
+  content: '\201C'; position: absolute; top: 6px; right: 20px;
+  font-family: var(--serif); font-size: 4rem; color: var(--gold-soft); opacity: .5; line-height: 1;
+}
+
+/* Instagram gallery strip */
+.ig-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+.ig-tile { position: relative; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; background: var(--cream-2); display: block; }
+.ig-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+.ig-tile:hover img { transform: scale(1.08); }
+.ig-overlay {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: rgba(43,18,31,.45); color: #fff; opacity: 0; transition: opacity .25s ease;
+}
+.ig-tile:hover .ig-overlay { opacity: 1; }
+
+@media (max-width: 960px) {
+  .testimonials { grid-template-columns: 1fr; }
+  .ig-strip { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .scroll-row { grid-auto-columns: 72%; gap: 14px; }
+  .ig-strip { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+}

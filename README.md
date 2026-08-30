@@ -106,6 +106,11 @@ To put a product on sale, either type a **Discount %** or a **Sale price** in th
 form - each field updates the other, and the "% off" is shown live. Leave both blank for no
 discount. The storefront then shows the sale price with the original price struck through.
 
+### Announcement bar
+
+In **Admin → Settings → Announcement Bar** you can edit the message shown at the very top of
+every page and toggle the whole bar on or off. Changes apply site-wide immediately.
+
 ### Shipping (flat + per-district)
 
 Go to **Admin → Settings**:

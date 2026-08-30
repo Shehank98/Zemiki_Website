@@ -34,6 +34,7 @@ app.get('/api/config', async (req, res, next) => {
       currency_symbol: 'Rs.',
       shipping_flat: settings.shipping_flat,
       free_shipping_over: settings.free_shipping_over,
+      announcement: { text: settings.announcement_text, enabled: settings.announcement_enabled },
       payment_methods: methods,
     });
   } catch (err) {

@@ -36,8 +36,13 @@
     }).join('');
 
     const header = document.createElement('div');
+    const ann = cfg.announcement || {};
+    const topbar = (ann.enabled && ann.text)
+      ? `<div class="topbar">${Z.escapeHtml(ann.text)}</div>`
+      : '';
+
     header.innerHTML = `
-      <div class="topbar">✨ Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay &amp; PayHere</div>
+      ${topbar}
       <header class="site-header">
         <div class="wrap header-inner">
           <a class="brand" href="/">${brandMark}${cfg.store_name || 'Zemiki'}</a>

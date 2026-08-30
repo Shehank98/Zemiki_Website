@@ -2,47 +2,51 @@
 
 const { query } = require('./db');
 
-// Env-based fallbacks used when a setting hasn't been stored in the DB yet.
-function defaults() {
-  return {
-    shipping_flat: Number(process.env.SHIPPING_FLAT_LKR || 350),
-    free_shipping_over: Number(process.env.FREE_SHIPPING_OVER_LKR || 0),
-  };
-}
+const DEFAULT_ANNOUNCEMENT =
+  'Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay & PayHere';
+
+// Typed settings schema. Each key knows how to coerce and default itself.
+const SETTINGS_SCHEMA = {
+  shipping_flat: { type: 'number', def: () => Number(process.env.SHIPPING_FLAT_LKR || 350) },
+  free_shipping_over: { type: 'number', def: () => Number(process.env.FREE_SHIPPING_OVER_LKR || 0) },
+  announcement_text: { type: 'text', def: () => DEFAULT_ANNOUNCEMENT },
+  announcement_enabled: { type: 'bool', def: () => true },
+};
 
 /**
- * Read store settings, merging DB values over env defaults.
- * @returns {Promise<{shipping_flat:number, free_shipping_over:number}>}
+ * Read store settings, merging DB values over defaults, coerced by type.
  */
 async function getSettings() {
-  const d = defaults();
+  const map = {};
   try {
-    const { rows } = await query(
-      "SELECT key, value FROM settings WHERE key IN ('shipping_flat','free_shipping_over')"
-    );
-    const map = {};
+    const { rows } = await query('SELECT key, value FROM settings');
     rows.forEach((r) => { map[r.key] = r.value; });
-    return {
-      shipping_flat: map.shipping_flat != null ? Number(map.shipping_flat) : d.shipping_flat,
-      free_shipping_over: map.free_shipping_over != null ? Number(map.free_shipping_over) : d.free_shipping_over,
-    };
-  } catch (e) {
-    return d;
+  } catch (e) { /* fall through to defaults */ }
+
+  const out = {};
+  for (const [key, spec] of Object.entries(SETTINGS_SCHEMA)) {
+    const raw = map[key];
+    if (raw === undefined) { out[key] = spec.def(); continue; }
+    if (spec.type === 'number') out[key] = Number(raw);
+    else if (spec.type === 'bool') out[key] = raw === 'true';
+    else out[key] = raw;
   }
+  return out;
 }
 
 /**
- * Persist a subset of settings (only known numeric keys).
- * @param {object} patch
+ * Persist a subset of settings (only known keys, coerced by type).
  */
 async function updateSettings(patch) {
-  const allowed = ['shipping_flat', 'free_shipping_over'];
-  for (const key of allowed) {
+  for (const [key, spec] of Object.entries(SETTINGS_SCHEMA)) {
     if (patch[key] === undefined) continue;
-    const num = Math.max(0, Number(patch[key]) || 0);
+    let value;
+    if (spec.type === 'number') value = String(Math.max(0, Number(patch[key]) || 0));
+    else if (spec.type === 'bool') value = patch[key] ? 'true' : 'false';
+    else value = String(patch[key]).slice(0, 300);
     await query(
       'INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value',
-      [key, String(num)]
+      [key, value]
     );
   }
   return getSettings();
