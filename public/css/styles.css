@@ -137,7 +137,7 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.4rem); }
     linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
   color: #fff;
 }
-.hero-inner { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; padding: 84px 0; }
+.hero-inner { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; padding: 84px 20px; }
 .hero h1 { color: #fff; }
 .hero h1 .accent { color: var(--gold-soft); font-style: italic; }
 .hero p { color: rgba(255,255,255,.82); font-size: 1.08rem; max-width: 460px; margin: 0 0 1.8rem; }
@@ -178,7 +178,7 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.4rem); }
 
 /* trust strip */
 .trust { background: #fff; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 34px 0; }
+.trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 34px 20px; }
 .trust-item { display: flex; gap: 12px; align-items: center; }
 .trust-item svg { color: var(--gold-deep); flex: none; }
 .trust-item strong { display: block; font-size: .95rem; }
@@ -192,7 +192,7 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.4rem); }
 
 /* ------------------------------ Footer ------------------------------ */
 .site-footer { background: var(--maroon-dark); color: rgba(255,255,255,.78); margin-top: 60px; }
-.footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 40px; padding: 60px 0 34px; }
+.footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 40px; padding: 60px 20px 34px; }
 .site-footer h4 { color: #fff; font-family: var(--sans); font-size: .95rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 1rem; }
 .site-footer a { display: block; padding: 5px 0; color: rgba(255,255,255,.72); font-size: .92rem; }
 .site-footer a:hover { color: var(--gold-soft); }
@@ -301,7 +301,7 @@ label { font-weight: 600; font-size: .85rem; display: block; margin-bottom: .35r
 
 /* ------------------------------ Responsive ------------------------------ */
 @media (max-width: 960px) {
-  .hero-inner { grid-template-columns: 1fr; padding: 56px 0; }
+  .hero-inner { grid-template-columns: 1fr; padding: 56px 20px; }
   .hero-art { max-width: 420px; margin: 0 auto; order: -1; }
   .pdp { grid-template-columns: 1fr; gap: 30px; }
   .cart-layout { grid-template-columns: 1fr; }
@@ -333,7 +333,6 @@ label { font-weight: 600; font-size: .85rem; display: block; margin-bottom: .35r
   /* Bigger tap targets */
   .icon-btn { padding: 10px; }
   .header-actions { gap: 4px; }
-  .hero-cta .btn { flex: 1; }
 
   /* Section headings tighter */
   .section-head { margin-bottom: 30px; }
@@ -526,11 +525,14 @@ img.js-fade.loaded { opacity: 1; }
 /* Mobile refinements: smaller, cleaner */
 @media (max-width: 640px) {
   .brand-logo { height: 34px; }
-  .hero-inner { padding: 40px 0 46px; gap: 24px; }
+  .hero-inner { padding: 40px 20px 46px; gap: 24px; }
   .hero-art { max-width: 300px; border-width: 2px; }
   .hero-badges { gap: 12px 18px; margin-top: 20px; }
   .hero-badge:nth-child(3) { display: none; } /* keep it clean on small screens */
   .hero p { font-size: 1rem; margin-bottom: 1.3rem; }
+  /* Stack hero buttons full-width so text never wraps unevenly */
+  .hero-cta { flex-direction: column; }
+  .hero-cta .btn { width: 100%; }
   .section { padding: 40px 0; }
   .scroll-row { grid-auto-columns: 62%; }
   .testimonial::before { display: none; }
