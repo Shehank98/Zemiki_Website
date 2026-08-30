@@ -3,6 +3,7 @@
 const express = require('express');
 const { query, withTransaction } = require('../db');
 const { computeShipping, getPaymentToggles } = require('../settings');
+const mailer = require('../mailer');
 
 const router = express.Router();
 
@@ -69,12 +70,16 @@ router.post('/', async (req, res, next) => {
     const total = subtotal + shipping;
     const orderNumber = genOrderNumber();
 
-    const order = await withTransaction(async (client) => {
+    const isGift = Boolean(customer.is_gift);
+    const giftMessage = isGift ? (customer.gift_message || '').slice(0, 500) : null;
+
+    const { order, savedItems } = await withTransaction(async (client) => {
       const { rows } = await client.query(
         `INSERT INTO orders
            (order_number, customer_name, phone, email, address, city, district, notes,
-            subtotal, shipping, total, payment_method, payment_status, order_status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pending','new')
+            subtotal, shipping, total, payment_method, payment_status, order_status,
+            is_gift, gift_message)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pending','new',$13,$14)
          RETURNING *`,
         [
           orderNumber,
@@ -89,18 +94,25 @@ router.post('/', async (req, res, next) => {
           shipping,
           total,
           method,
+          isGift,
+          giftMessage,
         ]
       );
       const created = rows[0];
+      const saved = [];
       for (const li of lineItems) {
         await client.query(
           `INSERT INTO order_items (order_id, product_id, product_name, unit_price, qty)
            VALUES ($1,$2,$3,$4,$5)`,
           [created.id, li.product_id, li.product_name, li.unit_price, li.qty]
         );
+        saved.push(li);
       }
-      return created;
+      return { order: created, savedItems: saved };
     });
+
+    // Best-effort: email the customer their invoice (never blocks the order).
+    mailer.sendInvoice(order, savedItems).catch(() => {});
 
     res.status(201).json({
       order_number: order.order_number,

@@ -7,6 +7,7 @@ const { slugify } = require('../migrate');
 const { normalizeImageUrl } = require('../utils/driveImage');
 const { getSettings, updateSettings, getAllDistricts, setDistricts, getPaymentToggles, setPaymentToggles } = require('../settings');
 const { listMethods } = require('../payments');
+const mailer = require('../mailer');
 const {
   requireAdmin,
   signToken,
@@ -385,6 +386,67 @@ router.patch('/orders/:id', async (req, res, next) => {
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Re-send the invoice email for an order.
+router.post('/orders/:id/resend-invoice', async (req, res, next) => {
+  try {
+    const { rows } = await query('SELECT * FROM orders WHERE id=$1', [req.params.id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    if (!rows[0].email) return res.status(400).json({ error: 'This order has no email address' });
+    const items = await query('SELECT * FROM order_items WHERE order_id=$1', [req.params.id]);
+    const result = await mailer.sendInvoice(rows[0], items.rows);
+    if (result.skipped) return res.status(400).json({ error: 'Email is not configured (set APPSCRIPT_URL)' });
+    if (!result.ok) return res.status(502).json({ error: 'Mail service did not accept the message' });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* --------------------------- Subscribers ------------------------ */
+
+router.get('/subscribers', async (req, res, next) => {
+  try {
+    const { rows } = await query('SELECT id, email, created_at FROM subscribers ORDER BY created_at DESC');
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/subscribers/:id', async (req, res, next) => {
+  try {
+    await query('DELETE FROM subscribers WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Broadcast a new-offer email to subscribers + past customers.
+router.post('/broadcast', async (req, res, next) => {
+  try {
+    const { subject, heading, body, cta_text, cta_url, image_url } = req.body || {};
+    if (!subject || !body) return res.status(400).json({ error: 'Subject and body are required' });
+
+    const subs = await query('SELECT email FROM subscribers');
+    const custs = await query("SELECT DISTINCT email FROM orders WHERE email IS NOT NULL AND email <> ''");
+    const recipients = subs.rows.map((r) => r.email).concat(custs.rows.map((r) => r.email));
+
+    const result = await mailer.sendBroadcast(
+      { subject, heading, body, cta_text, cta_url, image_url },
+      recipients
+    );
+    if (result.skipped && result.reason === 'no recipients') {
+      return res.status(400).json({ error: 'No subscribers or past customers to email yet' });
+    }
+    if (result.skipped) return res.status(400).json({ error: 'Email is not configured (set APPSCRIPT_URL)' });
+    if (!result.ok) return res.status(502).json({ error: 'Mail service did not accept the message' });
+    res.json({ ok: true, recipients: Array.from(new Set(recipients.filter(Boolean))).length });
   } catch (err) {
     next(err);
   }

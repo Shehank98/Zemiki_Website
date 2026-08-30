@@ -100,7 +100,15 @@ CREATE TABLE IF NOT EXISTS shipping_rates (
   sort_order  INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS subscribers (
+  id          SERIAL PRIMARY KEY,
+  email       TEXT NOT NULL UNIQUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS district TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS is_gift BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift_message TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured);
