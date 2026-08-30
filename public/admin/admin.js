@@ -77,6 +77,21 @@
     showLogin();
   });
 
+  // Animate a number counting up. data-money="1" formats as currency.
+  function countUp(el) {
+    const target = Number(el.dataset.count) || 0;
+    const isMoney = el.dataset.money === '1';
+    const dur = 700, start = performance.now();
+    function frame(now) {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const val = target * eased;
+      el.textContent = isMoney ? money(Math.round(val)) : Math.round(val).toLocaleString('en-LK');
+      if (p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
   /* --------------------------- navigation ---------------------------- */
   const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', orders: 'Orders', enquiries: 'Enquiries', marketing: 'Marketing', settings: 'Settings' };
   const loaders = {};
@@ -86,7 +101,12 @@
       $$('.nav-item').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       $$('.view').forEach((v) => v.classList.remove('active'));
-      $('#view-' + view).classList.add('active');
+      const active = $('#view-' + view);
+      active.classList.add('active');
+      // view-switch animation
+      active.classList.remove('view-anim');
+      void active.offsetWidth;
+      active.classList.add('view-anim');
       $('#viewTitle').textContent = titles[view];
       if (loaders[view]) loaders[view]();
     });
@@ -96,10 +116,13 @@
   loaders.dashboard = async function () {
     try {
       const s = await api('/stats');
-      $('#statGrid').innerHTML = [
-        ['Products', s.products], ['Orders', s.orders],
-        ['Revenue (paid)', money(s.revenue)], ['Open Enquiries', s.open_enquiries],
-      ].map(([l, v]) => `<div class="stat"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+      const cards = [
+        ['Products', s.products, 0], ['Orders', s.orders, 0],
+        ['Revenue (paid)', s.revenue, 1], ['Open Enquiries', s.open_enquiries, 0],
+      ];
+      $('#statGrid').innerHTML = cards.map(([l, v, money0]) =>
+        `<div class="stat"><div class="label">${l}</div><div class="value" data-count="${v}" data-money="${money0}">0</div></div>`).join('');
+      $$('#statGrid .value').forEach(countUp);
 
       const rows = (s.recent_orders || []);
       $('#recentOrders').innerHTML = rows.length ? `<table><thead><tr>
@@ -435,7 +458,7 @@
     el.innerHTML = list.length ? `<table><thead><tr>
       <th>Order</th><th>Customer</th><th>District</th><th>Total</th><th>Method</th><th>Payment</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>${
       list.map((o) => `<tr>
-        <td><strong>${esc(o.order_number)}</strong></td>
+        <td><strong>${esc(o.order_number)}</strong>${o.is_gift ? ' <span class="pill gold" title="Gift order">🎁 Gift</span>' : ''}</td>
         <td>${esc(o.customer_name)}<div style="color:#999;font-size:.8rem">${esc(o.phone)}</div></td>
         <td>${esc(o.district || '-')}</td>
         <td>${money(o.total)}</td>
@@ -464,25 +487,103 @@
     } catch (e) { toast(e.message, 'error'); }
   }
 
+  let currentOrder = null;
   async function viewOrder(id) {
     try {
       const o = await api('/orders/' + id);
-      const items = (o.items || []).map((it) => `<tr><td>${esc(it.product_name)}</td><td>${it.qty}</td><td>${money(it.unit_price)}</td><td>${money(it.unit_price * it.qty)}</td></tr>`).join('');
+      currentOrder = o;
+      const items = (o.items || []).map((it) => `<tr><td>${esc(it.product_name)}</td><td>${it.qty}</td><td>${money(it.unit_price)}</td><td style="text-align:right">${money(it.unit_price * it.qty)}</td></tr>`).join('');
+      const waNum = String(o.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '94');
+      const contact =
+        `<a class="btn btn-outline btn-sm" href="tel:${esc(o.phone)}">📞 Call</a> ` +
+        `<a class="btn btn-outline btn-sm" href="https://wa.me/${waNum}" target="_blank" rel="noopener">💬 WhatsApp</a>` +
+        (o.email ? ` <a class="btn btn-outline btn-sm" href="mailto:${esc(o.email)}">✉ Email</a>` : '');
+
+      const giftBlock = o.is_gift
+        ? `<div class="gift-note-admin">🎁 <strong>Gift order</strong> - anonymous, prices hidden on the delivery note.${o.gift_message ? `<div class="gift-msg">“${esc(o.gift_message)}”</div>` : ''}</div>`
+        : '';
+
+      const statusBtns = ['new', 'processing', 'shipped', 'delivered', 'cancelled']
+        .map((s) => `<button class="btn btn-sm ${s === o.order_status ? 'btn-primary' : 'btn-outline'}" data-set-status="${s}">${s}</button>`).join(' ');
+      const payBtns = ['pending', 'paid', 'failed']
+        .map((s) => `<button class="btn btn-sm ${s === o.payment_status ? 'btn-primary' : 'btn-outline'}" data-set-pay="${s}">${s}</button>`).join(' ');
+
       modal.open('Order ' + o.order_number, `
-        <div class="grid-2" style="margin-bottom:16px">
-          <div><strong>Customer</strong><div>${esc(o.customer_name)}</div><div>${esc(o.phone)}</div><div>${esc(o.email || '')}</div></div>
-          <div><strong>Delivery</strong><div>${esc(o.address || '')}</div><div>${esc(o.city || '')}</div></div>
+        <div class="order-grid">
+          <div>
+            <div class="od-label">Customer</div>
+            <div class="od-value"><strong>${esc(o.customer_name)}</strong></div>
+            <div class="od-value">${esc(o.phone)}${o.email ? ' · ' + esc(o.email) : ''}</div>
+            <div style="margin-top:8px">${contact}</div>
+          </div>
+          <div>
+            <div class="od-label">Deliver to</div>
+            <div class="od-value">${esc(o.address || '-')}</div>
+            <div class="od-value">${esc(o.city || '')}${o.district ? ', ' + esc(o.district) : ''}</div>
+          </div>
         </div>
-        ${o.notes ? `<div class="field"><strong>Notes:</strong> ${esc(o.notes)}</div>` : ''}
-        <table style="margin:10px 0"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${items}</tbody></table>
-        <div style="text-align:right">
-          <div>Subtotal: ${money(o.subtotal)}</div>
-          <div>Shipping: ${money(o.shipping)}</div>
-          <div style="font-weight:700;color:var(--maroon);font-size:1.1rem">Total: ${money(o.total)}</div>
+        ${o.notes ? `<div class="od-notes"><strong>Note:</strong> ${esc(o.notes)}</div>` : ''}
+        ${giftBlock}
+        <table class="od-items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th style="text-align:right">Total</th></tr></thead><tbody>${items}</tbody></table>
+        <div class="od-totals">
+          <div><span>Subtotal</span><span>${money(o.subtotal)}</span></div>
+          <div><span>Shipping</span><span>${money(o.shipping)}</span></div>
+          <div class="grand"><span>Total</span><span>${money(o.total)}</span></div>
         </div>
-        <div style="margin-top:12px">Payment: ${esc(o.payment_method)} ${payPill(o.payment_status)} · ${statusPill(o.order_status)}</div>`,
-        `<button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').classList.remove('open')">Close</button>`);
+        <div class="od-controls">
+          <div><div class="od-label">Order status</div><div class="btn-row" id="statusBtns">${statusBtns}</div></div>
+          <div><div class="od-label">Payment</div><div class="btn-row" id="payBtns">${esc(o.payment_method)} ${payBtns}</div></div>
+        </div>`,
+        `<button class="btn btn-outline" id="printSlip">🖨 Packing slip</button>
+         <button class="btn btn-gold" id="resendInv" ${o.email ? '' : 'disabled title="No email on this order"'}>✉ Resend invoice</button>
+         <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').classList.remove('open')">Close</button>`);
+
+      // quick status actions
+      $$('[data-set-status]').forEach((btn) => btn.addEventListener('click', async () => {
+        await updateOrder(o.id, { order_status: btn.dataset.setStatus });
+        viewOrder(o.id); // refresh modal
+      }));
+      $$('[data-set-pay]').forEach((btn) => btn.addEventListener('click', async () => {
+        await updateOrder(o.id, { payment_status: btn.dataset.setPay });
+        viewOrder(o.id);
+      }));
+      $('#resendInv') && $('#resendInv').addEventListener('click', async () => {
+        const btn = $('#resendInv'); btn.disabled = true; btn.textContent = 'Sending…';
+        try { await api('/orders/' + o.id + '/resend-invoice', { method: 'POST' }); toast('Invoice re-sent', 'success'); }
+        catch (e) { toast(e.message, 'error'); }
+        btn.disabled = false; btn.textContent = '✉ Resend invoice';
+      });
+      $('#printSlip') && $('#printSlip').addEventListener('click', () => printPackingSlip(o));
     } catch (e) { toast(e.message, 'error'); }
+  }
+
+  // Print-friendly packing slip. For gift orders, hide prices and buyer name.
+  function printPackingSlip(o) {
+    const gift = o.is_gift;
+    const rows = (o.items || []).map((it) =>
+      `<tr><td>${esc(it.product_name)}</td><td style="text-align:center">${it.qty}</td>${gift ? '' : `<td style="text-align:right">${money(it.unit_price * it.qty)}</td>`}</tr>`).join('');
+    const store = 'Zemiki';
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Packing Slip ${esc(o.order_number)}</title>
+      <style>
+        body{font-family:Arial,sans-serif;color:#2b2320;padding:32px;max-width:640px;margin:auto}
+        h1{font-size:22px;margin:0 0 2px;color:#5a1a2b}
+        .muted{color:#777;font-size:13px}
+        table{width:100%;border-collapse:collapse;margin:18px 0}
+        th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;font-size:14px}
+        .box{border:1px solid #eee;border-radius:8px;padding:14px;margin:14px 0}
+        .gift{background:#fff8ec;border:1px dashed #c9a24b;border-radius:8px;padding:16px;margin:14px 0;text-align:center;font-size:15px}
+        .tot{text-align:right;font-weight:bold;font-size:16px;color:#5a1a2b}
+      </style></head><body>
+      <h1>${store}</h1><div class="muted">Packing Slip · Order ${esc(o.order_number)} · ${new Date(o.created_at).toLocaleDateString('en-LK')}</div>
+      <div class="box"><strong>Deliver to</strong><br>${esc(o.customer_name)}<br>${esc(o.address || '')}<br>${esc(o.city || '')}${o.district ? ', ' + esc(o.district) : ''}<br>${esc(o.phone)}</div>
+      ${gift && o.gift_message ? `<div class="gift">🎁 A gift for you<br><em>“${esc(o.gift_message)}”</em></div>` : ''}
+      <table><thead><tr><th>Item</th><th style="text-align:center">Qty</th>${gift ? '' : '<th style="text-align:right">Total</th>'}</tr></thead><tbody>${rows}</tbody></table>
+      ${gift ? '<div class="muted">This is a gift order - no prices shown.</div>' : `<div class="tot">Total: ${money(o.total)}</div>`}
+      <script>window.onload=function(){window.print()}<\/script>
+    </body></html>`;
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(html); w.document.close(); }
+    else toast('Allow pop-ups to print', 'error');
   }
 
   /* ---------------------------- enquiries ---------------------------- */

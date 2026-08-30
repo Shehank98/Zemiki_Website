@@ -16,6 +16,5 @@ public/assets/logo.png
 Until you add `logo.png`, the site automatically falls back to the "✦ Zemiki"
 text wordmark, so nothing looks broken.
 
-An `.svg` also works if you name it `logo.png`'s reference — but PNG is simplest.
 To use a different filename or an SVG, change the `src="/assets/logo.png"` line
 in `public/js/layout.js`.
