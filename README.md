@@ -86,6 +86,36 @@ from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 | `MINTPAY_MERCHANT_ID`, `MINTPAY_API_KEY` | – | Leave blank → Mintpay runs in test mode |
 | `PAYHERE_MERCHANT_ID`, `PAYHERE_SECRET` | – | Leave blank → PayHere runs in test mode |
 | `PAYHERE_SANDBOX` | – | `true` uses PayHere's sandbox endpoint |
+| `APPSCRIPT_URL` | – | Google Apps Script web-app URL for sending email (see below) |
+| `APPSCRIPT_SECRET` | – | Shared secret matching the one in your Apps Script |
+
+---
+
+## Emails (invoices + offers)
+
+Order invoices and offer emails are sent through a **free Google Apps Script**
+web app (no SMTP setup). Follow **`docs/apps-script/README.md`**: paste
+`docs/apps-script/Code.gs` into script.google.com, deploy it as a web app, and
+put its URL + secret into `APPSCRIPT_URL` / `APPSCRIPT_SECRET`.
+
+- **Invoice:** emailed to the customer automatically when they place an order
+  (customer email is required at checkout). Re-send any invoice from
+  **Admin → Orders → View → Resend invoice**.
+- **Offers:** compose in **Admin → Marketing → Send an Offer Email**; it goes to
+  all newsletter subscribers + everyone who has ordered.
+- Until `APPSCRIPT_URL` is set, the store runs normally and skips email.
+
+## Logo
+
+Drop your logo at **`public/assets/logo.png`** (transparent PNG, ~240×80). It
+shows in the header automatically; until then the site uses the "Zemiki" text
+wordmark. See `public/assets/README.md`.
+
+## Gift orders
+
+Customers can tick **"This is a gift"** at checkout and add a message. Gift
+orders are sent anonymously with **prices hidden** on the printed packing slip
+(Admin → Orders → View → Packing slip), and the gift message is included.
 
 ---
 
