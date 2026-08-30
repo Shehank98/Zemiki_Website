@@ -73,11 +73,17 @@
     const bar = document.getElementById('miniCart');
     if (!bar || !window.Cart) return;
     const count = Cart.count();
-    if (count <= 0) { bar.classList.remove('show'); return; }
+    if (count <= 0) {
+      bar.classList.remove('show');
+      document.body.classList.remove('has-minicart');
+      return;
+    }
     const info = bar.querySelector('.mini-cart-info');
     info.innerHTML = '<strong>' + count + '</strong> item' + (count > 1 ? 's' : '') +
       ' &middot; ' + (window.Z ? Z.money(Cart.subtotal()) : Cart.subtotal());
     bar.classList.add('show');
+    // Reserve space so the fixed bar never covers footer content on mobile.
+    document.body.classList.add('has-minicart');
   }
 
   /* --- Cart badge bounce ------------------------------------------- */

@@ -474,3 +474,9 @@ body { animation: pageFade .5s ease both; }
   .scroll-row { grid-auto-columns: 72%; gap: 14px; }
   .ig-strip { grid-template-columns: repeat(3, 1fr); gap: 8px; }
 }
+
+/* Reserve space at the bottom so the sticky mini-cart bar never hides footer
+   content (mainly on mobile, where the bar sits just above the fold). */
+@media (max-width: 640px) {
+  body.has-minicart { padding-bottom: 70px; }
+}
