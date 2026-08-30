@@ -32,14 +32,37 @@
     : { observe: (el) => el.classList.add('in'), unobserve: function () {} };
 
   // Re-tag after dynamic content loads (product grids, category grid, etc.)
-  function retag() { tagReveal(document); }
+  function retag() { tagReveal(document); fadeImages(document); }
 
-  /* --- Header shadow on scroll ------------------------------------- */
+  /* --- Header shadow + scroll progress ----------------------------- */
   function onScroll() {
     const header = document.querySelector('.site-header');
     if (header) header.classList.toggle('scrolled', window.scrollY > 10);
     const btt = document.getElementById('backToTop');
     if (btt) btt.classList.toggle('show', window.scrollY > 400);
+    const bar = document.getElementById('scrollProgress');
+    if (bar) {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    }
+  }
+
+  function buildScrollProgress() {
+    const bar = document.createElement('div');
+    bar.id = 'scrollProgress';
+    document.body.appendChild(bar);
+  }
+
+  /* --- Fade product/category images in as they load ---------------- */
+  function fadeImages(root) {
+    (root || document).querySelectorAll('.product-media img, .ig-tile img, .cat-card img').forEach((img) => {
+      if (img.dataset.faded) return;
+      img.dataset.faded = '1';
+      img.classList.add('js-fade');
+      if (img.complete && img.naturalWidth > 0) { img.classList.add('loaded'); return; }
+      img.addEventListener('load', () => img.classList.add('loaded'));
+      img.addEventListener('error', () => img.classList.add('loaded'));
+    });
   }
 
   /* --- Back to top -------------------------------------------------- */
@@ -99,6 +122,8 @@
   /* --- Init --------------------------------------------------------- */
   function init() {
     tagReveal(document);
+    fadeImages(document);
+    buildScrollProgress();
     buildBackToTop();
     buildMiniCart();
     onScroll();

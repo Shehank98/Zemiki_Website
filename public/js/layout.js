@@ -45,7 +45,10 @@
       ${topbar}
       <header class="site-header">
         <div class="wrap header-inner">
-          <a class="brand" href="/">${brandMark}${cfg.store_name || 'Zemiki'}</a>
+          <a class="brand" href="/" aria-label="${Z.escapeHtml(cfg.store_name || 'Zemiki')}">
+            <img class="brand-logo" src="/assets/logo.png" alt="${Z.escapeHtml(cfg.store_name || 'Zemiki')}" onerror="this.remove();var f=document.getElementById('brandFallback');if(f)f.hidden=false">
+            <span id="brandFallback" class="brand-fallback" hidden>${brandMark}${cfg.store_name || 'Zemiki'}</span>
+          </a>
           <nav class="main-nav">${navHtml}</nav>
           <div class="header-actions">
             <button class="icon-btn" id="searchToggle" aria-label="Search">${icon('search')}</button>

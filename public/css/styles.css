@@ -500,3 +500,42 @@ body { animation: pageFade .5s ease both; }
   .newsletter-inner { flex-direction: column; align-items: stretch; text-align: center; gap: 16px; }
   .newsletter-form { max-width: none; }
 }
+
+/* ============================================================
+   Logo, extra animations & mobile refinements
+   ============================================================ */
+
+/* Header logo (falls back to text wordmark) */
+.brand-logo { height: 42px; width: auto; display: block; }
+.brand-fallback { display: inline-flex; align-items: center; gap: .6rem; }
+
+/* Scroll progress bar */
+#scrollProgress { position: fixed; top: 0; left: 0; height: 3px; width: 0; z-index: 100;
+  background: linear-gradient(90deg, var(--gold), var(--gold-deep)); transition: width .1s linear; }
+
+/* Hero art gentle float */
+.hero-art { animation: floaty 6s ease-in-out infinite; }
+@keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@media (prefers-reduced-motion: reduce) { .hero-art { animation: none; } }
+
+/* Product images fade in when loaded (only images JS has tagged, so they
+   stay visible if JS is disabled). */
+img.js-fade { opacity: 0; transition: opacity .5s ease; }
+img.js-fade.loaded { opacity: 1; }
+
+/* Mobile refinements: smaller, cleaner */
+@media (max-width: 640px) {
+  .brand-logo { height: 34px; }
+  .hero-inner { padding: 40px 0 46px; gap: 24px; }
+  .hero-art { max-width: 300px; border-width: 2px; }
+  .hero-badges { gap: 12px 18px; margin-top: 20px; }
+  .hero-badge:nth-child(3) { display: none; } /* keep it clean on small screens */
+  .hero p { font-size: 1rem; margin-bottom: 1.3rem; }
+  .section { padding: 40px 0; }
+  .scroll-row { grid-auto-columns: 62%; }
+  .testimonial::before { display: none; }
+  .testimonial { padding: 22px 20px; }
+}
+@media (max-width: 380px) {
+  .hero-art { max-width: 240px; }
+}
