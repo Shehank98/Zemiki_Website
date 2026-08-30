@@ -101,6 +101,18 @@
     const footer = document.createElement('footer');
     footer.className = 'site-footer';
     footer.innerHTML = `
+      <div class="newsletter">
+        <div class="wrap newsletter-inner">
+          <div class="newsletter-copy">
+            <h3>Join the ${Z.escapeHtml(cfg.store_name || 'Zemiki')} family</h3>
+            <p>Be first to know about new arrivals and exclusive offers.</p>
+          </div>
+          <form id="newsletterForm" class="newsletter-form">
+            <input type="email" name="email" placeholder="Your email address" aria-label="Email" required>
+            <button class="btn btn-gold" type="submit">Subscribe</button>
+          </form>
+        </div>
+      </div>
       <div class="wrap footer-grid">
         <div class="footer-brand">
           <a class="brand" href="/">${brandMark}${cfg.store_name || 'Zemiki'}</a>
@@ -133,6 +145,23 @@
       </div>
       <div class="footer-bottom">© ${year} ${cfg.store_name || 'Zemiki'}. All rights reserved. · Crafted with love in Sri Lanka</div>`;
     document.body.appendChild(footer);
+
+    const nf = document.getElementById('newsletterForm');
+    if (nf) {
+      nf.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = nf.email.value.trim();
+        const btn = nf.querySelector('button');
+        btn.disabled = true;
+        try {
+          await Z.postJSON('/api/subscribe', { email });
+          nf.innerHTML = '<p style="margin:0;color:#e3c988;font-weight:600">✓ Thank you for subscribing!</p>';
+        } catch (err) {
+          Z.toast(err.message || 'Could not subscribe', 'error');
+          btn.disabled = false;
+        }
+      });
+    }
   }
 
   function refreshBadge() {

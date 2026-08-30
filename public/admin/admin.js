@@ -78,7 +78,7 @@
   });
 
   /* --------------------------- navigation ---------------------------- */
-  const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', orders: 'Orders', enquiries: 'Enquiries', settings: 'Settings' };
+  const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', orders: 'Orders', enquiries: 'Enquiries', marketing: 'Marketing', settings: 'Settings' };
   const loaders = {};
   $$('.nav-item[data-view]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -510,6 +510,46 @@
   async function refreshBadges() {
     try { const s = await api('/stats'); updateBadges(s.orders, s.open_enquiries); } catch (e) {}
   }
+
+  /* ---------------------------- marketing ---------------------------- */
+  loaders.marketing = async function () {
+    const el = $('#subscribersTable');
+    try {
+      const subs = await api('/subscribers');
+      $('#subCount').textContent = subs.length + ' subscriber' + (subs.length === 1 ? '' : 's');
+      el.innerHTML = subs.length ? `<table><thead><tr><th>Email</th><th>Subscribed</th><th></th></tr></thead><tbody>${
+        subs.map((s) => `<tr>
+          <td><strong>${esc(s.email)}</strong></td>
+          <td style="font-size:.82rem">${fmtDate(s.created_at)}</td>
+          <td style="text-align:right"><button class="btn btn-danger btn-sm" data-del-sub="${s.id}">Remove</button></td>
+        </tr>`).join('')}</tbody></table>`
+        : '<div class="empty">No subscribers yet. The newsletter signup on the storefront feeds this list.</div>';
+      $$('[data-del-sub]', el).forEach((b) => b.addEventListener('click', async () => {
+        if (!confirm('Remove this subscriber?')) return;
+        try { await api('/subscribers/' + b.dataset.delSub, { method: 'DELETE' }); loaders.marketing(); }
+        catch (e) { toast(e.message, 'error'); }
+      }));
+    } catch (e) { el.innerHTML = '<div class="empty">Could not load subscribers.</div>'; }
+  };
+
+  $('#sendBroadcast').addEventListener('click', async () => {
+    const body = {
+      subject: $('#bcSubject').value.trim(),
+      heading: $('#bcHeading').value.trim(),
+      body: $('#bcBody').value.trim(),
+      cta_text: $('#bcCta').value.trim(),
+      cta_url: $('#bcUrl').value.trim(),
+      image_url: $('#bcImage').value.trim(),
+    };
+    if (!body.subject || !body.body) { toast('Subject and message are required', 'error'); return; }
+    if (!confirm('Send this email to all subscribers and past customers?')) return;
+    const btn = $('#sendBroadcast'); btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const r = await api('/broadcast', { method: 'POST', body });
+      toast('Sent to ' + r.recipients + ' recipient' + (r.recipients === 1 ? '' : 's'), 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Send to everyone';
+  });
 
   /* ----------------------------- settings ---------------------------- */
   loaders.settings = async function () {

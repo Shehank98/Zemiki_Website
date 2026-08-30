@@ -34,6 +34,7 @@
       <button class="nav-item" data-view="categories">☰ Categories</button>
       <button class="nav-item" data-view="orders">🛍 Orders <span class="badge" id="ordersBadge" hidden></span></button>
       <button class="nav-item" data-view="enquiries">✉ Enquiries <span class="badge" id="enqBadge" hidden></span></button>
+      <button class="nav-item" data-view="marketing">📣 Marketing</button>
       <button class="nav-item" data-view="settings">⚙ Settings</button>
       <div class="sidebar-foot">
         <button class="btn btn-outline btn-block" id="logoutBtn">Sign Out</button>
@@ -107,6 +108,29 @@
         <div class="panel">
           <div class="panel-head"><h2>Enquiries</h2></div>
           <div id="enquiriesTable"><div class="empty">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- Marketing -->
+      <section class="view" id="view-marketing">
+        <div class="panel">
+          <div class="panel-head"><h2>Send an Offer Email</h2></div>
+          <div style="padding:22px;max-width:640px">
+            <div class="hint" style="margin-bottom:14px">Emails go to all newsletter subscribers plus everyone who has placed an order. Requires the email service to be connected (APPSCRIPT_URL).</div>
+            <div class="field"><label>Subject *</label><input id="bcSubject" placeholder="e.g. New Bridal Collection just dropped ✨"></div>
+            <div class="field"><label>Heading</label><input id="bcHeading" placeholder="Big, bold headline inside the email"></div>
+            <div class="field"><label>Message *</label><textarea id="bcBody" rows="4" placeholder="Tell your customers what's new…"></textarea></div>
+            <div class="grid-2">
+              <div class="field"><label>Button text</label><input id="bcCta" value="Shop Now"></div>
+              <div class="field"><label>Button link</label><input id="bcUrl" placeholder="https://your-site/shop.html"></div>
+            </div>
+            <div class="field"><label>Banner image link (optional)</label><input id="bcImage" placeholder="Google Drive / image URL"></div>
+            <button class="btn btn-primary" id="sendBroadcast">Send to everyone</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Subscribers</h2><span id="subCount" class="pill blue"></span></div>
+          <div id="subscribersTable"><div class="empty">Loading…</div></div>
         </div>
       </section>
 

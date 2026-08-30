@@ -480,3 +480,23 @@ body { animation: pageFade .5s ease both; }
 @media (max-width: 640px) {
   body.has-minicart { padding-bottom: 70px; }
 }
+
+/* Gift option at checkout */
+.gift-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; }
+.gift-toggle input { width: auto; }
+.gift-toggle span { font-size: 1rem; }
+#giftBox textarea { resize: vertical; }
+
+/* Newsletter band (footer) */
+.newsletter { background: linear-gradient(135deg, var(--gold-deep), var(--gold)); }
+.newsletter-inner { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 34px 20px; flex-wrap: wrap; }
+.newsletter-copy h3 { font-family: var(--serif); color: #3a2a10; margin: 0 0 4px; font-size: 1.5rem; }
+.newsletter-copy p { margin: 0; color: #5a4415; font-size: .95rem; }
+.newsletter-form { display: flex; gap: 10px; flex: 1; max-width: 460px; min-width: 260px; }
+.newsletter-form input { flex: 1; border: none; }
+.newsletter-form .btn { background: var(--maroon); color: #fff; white-space: nowrap; }
+.newsletter-form .btn:hover { background: var(--maroon-dark); }
+@media (max-width: 640px) {
+  .newsletter-inner { flex-direction: column; align-items: stretch; text-align: center; gap: 16px; }
+  .newsletter-form { max-width: none; }
+}

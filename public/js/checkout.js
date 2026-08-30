@@ -44,7 +44,7 @@
     const methods = (cfg.payment_methods || []).filter((m) => m.kind === 'online' || m.id === 'cod' || m.id === 'whatsapp');
 
     const districtOptions = ['<option value="">Select your district</option>']
-      .concat(districts.map((d) => `<option value="${Z.escapeHtml(d.district)}">${Z.escapeHtml(d.district)} (${Z.money(d.fee)})</option>`))
+      .concat(districts.map((d) => `<option value="${Z.escapeHtml(d.district)}">${Z.escapeHtml(d.district)}</option>`))
       .join('');
 
     const summaryLines = items.map((i) =>
@@ -71,13 +71,23 @@
               <div class="field"><label>Full Name *</label><input name="name" required></div>
               <div class="field"><label>Phone *</label><input name="phone" required placeholder="07X XXX XXXX"></div>
             </div>
-            <div class="field"><label>Email</label><input type="email" name="email" placeholder="you@example.com"></div>
+            <div class="field"><label>Email *</label><input type="email" name="email" required placeholder="you@example.com"><div class="hint">We email your invoice here.</div></div>
             <div class="field"><label>Address *</label><input name="address" required placeholder="House no, street"></div>
             <div class="form-row">
               <div class="field"><label>District *</label><select name="district" id="districtSel" required>${districtOptions}</select></div>
               <div class="field"><label>City / Town *</label><input name="city" required placeholder="e.g. Nugegoda"></div>
             </div>
             <div class="field"><label>Notes (optional)</label><input name="notes" placeholder="Delivery instructions"></div>
+          </div>
+
+          <div class="summary" style="position:static;margin-bottom:24px">
+            <label class="gift-toggle">
+              <input type="checkbox" id="giftCheck"> <span>🎁 This is a gift</span>
+            </label>
+            <div id="giftBox" hidden>
+              <div class="field" style="margin-top:12px"><label>Gift message (optional)</label><textarea id="giftMsg" rows="3" maxlength="500" placeholder="Write a message for the lucky recipient…"></textarea></div>
+              <div class="hint">Sent anonymously - we hide your name and all prices on the delivery note, so it's a perfect surprise.</div>
+            </div>
           </div>
 
           <div class="summary" style="position:static">
@@ -101,6 +111,14 @@
     if (!methods.length) {
       const pb = document.getElementById('placeBtn');
       if (pb) { pb.disabled = true; pb.textContent = 'Ordering unavailable'; }
+    }
+
+    // Gift toggle reveals the message box.
+    const giftCheck = document.getElementById('giftCheck');
+    if (giftCheck) {
+      giftCheck.addEventListener('change', () => {
+        document.getElementById('giftBox').hidden = !giftCheck.checked;
+      });
     }
 
     // payment selection highlight
@@ -138,10 +156,13 @@
     if (!form.reportValidity()) return;
 
     const fd = new FormData(form);
+    const giftOn = (document.getElementById('giftCheck') || {}).checked;
     const customer = {
       name: fd.get('name'), phone: fd.get('phone'), email: fd.get('email'),
       address: fd.get('address'), city: fd.get('city'), district: fd.get('district'),
       notes: fd.get('notes'),
+      is_gift: !!giftOn,
+      gift_message: giftOn ? (document.getElementById('giftMsg').value || '') : '',
     };
     if (!customer.district) { Z.toast('Please select your district', 'error'); return; }
     const method = (root.querySelector('input[name="pay"]:checked') || {}).value || 'cod';
