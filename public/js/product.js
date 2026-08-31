@@ -62,8 +62,8 @@
           <p class="pdp-desc">${Z.escapeHtml(p.description || 'A beautiful handcrafted piece from the Zemiki collection.')}</p>
 
           <div class="bnpl-card">
-            <div class="bnpl-lead">or <strong>3 × ${Z.money(three)}</strong> interest-free</div>
-            <div class="bnpl-brands"><span>KOKO</span><span>Mintpay</span><span>PayHere</span><span>COD</span></div>
+            <div class="bnpl-lead">or <strong id="bnplAmt">3 × ${Z.money(three)}</strong> interest-free</div>
+            <div class="bnpl-brands"><span>KOKO</span></div>
           </div>
 
           <div class="qty-row">
@@ -104,14 +104,23 @@
       });
     });
 
-    // Qty stepper
+    // Qty stepper + live "pay in 3" amount (KOKO)
     const qtyInput = document.getElementById('qtyInput');
+    const bnplAmt = document.getElementById('bnplAmt');
+    const updateBnpl = () => {
+      const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+      if (bnplAmt) bnplAmt.textContent = '3 × ' + Z.money(Math.ceil(effPrice * qty / 3));
+    };
     document.getElementById('qtyMinus').addEventListener('click', () => {
       qtyInput.value = Math.max(1, (parseInt(qtyInput.value, 10) || 1) - 1);
+      updateBnpl();
     });
     document.getElementById('qtyPlus').addEventListener('click', () => {
       qtyInput.value = (parseInt(qtyInput.value, 10) || 1) + 1;
+      updateBnpl();
     });
+    qtyInput.addEventListener('input', updateBnpl);
+    updateBnpl();
 
     // Add to cart
     const addBtn = document.getElementById('addBtn');
