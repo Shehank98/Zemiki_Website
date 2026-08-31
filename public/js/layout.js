@@ -118,7 +118,10 @@
       </div>
       <div class="wrap footer-grid">
         <div class="footer-brand">
-          <a class="brand" href="/">${brandMark}${cfg.store_name || 'Zemiki'}</a>
+          <a class="brand" href="/" aria-label="${Z.escapeHtml(cfg.store_name || 'Zemiki')}">
+            <img class="footer-logo" src="/assets/logo.png" alt="${Z.escapeHtml(cfg.store_name || 'Zemiki')}" onerror="this.remove();var f=this.parentNode.querySelector('.brand-fallback');if(f)f.hidden=false">
+            <span class="brand-fallback" hidden>${brandMark}${cfg.store_name || 'Zemiki'}</span>
+          </a>
           <p>Handcrafted jewelry that celebrates every moment. Ethically made, elegantly designed, delivered across Sri Lanka.</p>
           <div class="social-row">
             <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
