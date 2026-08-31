@@ -33,22 +33,41 @@
     const waText = `Hi Zemiki, I'm interested in "${p.name}" (${location.href}). Is it available?`;
     const waHref = cfg.whatsapp_number ? Z.whatsappUrl(cfg.whatsapp_number, waText) : '#';
 
+    const onSale = p.sale_price != null && p.sale_price !== '' && Number(p.sale_price) < Number(p.price);
+    const effPrice = onSale ? Number(p.sale_price) : Number(p.price);
+    const pct = onSale ? Math.round((1 - Number(p.sale_price) / Number(p.price)) * 100) : 0;
+    const three = Math.ceil(effPrice / 3);
+    const lowStock = inStock && p.stock <= 5;
+
     root.innerHTML = `
       <div class="pdp">
         <div class="gallery">
-          <div class="gallery-main">${mainImg}</div>
+          <div class="gallery-main">
+            ${onSale ? `<span class="pdp-badge">-${pct}%</span>` : ''}
+            ${mainImg}
+          </div>
           ${thumbs}
         </div>
         <div class="pdp-info">
           ${p.category_name ? `<div class="eyebrow">${Z.escapeHtml(p.category_name)}</div>` : ''}
           <h1>${Z.escapeHtml(p.name)}</h1>
-          <div class="price">${priceBlock(p)}</div>
-          <div class="${inStock ? 'stock-in' : 'stock-out'}">${inStock ? '● In stock' : '● Currently unavailable'}</div>
+          <div class="pdp-rating"><span class="stars">★★★★★</span> <span class="rating-text">Loved by our customers</span></div>
+
+          <div class="price">${priceBlock(p)}${onSale ? `<span class="save-pill">Save ${Z.money(Number(p.price) - Number(p.sale_price))}</span>` : ''}</div>
+
+          <div class="pdp-stock ${inStock ? (lowStock ? 'low' : 'in') : 'out'}">
+            ${inStock ? (lowStock ? `🔥 Only ${p.stock} left in stock` : '● In stock, ready to ship') : '● Currently unavailable'}
+          </div>
+
           <p class="pdp-desc">${Z.escapeHtml(p.description || 'A beautiful handcrafted piece from the Zemiki collection.')}</p>
 
-          <div class="bnpl-note">💳 <strong>Pay your way:</strong> Split into 3 with KOKO or Mintpay, pay by card via PayHere, or Cash on Delivery.</div>
+          <div class="bnpl-card">
+            <div class="bnpl-lead">or <strong>3 × ${Z.money(three)}</strong> interest-free</div>
+            <div class="bnpl-brands"><span>KOKO</span><span>Mintpay</span><span>PayHere</span><span>COD</span></div>
+          </div>
 
           <div class="qty-row">
+            <span class="qty-label">Quantity</span>
             <div class="qty-stepper">
               <button type="button" id="qtyMinus" aria-label="decrease">−</button>
               <input type="number" id="qtyInput" value="1" min="1" max="${Math.max(1, p.stock)}" />
@@ -57,14 +76,20 @@
           </div>
 
           <div class="pdp-actions">
-            <button class="btn btn-primary btn-lg" id="addBtn" ${inStock ? '' : 'disabled'}>Add to Cart</button>
+            <button class="btn btn-gold btn-lg" id="addBtn" ${inStock ? '' : 'disabled'}>${inStock ? 'Add to Cart' : 'Sold Out'}</button>
             <a class="btn btn-whatsapp btn-lg" id="waBtn" href="${waHref}" target="_blank" rel="noopener">Enquire on WhatsApp</a>
           </div>
 
-          <div class="pdp-meta">
-            ${p.sku ? `<div><strong>SKU:</strong> ${Z.escapeHtml(p.sku)}</div>` : ''}
-            <div><strong>Delivery:</strong> Islandwide · Free over Rs. 15,000</div>
-            <div><strong>Care:</strong> Keep away from moisture &amp; perfume for lasting shine.</div>
+          <div class="pdp-trust">
+            <div class="pdp-trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg><span>Islandwide delivery<br><small>Free over Rs. 15,000</small></span></div>
+            <div class="pdp-trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Secure checkout<br><small>KOKO · Mintpay · PayHere</small></span></div>
+            <div class="pdp-trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 6L9 17l-5-5"/></svg><span>Cash on Delivery<br><small>Pay when it arrives</small></span></div>
+          </div>
+
+          <div class="pdp-accordion" id="pdpAccordion">
+            <details open><summary>Product details</summary><div>${Z.escapeHtml(p.description || 'A beautiful handcrafted piece from the Zemiki collection.')}${p.sku ? `<div class="acc-sku">SKU: ${Z.escapeHtml(p.sku)}</div>` : ''}</div></details>
+            <details><summary>Delivery &amp; returns</summary><div>Islandwide delivery, calculated by district at checkout. Free delivery on orders over Rs. 15,000. Contact us within 3 days of delivery for any issue with your piece.</div></details>
+            <details><summary>Care guide</summary><div>Keep your jewelry away from moisture, perfume and direct sunlight. Wipe gently with a soft dry cloth and store in a pouch to keep it shining.</div></details>
           </div>
         </div>
       </div>`;

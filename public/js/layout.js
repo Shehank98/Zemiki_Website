@@ -139,7 +139,7 @@
           <a href="/about">About Us</a>
           <a href="/contact">Contact</a>
           ${wa}
-          <a href="/shop">Shipping &amp; Returns</a>
+          <a href="/privacy">Privacy Policy</a>
         </div>
         <div>
           <h4>Pay Your Way</h4>

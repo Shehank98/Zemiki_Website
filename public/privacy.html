@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy - Zemiki</title>
+  <meta name="description" content="How Zemiki collects, uses and protects your personal information." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <main>
+    <section class="page-hero"><div class="wrap"><h1>Privacy Policy</h1><p>Your trust matters to us</p></div></section>
+    <section class="section">
+      <div class="wrap legal">
+        <p class="legal-updated">Last updated: <span id="lastUpdated"></span></p>
+
+        <p>This Privacy Policy explains how <strong id="storeName">Zemiki</strong> ("we", "us", "our")
+        collects, uses, and protects your personal information when you visit our website and place an order.
+        By using our site you agree to the practices described here.</p>
+
+        <h2>1. Information we collect</h2>
+        <ul>
+          <li><strong>Order details:</strong> your name, phone number, email address, and delivery address
+            (including district and city) when you place an order or make an enquiry.</li>
+          <li><strong>Order contents:</strong> the items you buy, amounts, and any gift message you add.</li>
+          <li><strong>Newsletter:</strong> your email address if you subscribe to our updates.</li>
+          <li><strong>Technical data:</strong> basic information your browser sends (such as IP address)
+            used to keep the site secure and working. Your shopping cart is stored only in your own
+            browser (local storage).</li>
+        </ul>
+
+        <h2>2. How we use your information</h2>
+        <ul>
+          <li>To process, deliver, and confirm your orders (including sending an invoice by email).</li>
+          <li>To contact you about your order via phone, WhatsApp, or email.</li>
+          <li>To send offers and new-product updates if you have subscribed (you can opt out any time).</li>
+          <li>To protect the site against fraud and abuse.</li>
+        </ul>
+
+        <h2>3. Payments</h2>
+        <p>Online payments are handled by trusted third-party providers - <strong>KOKO</strong>,
+        <strong>Mintpay</strong>, and <strong>PayHere</strong>. When you pay online you are redirected to
+        the provider, and your card or banking details are entered on their secure systems. We do not
+        collect or store your full card details on our servers.</p>
+
+        <h2>4. Sharing your information</h2>
+        <p>We only share what is necessary to fulfil your order - for example, your delivery details with
+        our courier, and payment information with the payment provider you choose. We do not sell your
+        personal information to anyone.</p>
+
+        <h2>5. Email</h2>
+        <p>Order invoices and newsletters are sent through a secure email service. Newsletter emails
+        include an easy way to unsubscribe, or you can ask us to remove you at any time.</p>
+
+        <h2>6. Data retention</h2>
+        <p>We keep order records for as long as needed to provide our service and meet legal and accounting
+        requirements. You can ask us to delete your details where we are not required to keep them.</p>
+
+        <h2>7. Your rights</h2>
+        <p>You can ask to access, correct, or delete your personal information, or to stop receiving
+        marketing emails. Contact us using the details below and we will help.</p>
+
+        <h2>8. Cookies &amp; local storage</h2>
+        <p>We use a small amount of browser storage to remember your shopping cart and to keep the admin
+        area secure. We do not use third-party advertising trackers.</p>
+
+        <h2>9. Contact us</h2>
+        <p>Questions about your privacy? Reach us any time:</p>
+        <p id="contactBlock" class="legal-contact"></p>
+
+        <p style="margin-top:26px"><a class="btn btn-primary" href="/shop">Continue Shopping</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/cart.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    (function () {
+      document.getElementById('lastUpdated').textContent =
+        new Date().toLocaleDateString('en-LK', { year: 'numeric', month: 'long', day: 'numeric' });
+      document.addEventListener('layout:ready', function (e) {
+        var cfg = e.detail.config || {};
+        if (cfg.store_name) {
+          document.getElementById('storeName').textContent = cfg.store_name;
+          document.title = 'Privacy Policy - ' + cfg.store_name;
+        }
+        var parts = [];
+        if (cfg.whatsapp_number) {
+          parts.push('WhatsApp: <a href="' + Z.whatsappUrl(cfg.whatsapp_number, 'Hi, I have a privacy question') + '" target="_blank" rel="noopener">+' + Z.escapeHtml(cfg.whatsapp_number) + '</a>');
+        }
+        parts.push('Or use our <a href="/contact">contact page</a>.');
+        document.getElementById('contactBlock').innerHTML = parts.join('<br>');
+      });
+    })();
+  </script>
+</body>
+</html>
