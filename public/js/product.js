@@ -7,7 +7,7 @@
   let product = null;
 
   if (!slug) {
-    root.innerHTML = '<div class="empty-state"><p>Product not specified.</p><a class="btn btn-primary" href="/shop.html">Back to shop</a></div>';
+    root.innerHTML = '<div class="empty-state"><p>Product not specified.</p><a class="btn btn-primary" href="/shop">Back to shop</a></div>';
     return;
   }
 
@@ -99,7 +99,7 @@
 
     // Breadcrumb
     document.getElementById('breadcrumb').innerHTML =
-      `<a href="/">Home</a> / <a href="/shop.html">Shop</a> / ${Z.escapeHtml(p.name)}`;
+      `<a href="/">Home</a> / <a href="/shop">Shop</a> / ${Z.escapeHtml(p.name)}`;
     document.title = `${p.name} - Zemiki`;
   }
 
@@ -115,7 +115,7 @@
       render(product);
       renderRelated(product.related);
     } catch (e) {
-      root.innerHTML = '<div class="empty-state"><h3>Product not found</h3><p>It may have been removed.</p><a class="btn btn-primary" href="/shop.html">Back to shop</a></div>';
+      root.innerHTML = '<div class="empty-state"><h3>Product not found</h3><p>It may have been removed.</p><a class="btn btn-primary" href="/shop">Back to shop</a></div>';
     }
   }
 

@@ -28,8 +28,8 @@ function sign(payload, key) {
 }
 
 function createSession(order, ctx) {
-  const returnUrl = `${ctx.baseUrl}/order-confirmation.html?order=${encodeURIComponent(order.order_number)}`;
-  const cancelUrl = `${ctx.baseUrl}/checkout.html?cancelled=1`;
+  const returnUrl = `${ctx.baseUrl}/order-confirmation?order=${encodeURIComponent(order.order_number)}`;
+  const cancelUrl = `${ctx.baseUrl}/checkout?cancelled=1`;
   const notifyUrl = `${ctx.baseUrl}/api/payments/koko/callback`;
 
   if (!isConfigured()) {

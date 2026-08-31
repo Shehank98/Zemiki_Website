@@ -76,7 +76,7 @@
   }
 
   /* --- Sticky mini-cart bar ---------------------------------------- */
-  const HIDE_MINICART_ON = ['/cart.html', '/checkout.html', '/order-confirmation.html'];
+  const HIDE_MINICART_ON = ['/cart', '/checkout', '/order-confirmation'];
 
   function buildMiniCart() {
     if (HIDE_MINICART_ON.some((p) => location.pathname.endsWith(p))) return;
@@ -85,7 +85,7 @@
     bar.innerHTML =
       '<div class="mini-cart-inner">' +
       '<span class="mini-cart-info"></span>' +
-      '<a class="btn btn-gold" href="/cart.html">View Cart</a>' +
+      '<a class="btn btn-gold" href="/cart">View Cart</a>' +
       '</div>';
     document.body.appendChild(bar);
     updateMiniCart();

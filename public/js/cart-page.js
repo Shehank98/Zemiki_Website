@@ -12,7 +12,7 @@
           <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"><circle cx="9" cy="21" r="1.5"/><circle cx="18" cy="21" r="1.5"/><path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.6L23 7H6"/></svg>
           <h3>Your bag is empty</h3>
           <p>Discover something beautiful.</p>
-          <a class="btn btn-primary btn-lg" href="/shop.html">Start Shopping</a>
+          <a class="btn btn-primary btn-lg" href="/shop">Start Shopping</a>
         </div>`;
       return;
     }
@@ -30,7 +30,7 @@
         <div class="cart-line">
           ${media}
           <div>
-            <h4><a href="/product.html?slug=${encodeURIComponent(i.slug)}">${Z.escapeHtml(i.name)}</a></h4>
+            <h4><a href="/product?slug=${encodeURIComponent(i.slug)}">${Z.escapeHtml(i.name)}</a></h4>
             <div style="color:var(--muted);font-size:.88rem">${Z.money(i.price)} each</div>
             <div class="qty-stepper" style="margin-top:8px">
               <button type="button" data-dec="${i.id}">−</button>
@@ -54,8 +54,8 @@
           <div class="summary-row"><span>Shipping</span><span style="color:var(--muted)">${freeEligible ? 'Free' : 'At checkout'}</span></div>
           <div class="summary-row total"><span>Total</span><span>${freeEligible ? Z.money(subtotal) : Z.money(subtotal) + '+'}</span></div>
           ${freeEligible ? '' : '<p style="font-size:.78rem;color:var(--muted);margin:8px 0 0">Shipping is calculated by district at checkout.</p>'}
-          <a class="btn btn-primary btn-block btn-lg" href="/checkout.html" style="margin-top:16px">Proceed to Checkout</a>
-          <a class="btn btn-outline btn-block" href="/shop.html" style="margin-top:10px">Continue Shopping</a>
+          <a class="btn btn-primary btn-block btn-lg" href="/checkout" style="margin-top:16px">Proceed to Checkout</a>
+          <a class="btn btn-outline btn-block" href="/shop" style="margin-top:10px">Continue Shopping</a>
         </div>
       </div>`;
 

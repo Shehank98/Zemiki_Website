@@ -32,7 +32,7 @@
   function render(cfg) {
     const items = Cart.items();
     if (!items.length) {
-      root.innerHTML = '<div class="empty-state"><h3>Your bag is empty</h3><a class="btn btn-primary" href="/shop.html">Shop now</a></div>';
+      root.innerHTML = '<div class="empty-state"><h3>Your bag is empty</h3><a class="btn btn-primary" href="/shop">Shop now</a></div>';
       return;
     }
 
@@ -189,14 +189,14 @@
       if (cfg.whatsapp_number) {
         window.location.href = Z.whatsappUrl(cfg.whatsapp_number, lines);
       }
-      setTimeout(() => { window.location.href = '/order-confirmation.html?order=' + encodeURIComponent(order.order_number); }, 400);
+      setTimeout(() => { window.location.href = '/order-confirmation?order=' + encodeURIComponent(order.order_number); }, 400);
       return;
     }
 
     // Cash on delivery - straight to confirmation.
     if (method === 'cod') {
       Cart.clear();
-      window.location.href = '/order-confirmation.html?order=' + encodeURIComponent(order.order_number);
+      window.location.href = '/order-confirmation?order=' + encodeURIComponent(order.order_number);
       return;
     }
 
@@ -207,7 +207,7 @@
       // Provider not configured yet → complete in test mode.
       await Z.postJSON('/api/payments/' + method + '/sandbox-complete', { order_number: order.order_number });
       Cart.clear();
-      window.location.href = '/order-confirmation.html?order=' + encodeURIComponent(order.order_number) + '&test=1';
+      window.location.href = '/order-confirmation?order=' + encodeURIComponent(order.order_number) + '&test=1';
       return;
     }
 
@@ -219,7 +219,7 @@
 
     if (session.mode === 'already_paid') {
       Cart.clear();
-      window.location.href = '/order-confirmation.html?order=' + encodeURIComponent(order.order_number);
+      window.location.href = '/order-confirmation?order=' + encodeURIComponent(order.order_number);
       return;
     }
 

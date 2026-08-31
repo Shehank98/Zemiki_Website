@@ -98,7 +98,7 @@ async function handleCallback(req, res, next) {
 
     // POST notifications just need a 200; GET returns redirect to confirmation.
     if (req.method === 'GET' && result.orderNumber) {
-      return res.redirect(`/order-confirmation.html?order=${encodeURIComponent(result.orderNumber)}`);
+      return res.redirect(`/order-confirmation?order=${encodeURIComponent(result.orderNumber)}`);
     }
     res.json({ ok: result.ok, paid: result.paid });
   } catch (err) {

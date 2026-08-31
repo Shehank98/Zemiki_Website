@@ -52,7 +52,7 @@
     if (!withImg.length) { strip.parentNode.parentNode.style.display = 'none'; return; }
     strip.innerHTML = withImg.slice(0, 6).map((p) => {
       const img = p.image || p.images[0];
-      return `<a class="ig-tile" href="/product.html?slug=${encodeURIComponent(p.slug)}" aria-label="${Z.escapeHtml(p.name)}">
+      return `<a class="ig-tile" href="/product?slug=${encodeURIComponent(p.slug)}" aria-label="${Z.escapeHtml(p.name)}">
           <img src="${Z.escapeHtml(img)}" alt="${Z.escapeHtml(p.name)}" loading="lazy" onerror="this.closest('.ig-tile').style.display='none'">
           <span class="ig-overlay"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1"/></svg></span>
         </a>`;

@@ -9,11 +9,11 @@
 
   const NAV = [
     { href: '/', label: 'Home' },
-    { href: '/shop.html', label: 'Shop' },
-    { href: '/shop.html?category=necklaces', label: 'Necklaces' },
-    { href: '/shop.html?category=earrings', label: 'Earrings' },
-    { href: '/about.html', label: 'About' },
-    { href: '/contact.html', label: 'Contact' },
+    { href: '/shop', label: 'Shop' },
+    { href: '/shop?category=necklaces', label: 'Necklaces' },
+    { href: '/shop?category=earrings', label: 'Earrings' },
+    { href: '/about', label: 'About' },
+    { href: '/contact', label: 'Contact' },
   ];
 
   function icon(name) {
@@ -52,7 +52,7 @@
           <nav class="main-nav">${navHtml}</nav>
           <div class="header-actions">
             <button class="icon-btn" id="searchToggle" aria-label="Search">${icon('search')}</button>
-            <a class="icon-btn cart-btn" href="/cart.html" aria-label="Cart">${icon('cart')}<span class="cart-badge" id="cartBadge" hidden>0</span></a>
+            <a class="icon-btn cart-btn" href="/cart" aria-label="Cart">${icon('cart')}<span class="cart-badge" id="cartBadge" hidden>0</span></a>
             <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Menu">${icon('menu')}</button>
           </div>
         </div>
@@ -71,7 +71,7 @@
         <div class="drawer-brand">${cfg.store_name || 'Zemiki'}</div>
         ${NAV.map((n) => `<a href="${n.href}">${n.label}</a>`).join('')}
         <div class="drawer-cta">
-          <a class="btn btn-gold" href="/cart.html">View Cart</a>
+          <a class="btn btn-gold" href="/cart">View Cart</a>
           ${cfg.whatsapp_number ? `<a class="btn btn-whatsapp" style="margin-top:10px" href="${Z.whatsappUrl(cfg.whatsapp_number, 'Hi Zemiki')}" target="_blank" rel="noopener">Chat on WhatsApp</a>` : ''}
         </div>
       </aside>`;
@@ -86,7 +86,7 @@
     document.getElementById('searchForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const q = e.target.q.value.trim();
-      location.href = '/shop.html' + (q ? '?q=' + encodeURIComponent(q) : '');
+      location.href = '/shop' + (q ? '?q=' + encodeURIComponent(q) : '');
     });
     const drawer = document.getElementById('drawer');
     const backdrop = document.getElementById('drawerBackdrop');
@@ -128,18 +128,18 @@
         </div>
         <div>
           <h4>Shop</h4>
-          <a href="/shop.html">All Jewelry</a>
-          <a href="/shop.html?category=necklaces">Necklaces</a>
-          <a href="/shop.html?category=earrings">Earrings</a>
-          <a href="/shop.html?category=bangles">Bangles</a>
-          <a href="/shop.html?category=rings">Rings</a>
+          <a href="/shop">All Jewelry</a>
+          <a href="/shop?category=necklaces">Necklaces</a>
+          <a href="/shop?category=earrings">Earrings</a>
+          <a href="/shop?category=bangles">Bangles</a>
+          <a href="/shop?category=rings">Rings</a>
         </div>
         <div>
           <h4>Help</h4>
-          <a href="/about.html">About Us</a>
-          <a href="/contact.html">Contact</a>
+          <a href="/about">About Us</a>
+          <a href="/contact">Contact</a>
           ${wa}
-          <a href="/shop.html">Shipping &amp; Returns</a>
+          <a href="/shop">Shipping &amp; Returns</a>
         </div>
         <div>
           <h4>Pay Your Way</h4>

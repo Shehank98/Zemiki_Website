@@ -17,12 +17,12 @@
     const cat = p.category_name ? `<div class="cat">${Z.escapeHtml(p.category_name)}</div>` : '';
     return `
       <div class="product-card">
-        <a class="product-media" href="/product.html?slug=${encodeURIComponent(p.slug)}">
+        <a class="product-media" href="/product?slug=${encodeURIComponent(p.slug)}">
           ${media}${tags}
         </a>
         <div class="product-body">
           ${cat}
-          <h3><a href="/product.html?slug=${encodeURIComponent(p.slug)}">${Z.escapeHtml(p.name)}</a></h3>
+          <h3><a href="/product?slug=${encodeURIComponent(p.slug)}">${Z.escapeHtml(p.name)}</a></h3>
           <div class="price">${priceHtml}</div>
           <button class="btn btn-outline" data-add='${encodeURIComponent(JSON.stringify({ id: p.id, name: p.name, slug: p.slug, price: p.price, sale_price: p.sale_price, images: img ? [img] : [] }))}'>Add to Cart</button>
         </div>
@@ -34,7 +34,7 @@
       ? `<img src="${Z.escapeHtml(c.image_url)}" alt="${Z.escapeHtml(c.name)}" loading="lazy" onerror="this.outerHTML='<div class=&quot;cat-ph&quot;>'+Z.placeholder()+'</div>'">`
       : `<div class="cat-ph">${Z.placeholder()}</div>`;
     return `
-      <a class="cat-card" href="/shop.html?category=${encodeURIComponent(c.slug)}">
+      <a class="cat-card" href="/shop?category=${encodeURIComponent(c.slug)}">
         ${media}
         <div class="cat-label">${Z.escapeHtml(c.name)}<span>${c.product_count || 0} pieces</span></div>
       </a>`;
