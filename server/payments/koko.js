@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { kokoConfig } = require('../settings');
 
 /**
  * KOKO adapter (Buy Now Pay Later, Sri Lanka).
@@ -17,7 +18,8 @@ const id = 'koko';
 const label = 'KOKO (Pay in 3)';
 
 function isConfigured() {
-  return Boolean(process.env.KOKO_MERCHANT_ID && process.env.KOKO_API_KEY);
+  const c = kokoConfig();
+  return Boolean(c.merchant_id && c.api_key);
 }
 
 function sign(payload, key) {
@@ -42,9 +44,10 @@ function createSession(order, ctx) {
     };
   }
 
-  const merchantId = process.env.KOKO_MERCHANT_ID;
-  const apiKey = process.env.KOKO_API_KEY;
-  const baseUrl = process.env.KOKO_BASE_URL || 'https://ipg.koko.lk';
+  const cfg = kokoConfig();
+  const merchantId = cfg.merchant_id;
+  const apiKey = cfg.api_key;
+  const baseUrl = cfg.base_url;
   const amount = Number(order.total).toFixed(2);
 
   const fields = {
@@ -74,7 +77,7 @@ function createSession(order, ctx) {
 }
 
 function verify(body) {
-  const apiKey = process.env.KOKO_API_KEY;
+  const apiKey = kokoConfig().api_key;
   const orderNumber = body.orderId || body.order_id || null;
   if (!apiKey) return { ok: false, orderNumber, paid: false };
 

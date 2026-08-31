@@ -2,7 +2,7 @@
 
 const express = require('express');
 const { query, withTransaction } = require('../db');
-const { computeShipping, getPaymentToggles } = require('../settings');
+const { computeShipping, getPaymentToggles, getSettings } = require('../settings');
 const mailer = require('../mailer');
 
 const router = express.Router();
@@ -41,6 +41,16 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'That payment method is not available' });
     }
 
+    // Country: default Sri Lanka. Block international orders unless enabled.
+    const country = (customer.country || 'Sri Lanka').trim();
+    const isIntl = country.toLowerCase() !== 'sri lanka';
+    if (isIntl) {
+      const s = await getSettings();
+      if (!s.intl_enabled) {
+        return res.status(400).json({ error: 'International orders are not available at the moment' });
+      }
+    }
+
     const ids = items.map((i) => parseInt(i.id, 10)).filter(Boolean);
     if (ids.length === 0) {
       return res.status(400).json({ error: 'Invalid items' });
@@ -66,7 +76,7 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'No valid items in cart' });
     }
 
-    const shipping = await computeShipping(subtotal, customer.district);
+    const shipping = await computeShipping(subtotal, customer.district, country);
     const total = subtotal + shipping;
     const orderNumber = genOrderNumber();
 
@@ -76,10 +86,10 @@ router.post('/', async (req, res, next) => {
     const { order, savedItems } = await withTransaction(async (client) => {
       const { rows } = await client.query(
         `INSERT INTO orders
-           (order_number, customer_name, phone, email, address, city, district, notes,
+           (order_number, customer_name, phone, email, address, city, district, country, notes,
             subtotal, shipping, total, payment_method, payment_status, order_status,
             is_gift, gift_message)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pending','new',$13,$14)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending','new',$14,$15)
          RETURNING *`,
         [
           orderNumber,
@@ -88,7 +98,8 @@ router.post('/', async (req, res, next) => {
           customer.email || null,
           customer.address || null,
           customer.city || null,
-          customer.district || null,
+          isIntl ? null : (customer.district || null),
+          country,
           customer.notes || null,
           subtotal,
           shipping,

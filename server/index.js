@@ -46,6 +46,12 @@ app.get('/api/config', async (req, res, next) => {
       shipping_flat: settings.shipping_flat,
       free_shipping_over: settings.free_shipping_over,
       announcement: { text: settings.announcement_text, enabled: settings.announcement_enabled },
+      intl: { enabled: settings.intl_enabled, shipping_flat: settings.intl_shipping_flat },
+      social: {
+        instagram: settings.instagram_url || '',
+        tiktok: settings.tiktok_url || '',
+        facebook: settings.facebook_url || '',
+      },
       payment_methods: methods,
     });
   } catch (err) {
@@ -98,6 +104,7 @@ const PORT = process.env.PORT || 3000;
 async function start() {
   try {
     await migrate();
+    await getSettings(); // warm KOKO credential cache so payment status is correct on first request
   } catch (err) {
     console.error('[startup] Migration failed:', err.message);
     console.error('[startup] Check DATABASE_URL. Server will still start so you can debug.');

@@ -113,7 +113,11 @@ router.get('/analytics', async (req, res, next) => {
 
 router.get('/settings', async (req, res, next) => {
   try {
-    res.json(await getSettings());
+    const s = await getSettings();
+    // Never echo the raw KOKO secret back to the browser; expose only whether it is set.
+    const { koko_api_key, ...safe } = s;
+    safe.koko_api_key_set = Boolean(koko_api_key);
+    res.json(safe);
   } catch (err) {
     next(err);
   }

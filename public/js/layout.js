@@ -99,6 +99,7 @@
 
   function buildFooter(cfg) {
     const year = new Date().getFullYear();
+    const social = cfg.social || {};
     const wa = cfg.whatsapp_number
       ? `<a href="${Z.whatsappUrl(cfg.whatsapp_number, 'Hi Zemiki, I have a question')}" target="_blank" rel="noopener">WhatsApp us</a>` : '';
     const footer = document.createElement('footer');
@@ -124,8 +125,9 @@
           </a>
           <p>Handcrafted jewelry that celebrates every moment. Ethically made, elegantly designed, delivered across Sri Lanka.</p>
           <div class="social-row">
-            <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
-            <a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9z"/></svg></a>
+            ${social.instagram ? `<a href="${Z.escapeHtml(social.instagram)}" target="_blank" rel="noopener" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>` : ''}
+            ${social.tiktok ? `<a href="${Z.escapeHtml(social.tiktok)}" target="_blank" rel="noopener" aria-label="TikTok"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.4 2.3 1.9 3.9 4 4.1v2.7c-1.4.1-2.8-.3-4-1v6.3a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v2.8a2.8 2.8 0 1 0 2 2.7V3h2.7z"/></svg></a>` : ''}
+            ${social.facebook ? `<a href="${Z.escapeHtml(social.facebook)}" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3V6h-3c-2 0-3 1-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9z"/></svg></a>` : ''}
             ${cfg.whatsapp_number ? `<a href="${Z.whatsappUrl(cfg.whatsapp_number, 'Hi Zemiki')}" target="_blank" rel="noopener" aria-label="WhatsApp"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">${'<path d="M12 2a9.8 9.8 0 0 0-8.4 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2z"/>'}</svg></a>` : ''}
           </div>
         </div>

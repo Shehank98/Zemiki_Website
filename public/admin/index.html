@@ -197,6 +197,40 @@
         </div>
 
         <div class="panel">
+          <div class="panel-head"><h2>International Delivery</h2></div>
+          <div style="padding:22px;max-width:520px">
+            <div class="check-row"><label class="toggle"><input type="checkbox" id="intlEnabled"><span class="track"></span></label><label for="intlEnabled" style="margin:0">Accept orders from outside Sri Lanka</label></div>
+            <div class="field">
+              <label>International shipping fee (Rs.)</label>
+              <input id="intlFlat" type="number" min="0" step="1">
+              <div class="hint">A flat delivery fee charged on every order shipped outside Sri Lanka. When enabled, customers can pick their country at checkout.</div>
+            </div>
+            <button class="btn btn-primary" id="saveIntl">Save International Settings</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Store Links (Social)</h2></div>
+          <div style="padding:22px;max-width:560px">
+            <div class="field"><label>Instagram page URL</label><input id="linkInstagram" type="url" placeholder="https://instagram.com/yourpage"></div>
+            <div class="field"><label>TikTok page URL</label><input id="linkTiktok" type="url" placeholder="https://tiktok.com/@yourpage"></div>
+            <div class="field"><label>Facebook page URL</label><input id="linkFacebook" type="url" placeholder="https://facebook.com/yourpage"></div>
+            <div class="hint" style="margin-bottom:12px">These show as icons in the storefront footer. Leave blank to hide an icon.</div>
+            <button class="btn btn-primary" id="saveLinks">Save Links</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>KOKO Payment (Pay in 3)</h2><span id="kokoStatus" class="pill grey">-</span></div>
+          <div style="padding:22px;max-width:560px">
+            <div class="hint" style="margin-bottom:14px">Enter the credentials KOKO gives you when your merchant account is approved. Until both are set, KOKO checkout runs in test mode.</div>
+            <div class="field"><label>KOKO Merchant ID</label><input id="kokoMerchant" placeholder="Your KOKO merchant ID"></div>
+            <div class="field"><label>KOKO API Key / Secret</label><input id="kokoKey" type="password" placeholder="Leave blank to keep the saved key"><div class="hint">Stored securely and never shown again. Enter a value only to set or replace it.</div></div>
+            <button class="btn btn-primary" id="saveKoko">Save KOKO Credentials</button>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="panel-head">
             <h2>Payment Methods</h2>
             <button class="btn btn-primary" id="savePayments">Save Payment Methods</button>

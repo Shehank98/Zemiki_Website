@@ -5,14 +5,24 @@
   const root = document.getElementById('checkoutRoot');
   let districts = []; // [{district, fee}]
 
+  // A short list of common destinations for international shipping.
+  const COUNTRIES = [
+    'Australia', 'Canada', 'France', 'Germany', 'India', 'Italy', 'Japan',
+    'Malaysia', 'Maldives', 'New Zealand', 'Qatar', 'Saudi Arabia', 'Singapore',
+    'South Korea', 'Switzerland', 'United Arab Emirates', 'United Kingdom',
+    'United States', 'Other',
+  ];
+
   function feeForDistrict(name) {
     const d = districts.find((x) => x.district === name);
     return d ? Number(d.fee) : null;
   }
 
-  function shippingFor(subtotal, cfg, district) {
-    const free = Number(cfg.free_shipping_over || 0);
+  function shippingFor(subtotal, cfg, district, country) {
     if (subtotal <= 0) return 0;
+    // International: flat international fee (islandwide free-shipping does not apply).
+    if (country && country !== 'Sri Lanka') return Number((cfg.intl && cfg.intl.shipping_flat) || 0);
+    const free = Number(cfg.free_shipping_over || 0);
     if (free > 0 && subtotal >= free) return 0;
     const fee = feeForDistrict(district);
     return fee != null ? fee : Number(cfg.shipping_flat || 350);
@@ -43,8 +53,12 @@
     const total = subtotal + shipping;
     const methods = (cfg.payment_methods || []).filter((m) => m.kind === 'online' || m.id === 'cod' || m.id === 'whatsapp');
 
+    const intlEnabled = !!(cfg.intl && cfg.intl.enabled);
     const districtOptions = ['<option value="">Select your district</option>']
       .concat(districts.map((d) => `<option value="${Z.escapeHtml(d.district)}">${Z.escapeHtml(d.district)}</option>`))
+      .join('');
+    const countryOptions = ['<option value="Sri Lanka" selected>Sri Lanka</option>']
+      .concat(COUNTRIES.map((c) => `<option value="${Z.escapeHtml(c)}">${Z.escapeHtml(c)}</option>`))
       .join('');
 
     const summaryLines = items.map((i) =>
@@ -72,11 +86,13 @@
               <div class="field"><label>Phone *</label><input name="phone" required placeholder="07X XXX XXXX"></div>
             </div>
             <div class="field"><label>Email *</label><input type="email" name="email" required placeholder="you@example.com"><div class="hint">We email your invoice here.</div></div>
+            ${intlEnabled ? `<div class="field"><label>Country *</label><select name="country" id="countrySel" required>${countryOptions}</select></div>` : ''}
             <div class="field"><label>Address *</label><input name="address" required placeholder="House no, street"></div>
             <div class="form-row">
-              <div class="field"><label>District *</label><select name="district" id="districtSel" required>${districtOptions}</select></div>
-              <div class="field"><label>City / Town *</label><input name="city" required placeholder="e.g. Nugegoda"></div>
+              <div class="field" id="districtField"><label>District *</label><select name="district" id="districtSel" required>${districtOptions}</select></div>
+              <div class="field"><label id="cityLabel">City / Town *</label><input name="city" required placeholder="e.g. Nugegoda"></div>
             </div>
+            <div class="field" id="postalField" hidden><label>State / Province &amp; Postal code</label><input name="postal" placeholder="e.g. California, 90001"></div>
             <div class="field"><label>Notes (optional)</label><input name="notes" placeholder="Delivery instructions"></div>
           </div>
 
@@ -100,7 +116,7 @@
           <h3>Your Order</h3>
           ${summaryLines}
           <div class="summary-row" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px"><span>Subtotal</span><span>${Z.money(subtotal)}</span></div>
-          <div class="summary-row"><span>Shipping${isFreeEligible ? '' : ' <small style="color:var(--muted)">(select district)</small>'}</span><span id="shipVal">${isFreeEligible ? 'Free' : '-'}</span></div>
+          <div class="summary-row"><span>Shipping <small id="shipNote" style="color:var(--muted)"${isFreeEligible ? ' hidden' : ''}>(select district)</small></span><span id="shipVal">${isFreeEligible ? 'Free' : '-'}</span></div>
           <div class="summary-row total"><span>Total</span><span id="totalVal">${isFreeEligible ? Z.money(subtotal) : Z.money(subtotal) + ' +'}</span></div>
           <button class="btn btn-primary btn-block btn-lg" id="placeBtn" style="margin-top:16px">Place Order</button>
           <p style="font-size:.78rem;color:var(--muted);text-align:center;margin-top:10px">By placing your order you agree to our terms. Your details are used only to process this order.</p>
@@ -130,22 +146,44 @@
       });
     });
 
-    // Live shipping recompute when the district changes.
+    // Live shipping recompute when the district or country changes.
     const sel = document.getElementById('districtSel');
+    const countrySel = document.getElementById('countrySel');
+    const districtField = document.getElementById('districtField');
+    const postalField = document.getElementById('postalField');
+    const cityLabel = document.getElementById('cityLabel');
+    const currentCountry = () => (countrySel ? countrySel.value : 'Sri Lanka');
+
+    function applyCountry() {
+      const intl = currentCountry() !== 'Sri Lanka';
+      if (districtField) districtField.hidden = intl;
+      if (sel) { sel.required = !intl; if (intl) sel.value = ''; }
+      if (postalField) postalField.hidden = !intl;
+      if (cityLabel) cityLabel.textContent = intl ? 'City *' : 'City / Town *';
+      updateShipping();
+    }
+
     function updateShipping() {
-      const chosen = sel.value;
-      const ship = shippingFor(subtotal, cfg, chosen);
+      const intl = currentCountry() !== 'Sri Lanka';
+      const chosen = sel ? sel.value : '';
+      const ship = shippingFor(subtotal, cfg, chosen, currentCountry());
       const shipEl = document.getElementById('shipVal');
       const totalEl = document.getElementById('totalVal');
-      if (!chosen && !isFreeEligible) {
+      const noteEl = document.getElementById('shipNote');
+      // Local order with no district picked yet: show a placeholder.
+      if (!intl && !chosen && !isFreeEligible) {
         shipEl.textContent = '-';
         totalEl.textContent = Z.money(subtotal) + ' +';
+        if (noteEl) { noteEl.textContent = '(select district)'; noteEl.hidden = false; }
       } else {
         shipEl.textContent = ship === 0 ? 'Free' : Z.money(ship);
         totalEl.textContent = Z.money(subtotal + ship);
+        if (noteEl) noteEl.hidden = true;
       }
     }
-    sel.addEventListener('change', updateShipping);
+    if (sel) sel.addEventListener('change', updateShipping);
+    if (countrySel) countrySel.addEventListener('change', applyCountry);
+    applyCountry();
 
     document.getElementById('placeBtn').addEventListener('click', placeOrder);
   }
@@ -157,14 +195,20 @@
 
     const fd = new FormData(form);
     const giftOn = (document.getElementById('giftCheck') || {}).checked;
+    const country = fd.get('country') || 'Sri Lanka';
+    const isIntl = country !== 'Sri Lanka';
+    const postal = fd.get('postal');
+    const notes = fd.get('notes');
     const customer = {
       name: fd.get('name'), phone: fd.get('phone'), email: fd.get('email'),
-      address: fd.get('address'), city: fd.get('city'), district: fd.get('district'),
-      notes: fd.get('notes'),
+      address: fd.get('address'), city: fd.get('city'),
+      district: isIntl ? '' : fd.get('district'),
+      country: country,
+      notes: [notes, isIntl && postal ? ('Region/Postal: ' + postal) : ''].filter(Boolean).join(' · '),
       is_gift: !!giftOn,
       gift_message: giftOn ? (document.getElementById('giftMsg').value || '') : '',
     };
-    if (!customer.district) { Z.toast('Please select your district', 'error'); return; }
+    if (!isIntl && !customer.district) { Z.toast('Please select your district', 'error'); return; }
     const method = (root.querySelector('input[name="pay"]:checked') || {}).value || 'cod';
     const items = Cart.items().map((i) => ({ id: i.id, qty: i.qty }));
 

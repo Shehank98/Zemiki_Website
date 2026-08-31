@@ -11,7 +11,29 @@ const SETTINGS_SCHEMA = {
   free_shipping_over: { type: 'number', def: () => Number(process.env.FREE_SHIPPING_OVER_LKR || 0) },
   announcement_text: { type: 'text', def: () => DEFAULT_ANNOUNCEMENT },
   announcement_enabled: { type: 'bool', def: () => true },
+  // International orders
+  intl_enabled: { type: 'bool', def: () => false },
+  intl_shipping_flat: { type: 'number', def: () => Number(process.env.INTL_SHIPPING_LKR || 0) },
+  // Social links (shown in the storefront footer)
+  instagram_url: { type: 'text', def: () => process.env.INSTAGRAM_URL || '' },
+  tiktok_url: { type: 'text', def: () => process.env.TIKTOK_URL || '' },
+  facebook_url: { type: 'text', def: () => process.env.FACEBOOK_URL || '' },
+  // KOKO payment credentials (settable from the admin panel; env is the fallback)
+  koko_merchant_id: { type: 'text', def: () => process.env.KOKO_MERCHANT_ID || '' },
+  koko_api_key: { type: 'text', def: () => process.env.KOKO_API_KEY || '' },
 };
+
+// In-memory cache of KOKO credentials so the (synchronous) payment adapter can
+// read the latest admin-saved values without an async DB call per request.
+let _kokoCache = null;
+function kokoConfig() {
+  const c = _kokoCache || {};
+  return {
+    merchant_id: c.koko_merchant_id || process.env.KOKO_MERCHANT_ID || '',
+    api_key: c.koko_api_key || process.env.KOKO_API_KEY || '',
+    base_url: process.env.KOKO_BASE_URL || 'https://ipg.koko.lk',
+  };
+}
 
 /**
  * Read store settings, merging DB values over defaults, coerced by type.
@@ -31,6 +53,7 @@ async function getSettings() {
     else if (spec.type === 'bool') out[key] = raw === 'true';
     else out[key] = raw;
   }
+  _kokoCache = { koko_merchant_id: out.koko_merchant_id, koko_api_key: out.koko_api_key };
   return out;
 }
 
@@ -120,9 +143,13 @@ async function setDistricts(rows) {
  * Uses the district fee when available, else the flat fallback; the
  * free-shipping-over threshold overrides both.
  */
-async function computeShipping(subtotal, district) {
+async function computeShipping(subtotal, district, country) {
   if (subtotal <= 0) return 0;
   const s = await getSettings();
+  // International order: flat international fee (free-over is islandwide only).
+  if (country && String(country).trim().toLowerCase() !== 'sri lanka') {
+    return s.intl_shipping_flat;
+  }
   if (s.free_shipping_over > 0 && subtotal >= s.free_shipping_over) return 0;
   const districtFee = await getDistrictFee(district);
   return districtFee != null ? districtFee : s.shipping_flat;
@@ -170,6 +197,7 @@ module.exports = {
   getSettings,
   updateSettings,
   computeShipping,
+  kokoConfig,
   getAllDistricts,
   getDistricts,
   getDistrictFee,

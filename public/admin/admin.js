@@ -165,6 +165,7 @@
       { label: 'Customer', key: 'customer_name' },
       { label: 'Phone', key: 'phone' },
       { label: 'Email', key: 'email' },
+      { label: 'Country', get: (o) => o.country || 'Sri Lanka' },
       { label: 'District', key: 'district' },
       { label: 'City', key: 'city' },
       { label: 'Address', key: 'address' },
@@ -702,7 +703,7 @@
           <div>
             <div class="od-label">Deliver to</div>
             <div class="od-value">${esc(o.address || '-')}</div>
-            <div class="od-value">${esc(o.city || '')}${o.district ? ', ' + esc(o.district) : ''}</div>
+            <div class="od-value">${esc(o.city || '')}${o.district ? ', ' + esc(o.district) : ''}${o.country && o.country !== 'Sri Lanka' ? ' · <strong>' + esc(o.country) + '</strong>' : ''}</div>
           </div>
         </div>
         ${o.notes ? `<div class="od-notes"><strong>Note:</strong> ${esc(o.notes)}</div>` : ''}
@@ -824,7 +825,7 @@
           <div class="ship">
             <div class="lbl">Ship to</div>
             <div class="name">${esc(o.customer_name)}</div>
-            <div class="addr">${esc(o.address || '')}<br>${esc(o.city || '')}${o.district ? ', ' + esc(o.district) : ''}</div>
+            <div class="addr">${esc(o.address || '')}<br>${esc(o.city || '')}${o.district ? ', ' + esc(o.district) : ''}${o.country && o.country !== 'Sri Lanka' ? '<br><strong>' + esc(o.country) + '</strong>' : ''}</div>
             <div class="phone">☎ ${esc(o.phone)}</div>
           </div>
           <div class="meta">
@@ -944,10 +945,47 @@
       $('#setFree').value = s.free_shipping_over;
       $('#annText').value = s.announcement_text || '';
       $('#annEnabled').checked = !!s.announcement_enabled;
+      $('#intlEnabled').checked = !!s.intl_enabled;
+      $('#intlFlat').value = s.intl_shipping_flat || 0;
+      $('#linkInstagram').value = s.instagram_url || '';
+      $('#linkTiktok').value = s.tiktok_url || '';
+      $('#linkFacebook').value = s.facebook_url || '';
+      $('#kokoMerchant').value = s.koko_merchant_id || '';
+      const ks = $('#kokoStatus');
+      if (s.koko_merchant_id && s.koko_api_key_set) { ks.className = 'pill green'; ks.textContent = 'Live'; }
+      else { ks.className = 'pill gold'; ks.textContent = 'Test mode'; }
     } catch (e) { toast(e.message, 'error'); }
     loadPaymentMethods();
     loadDistricts();
   };
+
+  function wireSave(btnSel, label, buildBody) {
+    $(btnSel).addEventListener('click', async () => {
+      const btn = $(btnSel); const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try { await api('/settings', { method: 'PUT', body: buildBody() }); toast(label + ' saved', 'success'); loaders.settings(); }
+      catch (e) { toast(e.message, 'error'); }
+      btn.disabled = false; btn.textContent = orig;
+    });
+  }
+  wireSave('#saveIntl', 'International settings', () => ({
+    intl_enabled: $('#intlEnabled').checked,
+    intl_shipping_flat: parseFloat($('#intlFlat').value) || 0,
+  }));
+  wireSave('#saveLinks', 'Links', () => ({
+    instagram_url: $('#linkInstagram').value.trim(),
+    tiktok_url: $('#linkTiktok').value.trim(),
+    facebook_url: $('#linkFacebook').value.trim(),
+  }));
+  $('#saveKoko').addEventListener('click', async () => {
+    const btn = $('#saveKoko'); btn.disabled = true; btn.textContent = 'Saving…';
+    const body = { koko_merchant_id: $('#kokoMerchant').value.trim() };
+    const key = $('#kokoKey').value.trim();
+    if (key) body.koko_api_key = key; // only overwrite the secret when a new one is typed
+    try { await api('/settings', { method: 'PUT', body }); toast('KOKO credentials saved', 'success'); $('#kokoKey').value = ''; loaders.settings(); loadPaymentMethods(); }
+    catch (e) { toast(e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Save KOKO Credentials';
+  });
 
   $('#saveAnnouncement').addEventListener('click', async () => {
     const btn = $('#saveAnnouncement'); btn.disabled = true; btn.textContent = 'Saving…';
