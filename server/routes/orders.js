@@ -111,6 +111,14 @@ router.post('/', async (req, res, next) => {
       return { order: created, savedItems: saved };
     });
 
+    // Best-effort: add the customer's email to the newsletter list (never blocks the order).
+    if (customer.email) {
+      const em = String(customer.email).trim().toLowerCase();
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+        query('INSERT INTO subscribers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING', [em]).catch(() => {});
+      }
+    }
+
     // Best-effort: email the customer their invoice (never blocks the order).
     mailer.sendInvoice(order, savedItems).catch(() => {});
 

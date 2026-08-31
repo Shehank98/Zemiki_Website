@@ -75,6 +75,40 @@ router.get('/stats', async (req, res, next) => {
   }
 });
 
+// Richer analytics for the dashboard charts.
+router.get('/analytics', async (req, res, next) => {
+  try {
+    const [rev14, statusRows, payRows, topRows, subCount, lowStock, catRows] = await Promise.all([
+      query(`SELECT to_char(d.day,'YYYY-MM-DD') AS day,
+                     COALESCE(SUM(o.total) FILTER (WHERE o.payment_status='paid'),0)::float AS revenue,
+                     COUNT(o.id)::int AS orders
+                FROM generate_series((CURRENT_DATE - INTERVAL '13 days'), CURRENT_DATE, INTERVAL '1 day') d(day)
+                LEFT JOIN orders o ON o.created_at >= d.day AND o.created_at < d.day + INTERVAL '1 day'
+               GROUP BY d.day ORDER BY d.day`),
+      query(`SELECT order_status AS k, COUNT(*)::int AS c FROM orders GROUP BY order_status`),
+      query(`SELECT payment_method AS k, COUNT(*)::int AS c FROM orders GROUP BY payment_method`),
+      query(`SELECT product_name AS k, SUM(qty)::int AS c
+                FROM order_items GROUP BY product_name ORDER BY c DESC LIMIT 6`),
+      query('SELECT COUNT(*)::int AS c FROM subscribers'),
+      query('SELECT COUNT(*)::int AS c FROM products WHERE stock <= 3'),
+      query(`SELECT c.name AS k, COUNT(p.id)::int AS c
+                FROM categories c LEFT JOIN products p ON p.category_id = c.id
+               GROUP BY c.name ORDER BY c DESC LIMIT 6`),
+    ]);
+    res.json({
+      revenue_14d: rev14.rows,
+      orders_by_status: statusRows.rows,
+      payment_split: payRows.rows,
+      top_products: topRows.rows,
+      products_by_category: catRows.rows,
+      subscribers: subCount.rows[0].c,
+      low_stock: lowStock.rows[0].c,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 /* ---------------------------- Settings -------------------------- */
 
 router.get('/settings', async (req, res, next) => {

@@ -109,8 +109,97 @@
       active.classList.add('view-anim');
       $('#viewTitle').textContent = titles[view];
       if (loaders[view]) loaders[view]();
+      document.querySelector('.admin').classList.remove('nav-open'); // close mobile drawer
     });
   });
+
+  function switchView(view) {
+    const btn = $('.nav-item[data-view="' + view + '"]');
+    if (btn) btn.click();
+  }
+
+  /* ---------------- sidebar collapse + mobile drawer ----------------- */
+  const adminEl = () => document.querySelector('.admin');
+  const collapseBtn = $('#collapseBtn');
+  if (collapseBtn) {
+    if (localStorage.getItem('zemikiSidebar') === 'collapsed') adminEl().classList.add('collapsed');
+    collapseBtn.addEventListener('click', () => {
+      const c = adminEl().classList.toggle('collapsed');
+      localStorage.setItem('zemikiSidebar', c ? 'collapsed' : 'expanded');
+    });
+  }
+  const menuBtn = $('#menuBtn');
+  if (menuBtn) menuBtn.addEventListener('click', () => adminEl().classList.toggle('nav-open'));
+  const sbBackdrop = $('#sidebarBackdrop');
+  if (sbBackdrop) sbBackdrop.addEventListener('click', () => adminEl().classList.remove('nav-open'));
+
+  /* ---------------------- quick action cards ------------------------- */
+  $$('.qa[data-goto]').forEach((c) => c.addEventListener('click', () => {
+    switchView(c.dataset.goto);
+    if (c.dataset.add) setTimeout(() => { const b = $('#addProductBtn'); if (b) b.click(); }, 60);
+  }));
+
+  /* --------------------------- CSV export ---------------------------- */
+  function exportCSV(filename, rows, columns) {
+    if (!rows || !rows.length) { toast('Nothing to export yet', 'error'); return; }
+    const esq = (v) => {
+      v = v == null ? '' : String(v);
+      return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    };
+    const lines = [columns.map((c) => esq(c.label)).join(',')];
+    rows.forEach((r) => lines.push(columns.map((c) => esq(typeof c.get === 'function' ? c.get(r) : r[c.key])).join(',')));
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Exported ' + rows.length + ' rows', 'success');
+  }
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  function exportOrdersCSV() {
+    exportCSV('zemiki-orders-' + today() + '.csv', ordersCache, [
+      { label: 'Order #', key: 'order_number' },
+      { label: 'Date', get: (o) => fmtDate(o.created_at) },
+      { label: 'Customer', key: 'customer_name' },
+      { label: 'Phone', key: 'phone' },
+      { label: 'Email', key: 'email' },
+      { label: 'District', key: 'district' },
+      { label: 'City', key: 'city' },
+      { label: 'Address', key: 'address' },
+      { label: 'Items total', get: (o) => o.subtotal },
+      { label: 'Shipping', get: (o) => o.shipping },
+      { label: 'Total', get: (o) => o.total },
+      { label: 'Payment', key: 'payment_method' },
+      { label: 'Payment status', key: 'payment_status' },
+      { label: 'Order status', key: 'order_status' },
+      { label: 'Gift', get: (o) => (o.is_gift ? 'Yes' : '') },
+    ]);
+  }
+  function exportProductsCSV() {
+    exportCSV('zemiki-products-' + today() + '.csv', productsCache, [
+      { label: 'Name', key: 'name' },
+      { label: 'SKU', key: 'sku' },
+      { label: 'Category', key: 'category_name' },
+      { label: 'Price', key: 'price' },
+      { label: 'Sale price', key: 'sale_price' },
+      { label: 'Stock', key: 'stock' },
+      { label: 'Featured', get: (p) => (p.featured ? 'Yes' : '') },
+      { label: 'Active', get: (p) => (p.active ? 'Yes' : 'No') },
+    ]);
+  }
+  function exportSubsCSV() {
+    exportCSV('zemiki-subscribers-' + today() + '.csv', subscribersCache, [
+      { label: 'Email', key: 'email' },
+      { label: 'Subscribed', get: (s) => fmtDate(s.created_at) },
+    ]);
+  }
+  [['#exportOrders', () => (ordersCache.length ? exportOrdersCSV() : loaders.orders().then(exportOrdersCSV))],
+   ['#exportOrdersDash', () => (ordersCache.length ? exportOrdersCSV() : loaders.orders().then(exportOrdersCSV))],
+   ['#exportProducts', exportProductsCSV],
+   ['#exportSubs', exportSubsCSV],
+  ].forEach(([sel, fn]) => { const b = $(sel); if (b) b.addEventListener('click', fn); });
 
   /* --------------------------- dashboard ----------------------------- */
   loaders.dashboard = async function () {
@@ -137,8 +226,102 @@
         : '<div class="empty">No orders yet.</div>';
 
       updateBadges(s.orders, s.open_enquiries);
+      loadCharts();
     } catch (e) { toast(e.message, 'error'); }
   };
+
+  /* ----------------------------- charts ------------------------------ */
+  const PALETTE = ['#5a1a2b', '#c9a24b', '#3f7d54', '#2f5ecf', '#a8842f', '#b23a48', '#7a6f66', '#8a5a2b'];
+  const STATUS_COLORS = { new: '#2f5ecf', processing: '#c9a24b', shipped: '#5a8fd6', delivered: '#3f7d54', cancelled: '#b23a48' };
+
+  function donut(rows, colorFor) {
+    const total = rows.reduce((n, r) => n + Number(r.c), 0);
+    if (!total) return '<div class="chart-empty">No data yet.</div>';
+    const R = 60, C = 2 * Math.PI * R, cx = 80, cy = 80;
+    let off = 0, segs = '';
+    rows.forEach((r, i) => {
+      const frac = Number(r.c) / total;
+      const col = colorFor ? colorFor(r.k, i) : PALETTE[i % PALETTE.length];
+      segs += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${col}" stroke-width="24"
+        stroke-dasharray="${(frac * C).toFixed(2)} ${(C - frac * C).toFixed(2)}"
+        stroke-dashoffset="${(-off * C).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"></circle>`;
+      off += frac;
+    });
+    const legend = rows.map((r, i) => {
+      const col = colorFor ? colorFor(r.k, i) : PALETTE[i % PALETTE.length];
+      return `<span class="lg"><span class="dot" style="background:${col}"></span>${esc(r.k)} (${r.c})</span>`;
+    }).join('');
+    return `<svg class="chart-svg" viewBox="0 0 160 160" style="max-width:180px;margin:0 auto">
+      ${segs}
+      <text x="80" y="76" text-anchor="middle" font-size="26" font-weight="700" fill="#5a1a2b" font-family="Playfair Display,serif">${total}</text>
+      <text x="80" y="95" text-anchor="middle" font-size="10" fill="#7a6f66">total</text>
+    </svg><div class="chart-legend">${legend}</div>`;
+  }
+
+  function barChart(rows, opts) {
+    opts = opts || {};
+    if (!rows.length || rows.every((r) => !Number(r.v))) return '<div class="chart-empty">No data yet.</div>';
+    const W = 560, H = 200, padL = 44, padB = 30, padT = 10;
+    const max = Math.max(1, ...rows.map((r) => Number(r.v)));
+    const bw = (W - padL - 10) / rows.length;
+    let bars = '', labels = '', grid = '';
+    for (let g = 0; g <= 3; g++) {
+      const y = padT + (H - padT - padB) * (g / 3);
+      const val = Math.round(max * (1 - g / 3));
+      grid += `<line x1="${padL}" y1="${y}" x2="${W}" y2="${y}" stroke="#eee"></line>
+        <text x="${padL - 6}" y="${y + 3}" text-anchor="end" font-size="9" fill="#7a6f66">${opts.money ? (val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val) : val}</text>`;
+    }
+    rows.forEach((r, i) => {
+      const h = (H - padT - padB) * (Number(r.v) / max);
+      const x = padL + i * bw + bw * 0.18, y = H - padB - h, w = bw * 0.64;
+      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(0, h).toFixed(1)}" rx="3" fill="url(#gbar)"><title>${esc(r.label)}: ${opts.money ? money(r.v) : r.v}</title></rect>`;
+      labels += `<text x="${(padL + i * bw + bw / 2).toFixed(1)}" y="${H - padB + 14}" text-anchor="middle" font-size="9" fill="#7a6f66">${esc(r.short || r.label)}</text>`;
+    });
+    return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}">
+      <defs><linearGradient id="gbar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#c9a24b"></stop><stop offset="1" stop-color="#a8842f"></stop></linearGradient></defs>
+      ${grid}${bars}${labels}</svg>`;
+  }
+
+  function hbars(rows, opts) {
+    opts = opts || {};
+    if (!rows.length) return '<div class="chart-empty">No data yet.</div>';
+    const max = Math.max(1, ...rows.map((r) => Number(r.c)));
+    return '<div class="hbars">' + rows.map((r) => `
+      <div class="hbar"><div class="hbar-top"><span>${esc(r.k)}</span><strong>${opts.money ? money(r.c) : r.c}</strong></div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${(Number(r.c) / max * 100).toFixed(1)}%"></div></div></div>`).join('') + '</div>';
+  }
+
+  async function loadCharts() {
+    const grid = $('#chartsGrid');
+    if (!grid) return;
+    try {
+      const a = await api('/analytics');
+      const rev = (a.revenue_14d || []).map((d) => ({
+        label: d.day, short: d.day.slice(5), v: Number(d.revenue),
+      }));
+      const status = (a.orders_by_status || []);
+      const pay = (a.payment_split || []);
+      const top = (a.top_products || []);
+      grid.innerHTML = `
+        <div class="chart-card span-2">
+          <h3>Revenue - last 14 days</h3><div class="chart-sub">Paid orders only, Rs.</div>
+          ${barChart(rev, { money: true })}
+        </div>
+        <div class="chart-card">
+          <h3>Orders by status</h3><div class="chart-sub">All time</div>
+          ${donut(status, (k) => STATUS_COLORS[k] || '#7a6f66')}
+        </div>
+        <div class="chart-card">
+          <h3>Payment methods</h3><div class="chart-sub">Share of orders</div>
+          ${donut(pay)}
+        </div>
+        <div class="chart-card">
+          <h3>Best sellers</h3><div class="chart-sub">Top products by units sold</div>
+          ${hbars(top)}
+        </div>`;
+    } catch (e) { grid.innerHTML = ''; }
+  }
 
   function updateBadges(orders, enq) {
     const ob = $('#ordersBadge'), eb = $('#enqBadge');
@@ -712,10 +895,12 @@
   }
 
   /* ---------------------------- marketing ---------------------------- */
+  let subscribersCache = [];
   loaders.marketing = async function () {
     const el = $('#subscribersTable');
     try {
       const subs = await api('/subscribers');
+      subscribersCache = subs;
       $('#subCount').textContent = subs.length + ' subscriber' + (subs.length === 1 ? '' : 's');
       el.innerHTML = subs.length ? `<table><thead><tr><th>Email</th><th>Subscribed</th><th></th></tr></thead><tbody>${
         subs.map((s) => `<tr>

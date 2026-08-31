@@ -14,6 +14,7 @@
   <!-- Login screen -->
   <div class="login-wrap" id="loginScreen" style="display:none">
     <div class="login-card">
+      <img class="login-logo" src="/assets/logo.png" alt="Zemiki" onerror="this.remove()">
       <h1>Zemiki Admin</h1>
       <p>Sign in to manage your store</p>
       <div class="err" id="loginErr"></div>
@@ -27,31 +28,52 @@
 
   <!-- Admin app -->
   <div class="admin" id="adminApp" style="display:none">
-    <aside class="sidebar">
-      <div class="logo">✦ Zem<span>iki</span></div>
-      <button class="nav-item active" data-view="dashboard">▤ Dashboard</button>
-      <button class="nav-item" data-view="products">◆ Products</button>
-      <button class="nav-item" data-view="categories">☰ Categories</button>
-      <button class="nav-item" data-view="orders">🛍 Orders <span class="badge" id="ordersBadge" hidden></span></button>
-      <button class="nav-item" data-view="enquiries">✉ Enquiries <span class="badge" id="enqBadge" hidden></span></button>
-      <button class="nav-item" data-view="marketing">📣 Marketing</button>
-      <button class="nav-item" data-view="settings">⚙ Settings</button>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <a class="logo" href="/" target="_blank" rel="noopener" title="View storefront">
+          <img class="logo-img" src="/assets/logo.png" alt="Zemiki" onerror="this.remove();var f=this.parentNode.querySelector('.logo-txt');if(f)f.hidden=false">
+          <span class="logo-txt" hidden>✦ Zem<b>iki</b></span>
+        </a>
+        <button class="collapse-btn" id="collapseBtn" aria-label="Collapse menu" title="Collapse menu">«</button>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard" title="Dashboard"><span class="ni-ico">▤</span><span class="ni-label">Dashboard</span></button>
+        <button class="nav-item" data-view="products" title="Products"><span class="ni-ico">◆</span><span class="ni-label">Products</span></button>
+        <button class="nav-item" data-view="categories" title="Categories"><span class="ni-ico">☰</span><span class="ni-label">Categories</span></button>
+        <button class="nav-item" data-view="orders" title="Orders"><span class="ni-ico">🛍</span><span class="ni-label">Orders</span><span class="badge" id="ordersBadge" hidden></span></button>
+        <button class="nav-item" data-view="enquiries" title="Enquiries"><span class="ni-ico">✉</span><span class="ni-label">Enquiries</span><span class="badge" id="enqBadge" hidden></span></button>
+        <button class="nav-item" data-view="marketing" title="Marketing"><span class="ni-ico">📣</span><span class="ni-label">Marketing</span></button>
+        <button class="nav-item" data-view="settings" title="Settings"><span class="ni-ico">⚙</span><span class="ni-label">Settings</span></button>
+      </nav>
       <div class="sidebar-foot">
-        <button class="btn btn-outline btn-block" id="logoutBtn">Sign Out</button>
+        <button class="btn btn-outline btn-block" id="logoutBtn"><span class="ni-ico">⏻</span><span class="ni-label">Sign Out</span></button>
       </div>
     </aside>
 
     <main class="main">
       <div class="topbar">
-        <h1 id="viewTitle">Dashboard</h1>
+        <div class="topbar-left">
+          <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+          <h1 id="viewTitle">Dashboard</h1>
+        </div>
         <a class="view-site" href="/" target="_blank" rel="noopener">View storefront ↗</a>
       </div>
 
       <!-- Dashboard -->
       <section class="view active" id="view-dashboard">
         <div class="stat-grid" id="statGrid"></div>
+        <div class="quick-actions">
+          <button class="qa" data-goto="products" data-add="1"><span class="qa-ico">＋</span><span class="qa-txt"><strong>Add product</strong><small>Create a new listing</small></span></button>
+          <button class="qa" data-goto="orders"><span class="qa-ico">🛍</span><span class="qa-txt"><strong>View orders</strong><small>Fulfil &amp; update status</small></span></button>
+          <button class="qa" data-goto="marketing"><span class="qa-ico">📣</span><span class="qa-txt"><strong>Send an offer</strong><small>Email your customers</small></span></button>
+          <button class="qa" data-goto="settings"><span class="qa-ico">⚙</span><span class="qa-txt"><strong>Settings</strong><small>Shipping, payments, more</small></span></button>
+        </div>
+        <div class="charts-grid" id="chartsGrid"></div>
         <div class="panel">
-          <div class="panel-head"><h2>Recent Orders</h2></div>
+          <div class="panel-head">
+            <h2>Recent Orders</h2>
+            <button class="btn btn-outline btn-sm" id="exportOrdersDash">⤓ Export CSV</button>
+          </div>
           <div id="recentOrders"><div class="empty">Loading…</div></div>
         </div>
       </section>
@@ -61,8 +83,9 @@
         <div class="panel">
           <div class="panel-head">
             <h2>Products</h2>
-            <div style="display:flex;gap:10px;align-items:center">
+            <div class="head-actions">
               <input id="productSearch" class="admin-search" type="search" placeholder="Search products…">
+              <button class="btn btn-outline" id="exportProducts">⤓ Export</button>
               <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
             </div>
           </div>
@@ -87,7 +110,7 @@
         <div class="panel">
           <div class="panel-head">
             <h2>Orders</h2>
-            <div style="display:flex;gap:10px;align-items:center">
+            <div class="head-actions">
               <input id="orderSearch" class="admin-search" type="search" placeholder="Search order #, name, phone…">
               <select id="orderStatusFilter">
                 <option value="">All statuses</option>
@@ -97,6 +120,7 @@
                 <option value="delivered">Delivered</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+              <button class="btn btn-outline" id="exportOrders">⤓ Export</button>
             </div>
           </div>
           <div id="ordersTable"><div class="empty">Loading…</div></div>
@@ -129,7 +153,13 @@
           </div>
         </div>
         <div class="panel">
-          <div class="panel-head"><h2>Subscribers</h2><span id="subCount" class="pill blue"></span></div>
+          <div class="panel-head">
+            <h2>Subscribers</h2>
+            <div class="head-actions">
+              <span id="subCount" class="pill blue"></span>
+              <button class="btn btn-outline btn-sm" id="exportSubs">⤓ Export</button>
+            </div>
+          </div>
           <div id="subscribersTable"><div class="empty">Loading…</div></div>
         </div>
       </section>
@@ -185,6 +215,7 @@
         </div>
       </section>
     </main>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
   </div>
 
   <!-- Modal -->
