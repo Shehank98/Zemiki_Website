@@ -557,33 +557,132 @@
     } catch (e) { toast(e.message, 'error'); }
   }
 
-  // Print-friendly packing slip. For gift orders, hide prices and buyer name.
+  // Professional print-friendly packing slip to stick on the order box.
+  // For gift orders, prices and the buyer's identity are hidden.
   function printPackingSlip(o) {
     const gift = o.is_gift;
-    const rows = (o.items || []).map((it) =>
-      `<tr><td>${esc(it.product_name)}</td><td style="text-align:center">${it.qty}</td>${gift ? '' : `<td style="text-align:right">${money(it.unit_price * it.qty)}</td>`}</tr>`).join('');
-    const store = 'Zemiki';
+    const store = (siteCfg.store_name || 'Zemiki');
+    const wa = siteCfg.whatsapp_number ? ('+' + String(siteCfg.whatsapp_number).replace(/[^0-9]/g, '')) : '';
+    const logoUrl = location.origin + '/assets/logo.png';
+    const dateStr = new Date(o.created_at).toLocaleDateString('en-LK', { year: 'numeric', month: 'short', day: 'numeric' });
+    const itemCount = (o.items || []).reduce((n, it) => n + Number(it.qty), 0);
+
+    const rows = (o.items || []).map((it) => `
+      <tr>
+        <td class="it-name">${esc(it.product_name)}</td>
+        <td class="it-qty">${it.qty}</td>
+        ${gift ? '' : `<td class="it-price">${money(it.unit_price)}</td><td class="it-total">${money(it.unit_price * it.qty)}</td>`}
+      </tr>`).join('');
+
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Packing Slip ${esc(o.order_number)}</title>
-      <style>
-        body{font-family:Arial,sans-serif;color:#2b2320;padding:32px;max-width:640px;margin:auto}
-        h1{font-size:22px;margin:0 0 2px;color:#5a1a2b}
-        .muted{color:#777;font-size:13px}
-        table{width:100%;border-collapse:collapse;margin:18px 0}
-        th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;font-size:14px}
-        .box{border:1px solid #eee;border-radius:8px;padding:14px;margin:14px 0}
-        .gift{background:#fff8ec;border:1px dashed #c9a24b;border-radius:8px;padding:16px;margin:14px 0;text-align:center;font-size:15px}
-        .tot{text-align:right;font-weight:bold;font-size:16px;color:#5a1a2b}
-      </style></head><body>
-      <h1>${store}</h1><div class="muted">Packing Slip · Order ${esc(o.order_number)} · ${new Date(o.created_at).toLocaleDateString('en-LK')}</div>
-      <div class="box"><strong>Deliver to</strong><br>${esc(o.customer_name)}<br>${esc(o.address || '')}<br>${esc(o.city || '')}${o.district ? ', ' + esc(o.district) : ''}<br>${esc(o.phone)}</div>
-      ${gift && o.gift_message ? `<div class="gift">🎁 A gift for you<br><em>“${esc(o.gift_message)}”</em></div>` : ''}
-      <table><thead><tr><th>Item</th><th style="text-align:center">Qty</th>${gift ? '' : '<th style="text-align:right">Total</th>'}</tr></thead><tbody>${rows}</tbody></table>
-      ${gift ? '<div class="muted">This is a gift order - no prices shown.</div>' : `<div class="tot">Total: ${money(o.total)}</div>`}
-      <script>window.onload=function(){window.print()}<\/script>
+    <style>
+      @page { size: A4; margin: 14mm; }
+      * { box-sizing: border-box; }
+      body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #2b2320; margin: 0; }
+      .slip { max-width: 720px; margin: 0 auto; }
+      .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #c9a24b; padding-bottom: 16px; }
+      .brand-logo { height: 54px; }
+      .brand-word { font-family: Georgia, 'Times New Roman', serif; font-size: 30px; font-weight: bold; color: #5a1a2b; letter-spacing: .5px; }
+      .brand-tag { color: #a8842f; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin-top: 2px; }
+      .doc { text-align: right; }
+      .doc .title { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #7a6f66; }
+      .doc .ord { font-size: 20px; font-weight: bold; color: #5a1a2b; margin-top: 2px; }
+      .doc .date { font-size: 12px; color: #7a6f66; margin-top: 2px; }
+
+      .grid { display: flex; gap: 16px; margin: 18px 0; }
+      .ship { flex: 1.4; border: 2px solid #2b2320; border-radius: 10px; padding: 14px 16px; }
+      .meta { flex: 1; border: 1px solid #e7e0d3; border-radius: 10px; padding: 14px 16px; background: #faf6ef; }
+      .lbl { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #7a6f66; margin-bottom: 6px; }
+      .ship .name { font-size: 18px; font-weight: bold; }
+      .ship .addr { font-size: 15px; line-height: 1.5; margin-top: 2px; }
+      .ship .phone { font-size: 15px; font-weight: bold; margin-top: 6px; }
+      .meta div.row { font-size: 13px; margin-bottom: 5px; display: flex; justify-content: space-between; gap: 10px; }
+      .meta .k { color: #7a6f66; }
+      .meta .v { font-weight: 600; text-align: right; }
+
+      .gift { background: #fff8ec; border: 1px dashed #c9a24b; border-radius: 10px; padding: 16px; margin: 16px 0; text-align: center; }
+      .gift .g-title { font-family: Georgia, serif; color: #5a1a2b; font-size: 17px; }
+      .gift .g-msg { font-style: italic; margin-top: 6px; font-size: 15px; }
+
+      table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+      thead th { background: #5a1a2b; color: #fff; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 9px 12px; text-align: left; }
+      thead th:nth-child(2){ text-align:center } thead th:nth-child(3),thead th:nth-child(4){ text-align:right }
+      tbody td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+      .it-qty { text-align: center; } .it-price, .it-total { text-align: right; white-space: nowrap; }
+      .it-total { font-weight: 600; }
+      tr { page-break-inside: avoid; }
+
+      .totals { margin-top: 10px; margin-left: auto; width: 260px; }
+      .totals .row { display: flex; justify-content: space-between; padding: 4px 12px; font-size: 14px; }
+      .totals .grand { border-top: 2px solid #2b2320; margin-top: 4px; padding-top: 8px; font-size: 17px; font-weight: bold; color: #5a1a2b; }
+      .count { font-size: 13px; color: #7a6f66; margin-top: 10px; }
+
+      .foot { margin-top: 24px; border-top: 1px solid #e7e0d3; padding-top: 16px; text-align: center; }
+      .foot .ty { font-family: Georgia, serif; color: #5a1a2b; font-size: 18px; }
+      .foot .sub { color: #7a6f66; font-size: 13px; margin-top: 4px; line-height: 1.6; }
+      .pay-badge { display:inline-block; margin-top:8px; font-size:12px; color:#7a6f66 }
+    </style></head>
+    <body>
+      <div class="slip">
+        <div class="head">
+          <div>
+            <img class="brand-logo" src="${logoUrl}" alt="${esc(store)}"
+                 onerror="this.outerHTML='<div class=&quot;brand-word&quot;>${esc(store)}</div>'">
+            <div class="brand-tag">Handcrafted Jewelry</div>
+          </div>
+          <div class="doc">
+            <div class="title">Packing Slip</div>
+            <div class="ord">${esc(o.order_number)}</div>
+            <div class="date">${dateStr}</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="ship">
+            <div class="lbl">Ship to</div>
+            <div class="name">${esc(o.customer_name)}</div>
+            <div class="addr">${esc(o.address || '')}<br>${esc(o.city || '')}${o.district ? ', ' + esc(o.district) : ''}</div>
+            <div class="phone">☎ ${esc(o.phone)}</div>
+          </div>
+          <div class="meta">
+            <div class="row"><span class="k">Order</span><span class="v">${esc(o.order_number)}</span></div>
+            <div class="row"><span class="k">Date</span><span class="v">${dateStr}</span></div>
+            <div class="row"><span class="k">Payment</span><span class="v">${esc((o.payment_method || '').toUpperCase())}</span></div>
+            ${gift ? '' : `<div class="row"><span class="k">Status</span><span class="v">${esc(o.payment_status)}</span></div>`}
+            <div class="row"><span class="k">Items</span><span class="v">${itemCount}</span></div>
+          </div>
+        </div>
+
+        ${gift ? `<div class="gift"><div class="g-title">🎁 A special gift for you</div>${o.gift_message ? `<div class="g-msg">“${esc(o.gift_message)}”</div>` : ''}</div>` : ''}
+
+        <table>
+          <thead><tr><th>Item</th><th>Qty</th>${gift ? '' : '<th>Price</th><th>Total</th>'}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        ${gift
+          ? `<div class="count">${itemCount} item(s) enclosed. This is a gift - prices are intentionally not shown.</div>`
+          : `<div class="totals">
+               <div class="row"><span>Subtotal</span><span>${money(o.subtotal)}</span></div>
+               <div class="row"><span>Shipping</span><span>${money(o.shipping)}</span></div>
+               <div class="row grand"><span>Total</span><span>${money(o.total)}</span></div>
+             </div>`}
+
+        <div class="foot">
+          <div class="ty">Thank you for shopping with ${esc(store)}!</div>
+          <div class="sub">
+            We hope you love your piece. Keep it away from moisture &amp; perfume for lasting shine.<br>
+            Any issue with your order? Contact us within 3 days of delivery${wa ? ' on WhatsApp <strong>' + esc(wa) + '</strong>' : ''}.
+          </div>
+          ${gift ? '' : '<div class="pay-badge">Pay in 3 with KOKO / Mintpay &middot; Cards via PayHere &middot; Cash on Delivery</div>'}
+        </div>
+      </div>
+      <script>window.onload=function(){setTimeout(function(){window.print()},250)}<\/script>
     </body></html>`;
+
     const w = window.open('', '_blank');
     if (w) { w.document.write(html); w.document.close(); }
-    else toast('Allow pop-ups to print', 'error');
+    else toast('Allow pop-ups to print the packing slip', 'error');
   }
 
   /* ---------------------------- enquiries ---------------------------- */
@@ -751,7 +850,16 @@
   });
 
   /* ------------------------------ boot ------------------------------- */
+  let siteCfg = { store_name: 'Zemiki', whatsapp_number: '' };
+  async function loadSiteConfig() {
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) siteCfg = await res.json();
+    } catch (e) { /* keep defaults */ }
+  }
+
   async function boot() {
+    loadSiteConfig();
     loaders.dashboard();
     refreshBadges();
   }
