@@ -17,7 +17,8 @@
         <div>
           <div class="eyebrow">Contact us</div>
           <h2>Questions? Custom orders?</h2>
-          <p style="color:var(--muted)">Send us a message and our team will get back to you. For the fastest response, reach us on WhatsApp.</p>
+          <p style="color:var(--muted)" id="contactIntro">Send us a message and our team will get back to you. For the fastest response, reach us on WhatsApp.</p>
+          <div id="contactDetails" style="margin:16px 0"></div>
           <div id="contactInfo" style="margin-top:20px"></div>
         </div>
         <div class="summary" style="position:static">
@@ -41,6 +42,14 @@
     (function () {
       document.addEventListener('layout:ready', function (e) {
         var cfg = e.detail.config;
+        var c = cfg.contact || {};
+        if (c.intro) { var intro = document.getElementById('contactIntro'); if (intro) intro.textContent = c.intro; }
+        var rows = [];
+        if (c.email) rows.push('<div style="margin-bottom:6px">✉ <a href="mailto:' + Z.escapeHtml(c.email) + '">' + Z.escapeHtml(c.email) + '</a></div>');
+        if (c.phone) rows.push('<div style="margin-bottom:6px">☎ <a href="tel:' + Z.escapeHtml(c.phone.replace(/\s/g, '')) + '">' + Z.escapeHtml(c.phone) + '</a></div>');
+        if (c.address) rows.push('<div style="margin-bottom:6px;color:var(--muted)">📍 ' + Z.escapeHtml(c.address) + '</div>');
+        var det = document.getElementById('contactDetails');
+        if (det) det.innerHTML = rows.join('');
         if (cfg.whatsapp_number) {
           document.getElementById('contactInfo').innerHTML =
             '<a class="btn btn-whatsapp btn-lg" target="_blank" rel="noopener" href="' +

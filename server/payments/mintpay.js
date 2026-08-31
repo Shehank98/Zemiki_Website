@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { mintpayConfig } = require('../settings');
 
 /**
  * Mintpay adapter (Buy Now Pay Later, Sri Lanka).
@@ -16,7 +17,8 @@ const id = 'mintpay';
 const label = 'Mintpay (Split in 3)';
 
 function isConfigured() {
-  return Boolean(process.env.MINTPAY_MERCHANT_ID && process.env.MINTPAY_API_KEY);
+  const c = mintpayConfig();
+  return Boolean(c.merchant_id && c.api_key);
 }
 
 function sign(payload, key) {
@@ -38,9 +40,10 @@ function createSession(order, ctx) {
     };
   }
 
-  const merchantId = process.env.MINTPAY_MERCHANT_ID;
-  const apiKey = process.env.MINTPAY_API_KEY;
-  const baseUrl = process.env.MINTPAY_BASE_URL || 'https://api.mintpay.lk';
+  const cfg = mintpayConfig();
+  const merchantId = cfg.merchant_id;
+  const apiKey = cfg.api_key;
+  const baseUrl = cfg.base_url;
   const amount = Number(order.total).toFixed(2);
 
   const fields = {
@@ -68,8 +71,9 @@ function createSession(order, ctx) {
 }
 
 function verify(body) {
-  const apiKey = process.env.MINTPAY_API_KEY;
-  const merchantId = process.env.MINTPAY_MERCHANT_ID;
+  const cfg = mintpayConfig();
+  const apiKey = cfg.api_key;
+  const merchantId = cfg.merchant_id;
   const orderNumber = body.order_id || body.orderId || null;
   if (!apiKey) return { ok: false, orderNumber, paid: false };
 

@@ -43,6 +43,7 @@
         <button class="nav-item" data-view="orders" title="Orders"><span class="ni-ico">🛍</span><span class="ni-label">Orders</span><span class="badge" id="ordersBadge" hidden></span></button>
         <button class="nav-item" data-view="enquiries" title="Enquiries"><span class="ni-ico">✉</span><span class="ni-label">Enquiries</span><span class="badge" id="enqBadge" hidden></span></button>
         <button class="nav-item" data-view="marketing" title="Marketing"><span class="ni-ico">📣</span><span class="ni-label">Marketing</span></button>
+        <button class="nav-item" data-view="content" title="Content"><span class="ni-ico">✎</span><span class="ni-label">Content</span></button>
         <button class="nav-item" data-view="settings" title="Settings"><span class="ni-ico">⚙</span><span class="ni-label">Settings</span></button>
       </nav>
       <div class="sidebar-foot">
@@ -164,6 +165,77 @@
         </div>
       </section>
 
+      <!-- Content -->
+      <section class="view" id="view-content">
+        <div class="panel">
+          <div class="panel-head"><h2>Store Details</h2></div>
+          <div style="padding:22px;max-width:560px">
+            <div class="field"><label>Store name</label><input id="cStoreName" placeholder="Zemiki"></div>
+            <div class="field"><label>WhatsApp number</label><input id="cWhatsapp" placeholder="94771234567"><div class="hint">Country code + number, no spaces or +. Used for all WhatsApp links.</div></div>
+            <div class="field"><label>Logo image URL</label><input id="cLogo" placeholder="https://... or a Google Drive link"><div class="hint">Paste a link to your logo (or a Drive share link). Leave blank to use the uploaded /assets/logo.png.</div></div>
+            <button class="btn btn-primary" id="saveStore">Save Store Details</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Hero Banner (home page)</h2></div>
+          <div style="padding:22px;max-width:640px">
+            <div class="field"><label>Small label (eyebrow)</label><input id="cHeroEyebrow" placeholder="Handcrafted in Sri Lanka"></div>
+            <div class="field"><label>Headline</label><input id="cHeroTitle" placeholder="Jewelry that tells your story"><div class="hint">The last two words are highlighted in gold automatically.</div></div>
+            <div class="field"><label>Subtitle</label><textarea id="cHeroSubtitle" rows="2"></textarea></div>
+            <div class="grid-2">
+              <div class="field"><label>Button text</label><input id="cHeroCtaText" placeholder="Shop Collection"></div>
+              <div class="field"><label>Button link</label><input id="cHeroCtaLink" placeholder="/shop"></div>
+            </div>
+            <div class="field"><label>Hero image URL</label><input id="cHeroImage" placeholder="https://... image link"></div>
+            <button class="btn btn-primary" id="saveHero">Save Hero</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>About Page</h2></div>
+          <div style="padding:22px;max-width:640px">
+            <div class="field"><label>Title</label><input id="cAboutTitle" placeholder="Timeless design, honest craft"></div>
+            <div class="field"><label>Body text</label><textarea id="cAboutBody" rows="6" placeholder="Tell your story… leave a blank line between paragraphs."></textarea></div>
+            <div class="field"><label>About image URL</label><input id="cAboutImage" placeholder="https://... image link"></div>
+            <button class="btn btn-primary" id="saveAbout">Save About Page</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Contact Page</h2></div>
+          <div style="padding:22px;max-width:640px">
+            <div class="field"><label>Intro text</label><textarea id="cContactIntro" rows="2"></textarea></div>
+            <div class="grid-2">
+              <div class="field"><label>Contact email</label><input id="cContactEmail" type="email" placeholder="hello@zemiki.lk"></div>
+              <div class="field"><label>Contact phone</label><input id="cContactPhone" placeholder="+94 77 123 4567"></div>
+            </div>
+            <div class="field"><label>Address</label><input id="cContactAddress" placeholder="123 Main St, Colombo"></div>
+            <button class="btn btn-primary" id="saveContact">Save Contact Page</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Testimonials</h2>
+            <button class="btn btn-primary" id="addTestimonialBtn">+ Add Testimonial</button>
+          </div>
+          <div id="testimonialsTable"><div class="empty">Loading…</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Instagram / Lookbook Strip</h2></div>
+          <div style="padding:22px;max-width:640px">
+            <div class="field">
+              <label>Image tiles</label>
+              <textarea id="cInstagram" rows="6" placeholder="One per line: image URL, optionally followed by | and a link&#10;https://.../photo1.jpg | https://instagram.com/p/xxxx&#10;https://.../photo2.jpg"></textarea>
+              <div class="hint">One image URL per line. Add <strong>| link</strong> after a URL to make that tile clickable. Leave this empty to auto-show your newest products instead.</div>
+            </div>
+            <button class="btn btn-primary" id="saveInstagram">Save Instagram Strip</button>
+          </div>
+        </div>
+      </section>
+
       <!-- Settings -->
       <section class="view" id="view-settings">
         <div class="panel">
@@ -227,6 +299,37 @@
             <div class="field"><label>KOKO Merchant ID</label><input id="kokoMerchant" placeholder="Your KOKO merchant ID"></div>
             <div class="field"><label>KOKO API Key / Secret</label><input id="kokoKey" type="password" placeholder="Leave blank to keep the saved key"><div class="hint">Stored securely and never shown again. Enter a value only to set or replace it.</div></div>
             <button class="btn btn-primary" id="saveKoko">Save KOKO Credentials</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Mintpay (Split in 3)</h2><span id="mintpayStatus" class="pill grey">-</span></div>
+          <div style="padding:22px;max-width:560px">
+            <div class="field"><label>Mintpay Merchant ID</label><input id="mintpayMerchant" placeholder="Your Mintpay merchant ID"></div>
+            <div class="field"><label>Mintpay API Key</label><input id="mintpayKey" type="password" placeholder="Leave blank to keep the saved key"></div>
+            <button class="btn btn-primary" id="saveMintpay">Save Mintpay Credentials</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>PayHere (Card / Bank)</h2><span id="payhereStatus" class="pill grey">-</span></div>
+          <div style="padding:22px;max-width:560px">
+            <div class="field"><label>PayHere Merchant ID</label><input id="payhereMerchant" placeholder="Your PayHere merchant ID"></div>
+            <div class="field"><label>PayHere Secret</label><input id="payhereSecret" type="password" placeholder="Leave blank to keep the saved secret"></div>
+            <button class="btn btn-primary" id="savePayhere">Save PayHere Credentials</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Admin Password</h2></div>
+          <div style="padding:22px;max-width:520px">
+            <div class="field"><label>Current password</label><input id="pwCurrent" type="password" autocomplete="current-password"></div>
+            <div class="grid-2">
+              <div class="field"><label>New password</label><input id="pwNew" type="password" autocomplete="new-password"></div>
+              <div class="field"><label>Confirm new password</label><input id="pwConfirm" type="password" autocomplete="new-password"></div>
+            </div>
+            <div class="hint" style="margin-bottom:12px">At least 6 characters. You stay signed in after changing it.</div>
+            <button class="btn btn-primary" id="savePassword">Change Password</button>
           </div>
         </div>
 

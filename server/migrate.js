@@ -106,6 +106,17 @@ CREATE TABLE IF NOT EXISTS subscribers (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS testimonials (
+  id          SERIAL PRIMARY KEY,
+  name        TEXT NOT NULL,
+  location    TEXT,
+  rating      INTEGER NOT NULL DEFAULT 5,
+  quote       TEXT NOT NULL,
+  active      BOOLEAN NOT NULL DEFAULT true,
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS district TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS country TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS is_gift BOOLEAN NOT NULL DEFAULT false;
@@ -324,7 +335,35 @@ async function migrate() {
   await seedShippingRates();
   await seedSampleProducts();
   await seedAdmin();
+  await seedTestimonials();
   console.log('[migrate] Schema is up to date.');
+}
+
+// Seed a few starter testimonials once (guarded by a settings marker), so the
+// home page has social proof out of the box; admin can edit/replace them.
+async function seedTestimonials() {
+  try {
+    const marker = await query("SELECT value FROM settings WHERE key = 'testimonials_seeded'");
+    if (marker.rows.length) return;
+    const seed = [
+      ['Dilani P.', 'Colombo', 5, 'The necklace is even more beautiful in person. Delivery was quick and the packaging felt so premium. I keep getting compliments!'],
+      ['Nethmi R.', 'Kandy', 5, "Bought a bridal set for my sister's wedding. Stunning craftsmanship and paying with KOKO made it so easy. Highly recommend Zemiki."],
+      ['Ayesha F.', 'Galle', 5, 'Great quality for the price and lovely customer service on WhatsApp. My earrings arrived next day. Will definitely shop again.'],
+    ];
+    for (let i = 0; i < seed.length; i++) {
+      const [name, location, rating, quote] = seed[i];
+      await query(
+        'INSERT INTO testimonials (name, location, rating, quote, active, sort_order) VALUES ($1,$2,$3,$4,true,$5)',
+        [name, location, rating, quote, i]
+      );
+    }
+    await query(
+      "INSERT INTO settings (key, value) VALUES ('testimonials_seeded','true') ON CONFLICT (key) DO UPDATE SET value = 'true'"
+    );
+    console.log('[migrate] Seeded starter testimonials.');
+  } catch (e) {
+    /* non-fatal */
+  }
 }
 
 module.exports = { migrate, slugify };

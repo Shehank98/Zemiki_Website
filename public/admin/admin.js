@@ -93,7 +93,7 @@
   }
 
   /* --------------------------- navigation ---------------------------- */
-  const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', orders: 'Orders', enquiries: 'Enquiries', marketing: 'Marketing', settings: 'Settings' };
+  const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', orders: 'Orders', enquiries: 'Enquiries', marketing: 'Marketing', content: 'Content', settings: 'Settings' };
   const loaders = {};
   $$('.nav-item[data-view]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -951,13 +951,21 @@
       $('#linkTiktok').value = s.tiktok_url || '';
       $('#linkFacebook').value = s.facebook_url || '';
       $('#kokoMerchant').value = s.koko_merchant_id || '';
-      const ks = $('#kokoStatus');
-      if (s.koko_merchant_id && s.koko_api_key_set) { ks.className = 'pill green'; ks.textContent = 'Live'; }
-      else { ks.className = 'pill gold'; ks.textContent = 'Test mode'; }
+      $('#mintpayMerchant').value = s.mintpay_merchant_id || '';
+      $('#payhereMerchant').value = s.payhere_merchant_id || '';
+      payStatus('#kokoStatus', s.koko_merchant_id, s.koko_api_key_set);
+      payStatus('#mintpayStatus', s.mintpay_merchant_id, s.mintpay_api_key_set);
+      payStatus('#payhereStatus', s.payhere_merchant_id, s.payhere_secret_set);
     } catch (e) { toast(e.message, 'error'); }
     loadPaymentMethods();
     loadDistricts();
   };
+
+  function payStatus(sel, merchant, keySet) {
+    const el = $(sel); if (!el) return;
+    if (merchant && keySet) { el.className = 'pill green'; el.textContent = 'Live'; }
+    else { el.className = 'pill gold'; el.textContent = 'Test mode'; }
+  }
 
   function wireSave(btnSel, label, buildBody) {
     $(btnSel).addEventListener('click', async () => {
@@ -977,15 +985,138 @@
     tiktok_url: $('#linkTiktok').value.trim(),
     facebook_url: $('#linkFacebook').value.trim(),
   }));
-  $('#saveKoko').addEventListener('click', async () => {
-    const btn = $('#saveKoko'); btn.disabled = true; btn.textContent = 'Saving…';
-    const body = { koko_merchant_id: $('#kokoMerchant').value.trim() };
-    const key = $('#kokoKey').value.trim();
-    if (key) body.koko_api_key = key; // only overwrite the secret when a new one is typed
-    try { await api('/settings', { method: 'PUT', body }); toast('KOKO credentials saved', 'success'); $('#kokoKey').value = ''; loaders.settings(); loadPaymentMethods(); }
-    catch (e) { toast(e.message, 'error'); }
-    btn.disabled = false; btn.textContent = 'Save KOKO Credentials';
+  // Generic payment-credential saver (secret only overwritten when typed).
+  function wirePaymentSave(btnSel, label, merchantSel, merchantKey, secretSel, secretKey) {
+    $(btnSel).addEventListener('click', async () => {
+      const btn = $(btnSel); const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Saving…';
+      const body = {}; body[merchantKey] = $(merchantSel).value.trim();
+      const secret = $(secretSel).value.trim();
+      if (secret) body[secretKey] = secret;
+      try { await api('/settings', { method: 'PUT', body }); toast(label + ' saved', 'success'); $(secretSel).value = ''; loaders.settings(); loadPaymentMethods(); }
+      catch (e) { toast(e.message, 'error'); }
+      btn.disabled = false; btn.textContent = orig;
+    });
+  }
+  wirePaymentSave('#saveKoko', 'KOKO credentials', '#kokoMerchant', 'koko_merchant_id', '#kokoKey', 'koko_api_key');
+  wirePaymentSave('#saveMintpay', 'Mintpay credentials', '#mintpayMerchant', 'mintpay_merchant_id', '#mintpayKey', 'mintpay_api_key');
+  wirePaymentSave('#savePayhere', 'PayHere credentials', '#payhereMerchant', 'payhere_merchant_id', '#payhereSecret', 'payhere_secret');
+
+  $('#savePassword').addEventListener('click', async () => {
+    const cur = $('#pwCurrent').value, nw = $('#pwNew').value, cf = $('#pwConfirm').value;
+    if (!cur || !nw) { toast('Enter your current and new password', 'error'); return; }
+    if (nw.length < 6) { toast('New password must be at least 6 characters', 'error'); return; }
+    if (nw !== cf) { toast('New passwords do not match', 'error'); return; }
+    const btn = $('#savePassword'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await api('/change-password', { method: 'POST', body: { current_password: cur, new_password: nw } });
+      toast('Password changed', 'success');
+      $('#pwCurrent').value = $('#pwNew').value = $('#pwConfirm').value = '';
+    } catch (e) { toast(e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Change Password';
   });
+
+  /* ----------------------------- content ----------------------------- */
+  loaders.content = async function () {
+    try {
+      const s = await api('/settings');
+      const setv = (id, v) => { const el = $(id); if (el) el.value = v == null ? '' : v; };
+      setv('#cStoreName', s.store_name); setv('#cWhatsapp', s.whatsapp_number); setv('#cLogo', s.logo_url);
+      setv('#cHeroEyebrow', s.hero_eyebrow); setv('#cHeroTitle', s.hero_title); setv('#cHeroSubtitle', s.hero_subtitle);
+      setv('#cHeroCtaText', s.hero_cta_text); setv('#cHeroCtaLink', s.hero_cta_link); setv('#cHeroImage', s.hero_image);
+      setv('#cAboutTitle', s.about_title); setv('#cAboutBody', s.about_body); setv('#cAboutImage', s.about_image);
+      setv('#cContactIntro', s.contact_intro); setv('#cContactEmail', s.contact_email);
+      setv('#cContactPhone', s.contact_phone); setv('#cContactAddress', s.contact_address);
+      setv('#cInstagram', s.instagram_images);
+    } catch (e) { toast(e.message, 'error'); }
+    loadTestimonials();
+  };
+
+  wireSave('#saveStore', 'Store details', () => ({
+    store_name: $('#cStoreName').value.trim(),
+    whatsapp_number: $('#cWhatsapp').value.trim(),
+    logo_url: $('#cLogo').value.trim(),
+  }));
+  wireSave('#saveHero', 'Hero', () => ({
+    hero_eyebrow: $('#cHeroEyebrow').value, hero_title: $('#cHeroTitle').value,
+    hero_subtitle: $('#cHeroSubtitle').value, hero_cta_text: $('#cHeroCtaText').value,
+    hero_cta_link: $('#cHeroCtaLink').value, hero_image: $('#cHeroImage').value.trim(),
+  }));
+  wireSave('#saveAbout', 'About page', () => ({
+    about_title: $('#cAboutTitle').value, about_body: $('#cAboutBody').value, about_image: $('#cAboutImage').value.trim(),
+  }));
+  wireSave('#saveContact', 'Contact page', () => ({
+    contact_intro: $('#cContactIntro').value, contact_email: $('#cContactEmail').value.trim(),
+    contact_phone: $('#cContactPhone').value.trim(), contact_address: $('#cContactAddress').value.trim(),
+  }));
+  wireSave('#saveInstagram', 'Instagram strip', () => ({ instagram_images: $('#cInstagram').value }));
+
+  /* --------------------------- testimonials -------------------------- */
+  async function loadTestimonials() {
+    const el = $('#testimonialsTable');
+    try {
+      const list = await api('/testimonials');
+      el.innerHTML = list.length ? `<table><thead><tr>
+        <th>Name</th><th>Location</th><th>Rating</th><th>Quote</th><th>Active</th><th></th></tr></thead><tbody>${
+        list.map((t) => `<tr>
+          <td><strong>${esc(t.name)}</strong></td>
+          <td>${esc(t.location || '-')}</td>
+          <td>${'★'.repeat(Math.max(1, Math.min(5, t.rating)))}</td>
+          <td style="max-width:320px">${esc(t.quote)}</td>
+          <td>${t.active ? '<span class="pill green">Shown</span>' : '<span class="pill grey">Hidden</span>'}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <button class="btn btn-outline btn-sm" data-edit-tst="${t.id}">Edit</button>
+            <button class="btn btn-danger btn-sm" data-del-tst="${t.id}">Delete</button>
+          </td></tr>`).join('')}</tbody></table>`
+        : '<div class="empty">No testimonials yet. Add one to show it on the home page.</div>';
+      window.__testimonials = list;
+      $$('[data-edit-tst]', el).forEach((b) => b.addEventListener('click', () => editTestimonial(+b.dataset.editTst)));
+      $$('[data-del-tst]', el).forEach((b) => b.addEventListener('click', () => deleteTestimonial(+b.dataset.delTst)));
+    } catch (e) { el.innerHTML = '<div class="empty">Could not load testimonials.</div>'; }
+  }
+
+  function testimonialForm(t) {
+    t = t || {};
+    return `
+      <div class="grid-2">
+        <div class="field"><label>Customer name *</label><input id="tstName" value="${esc(t.name || '')}"></div>
+        <div class="field"><label>Location</label><input id="tstLocation" value="${esc(t.location || '')}" placeholder="e.g. Colombo"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Rating</label><select id="tstRating">${[5, 4, 3, 2, 1].map((n) => `<option value="${n}" ${(+t.rating || 5) === n ? 'selected' : ''}>${'★'.repeat(n)} (${n})</option>`).join('')}</select></div>
+        <div class="field"><label>Sort order</label><input id="tstSort" type="number" value="${t.sort_order || 0}"></div>
+      </div>
+      <div class="field"><label>Quote *</label><textarea id="tstQuote" rows="4">${esc(t.quote || '')}</textarea></div>
+      <div class="check-row"><label class="toggle"><input type="checkbox" id="tstActive" ${t.active === false ? '' : 'checked'}><span class="track"></span></label><label for="tstActive" style="margin:0">Show on the home page</label></div>`;
+  }
+
+  $('#addTestimonialBtn').addEventListener('click', () => {
+    modal.open('Add Testimonial', testimonialForm(), '<button class="btn btn-outline" id="tstCancel">Cancel</button><button class="btn btn-primary" id="tstSave">Add</button>');
+    $('#tstCancel').addEventListener('click', modal.close);
+    $('#tstSave').addEventListener('click', () => saveTestimonial(null));
+  });
+  function editTestimonial(id) {
+    const t = (window.__testimonials || []).find((x) => x.id === id);
+    modal.open('Edit Testimonial', testimonialForm(t), '<button class="btn btn-outline" id="tstCancel">Cancel</button><button class="btn btn-primary" id="tstSave">Save</button>');
+    $('#tstCancel').addEventListener('click', modal.close);
+    $('#tstSave').addEventListener('click', () => saveTestimonial(id));
+  }
+  async function saveTestimonial(id) {
+    const body = {
+      name: $('#tstName').value.trim(), location: $('#tstLocation').value.trim(),
+      rating: +$('#tstRating').value, sort_order: +$('#tstSort').value,
+      quote: $('#tstQuote').value.trim(), active: $('#tstActive').checked,
+    };
+    if (!body.name || !body.quote) { toast('Name and quote are required', 'error'); return; }
+    try {
+      await api('/testimonials' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body });
+      modal.close(); toast('Testimonial saved', 'success'); loadTestimonials();
+    } catch (e) { toast(e.message, 'error'); }
+  }
+  async function deleteTestimonial(id) {
+    if (!confirm('Delete this testimonial?')) return;
+    try { await api('/testimonials/' + id, { method: 'DELETE' }); toast('Deleted', 'success'); loadTestimonials(); }
+    catch (e) { toast(e.message, 'error'); }
+  }
 
   $('#saveAnnouncement').addEventListener('click', async () => {
     const btn = $('#saveAnnouncement'); btn.disabled = true; btn.textContent = 'Saving…';

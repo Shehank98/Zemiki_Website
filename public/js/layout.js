@@ -46,7 +46,7 @@
       <header class="site-header">
         <div class="wrap header-inner">
           <a class="brand" href="/" aria-label="${Z.escapeHtml(cfg.store_name || 'Zemiki')}">
-            <img class="brand-logo" src="/assets/logo.png" alt="${Z.escapeHtml(cfg.store_name || 'Zemiki')}" onerror="this.remove();var f=document.getElementById('brandFallback');if(f)f.hidden=false">
+            <img class="brand-logo" src="${Z.escapeHtml(cfg.logo_url || '/assets/logo.png')}" alt="${Z.escapeHtml(cfg.store_name || 'Zemiki')}" onerror="this.remove();var f=document.getElementById('brandFallback');if(f)f.hidden=false">
             <span id="brandFallback" class="brand-fallback" hidden>${brandMark}${cfg.store_name || 'Zemiki'}</span>
           </a>
           <nav class="main-nav">${navHtml}</nav>
@@ -120,7 +120,7 @@
       <div class="wrap footer-grid">
         <div class="footer-brand">
           <a class="brand" href="/" aria-label="${Z.escapeHtml(cfg.store_name || 'Zemiki')}">
-            <img class="footer-logo" src="/assets/logo.png" alt="${Z.escapeHtml(cfg.store_name || 'Zemiki')}" onerror="this.remove();var f=this.parentNode.querySelector('.brand-fallback');if(f)f.hidden=false">
+            <img class="footer-logo" src="${Z.escapeHtml(cfg.logo_url || '/assets/logo.png')}" alt="${Z.escapeHtml(cfg.store_name || 'Zemiki')}" onerror="this.remove();var f=this.parentNode.querySelector('.brand-fallback');if(f)f.hidden=false">
             <span class="brand-fallback" hidden>${brandMark}${cfg.store_name || 'Zemiki'}</span>
           </a>
           <p>Handcrafted jewelry that celebrates every moment. Ethically made, elegantly designed, delivered across Sri Lanka.</p>

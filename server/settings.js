@@ -6,11 +6,16 @@ const DEFAULT_ANNOUNCEMENT =
   'Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay & PayHere';
 
 // Typed settings schema. Each key knows how to coerce and default itself.
+// Text keys may set `max` to allow longer values (default cap 300 chars).
 const SETTINGS_SCHEMA = {
   shipping_flat: { type: 'number', def: () => Number(process.env.SHIPPING_FLAT_LKR || 350) },
   free_shipping_over: { type: 'number', def: () => Number(process.env.FREE_SHIPPING_OVER_LKR || 0) },
   announcement_text: { type: 'text', def: () => DEFAULT_ANNOUNCEMENT },
   announcement_enabled: { type: 'bool', def: () => true },
+  // Store identity
+  store_name: { type: 'text', def: () => process.env.STORE_NAME || 'Zemiki' },
+  whatsapp_number: { type: 'text', def: () => process.env.WHATSAPP_NUMBER || '' },
+  logo_url: { type: 'text', max: 600, def: () => '' },
   // International orders
   intl_enabled: { type: 'bool', def: () => false },
   intl_shipping_flat: { type: 'number', def: () => Number(process.env.INTL_SHIPPING_LKR || 0) },
@@ -18,20 +23,65 @@ const SETTINGS_SCHEMA = {
   instagram_url: { type: 'text', def: () => process.env.INSTAGRAM_URL || '' },
   tiktok_url: { type: 'text', def: () => process.env.TIKTOK_URL || '' },
   facebook_url: { type: 'text', def: () => process.env.FACEBOOK_URL || '' },
-  // KOKO payment credentials (settable from the admin panel; env is the fallback)
+  // Hero banner (home page)
+  hero_eyebrow: { type: 'text', def: () => 'Handcrafted in Sri Lanka' },
+  hero_title: { type: 'text', def: () => 'Jewelry that tells your story' },
+  hero_subtitle: { type: 'text', max: 500, def: () => 'Discover timeless necklaces, earrings and bridal sets - designed to be treasured and made to be worn every day.' },
+  hero_image: { type: 'text', max: 600, def: () => '' },
+  hero_cta_text: { type: 'text', def: () => 'Shop Collection' },
+  hero_cta_link: { type: 'text', def: () => '/shop' },
+  // About page
+  about_title: { type: 'text', def: () => 'Timeless design, honest craft' },
+  about_body: { type: 'text', max: 4000, def: () => '' },
+  about_image: { type: 'text', max: 600, def: () => '' },
+  // Contact page
+  contact_intro: { type: 'text', max: 800, def: () => 'Send us a message and our team will get back to you. For the fastest response, reach us on WhatsApp.' },
+  contact_email: { type: 'text', def: () => '' },
+  contact_phone: { type: 'text', def: () => '' },
+  contact_address: { type: 'text', max: 400, def: () => '' },
+  // Instagram / lookbook strip (newline-separated "imageUrl" or "imageUrl | linkUrl")
+  instagram_images: { type: 'text', max: 4000, def: () => '' },
+  // Payment credentials (settable from the admin panel; env is the fallback)
   koko_merchant_id: { type: 'text', def: () => process.env.KOKO_MERCHANT_ID || '' },
   koko_api_key: { type: 'text', def: () => process.env.KOKO_API_KEY || '' },
+  mintpay_merchant_id: { type: 'text', def: () => process.env.MINTPAY_MERCHANT_ID || '' },
+  mintpay_api_key: { type: 'text', def: () => process.env.MINTPAY_API_KEY || '' },
+  payhere_merchant_id: { type: 'text', def: () => process.env.PAYHERE_MERCHANT_ID || '' },
+  payhere_secret: { type: 'text', def: () => process.env.PAYHERE_SECRET || '' },
 };
 
-// In-memory cache of KOKO credentials so the (synchronous) payment adapter can
-// read the latest admin-saved values without an async DB call per request.
-let _kokoCache = null;
+// In-memory cache of payment credentials so the (synchronous) payment adapters
+// can read the latest admin-saved values without an async DB call per request.
+let _payCache = {};
+function _refreshPayCache(out) {
+  _payCache = {
+    koko: { merchant_id: out.koko_merchant_id, api_key: out.koko_api_key },
+    mintpay: { merchant_id: out.mintpay_merchant_id, api_key: out.mintpay_api_key },
+    payhere: { merchant_id: out.payhere_merchant_id, secret: out.payhere_secret },
+  };
+}
 function kokoConfig() {
-  const c = _kokoCache || {};
+  const c = _payCache.koko || {};
   return {
-    merchant_id: c.koko_merchant_id || process.env.KOKO_MERCHANT_ID || '',
-    api_key: c.koko_api_key || process.env.KOKO_API_KEY || '',
+    merchant_id: c.merchant_id || process.env.KOKO_MERCHANT_ID || '',
+    api_key: c.api_key || process.env.KOKO_API_KEY || '',
     base_url: process.env.KOKO_BASE_URL || 'https://ipg.koko.lk',
+  };
+}
+function mintpayConfig() {
+  const c = _payCache.mintpay || {};
+  return {
+    merchant_id: c.merchant_id || process.env.MINTPAY_MERCHANT_ID || '',
+    api_key: c.api_key || process.env.MINTPAY_API_KEY || '',
+    base_url: process.env.MINTPAY_BASE_URL || 'https://api.mintpay.lk',
+  };
+}
+function payhereConfig() {
+  const c = _payCache.payhere || {};
+  return {
+    merchant_id: c.merchant_id || process.env.PAYHERE_MERCHANT_ID || '',
+    secret: c.secret || process.env.PAYHERE_SECRET || '',
+    sandbox: process.env.PAYHERE_SANDBOX === 'true',
   };
 }
 
@@ -53,7 +103,7 @@ async function getSettings() {
     else if (spec.type === 'bool') out[key] = raw === 'true';
     else out[key] = raw;
   }
-  _kokoCache = { koko_merchant_id: out.koko_merchant_id, koko_api_key: out.koko_api_key };
+  _refreshPayCache(out);
   return out;
 }
 
@@ -66,7 +116,7 @@ async function updateSettings(patch) {
     let value;
     if (spec.type === 'number') value = String(Math.max(0, Number(patch[key]) || 0));
     else if (spec.type === 'bool') value = patch[key] ? 'true' : 'false';
-    else value = String(patch[key]).slice(0, 300);
+    else value = String(patch[key]).slice(0, spec.max || 300);
     await query(
       'INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value',
       [key, value]
@@ -198,6 +248,8 @@ module.exports = {
   updateSettings,
   computeShipping,
   kokoConfig,
+  mintpayConfig,
+  payhereConfig,
   getAllDistricts,
   getDistricts,
   getDistrictFee,

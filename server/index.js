@@ -38,9 +38,19 @@ app.get('/api/config', async (req, res, next) => {
     const toggles = await getPaymentToggles();
     // Only surface methods the admin has enabled.
     const methods = listMethods().filter((m) => toggles[m.id]);
+    const igImages = String(settings.instagram_images || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [image, link] = line.split('|').map((s) => s.trim());
+        return { image, link: link || '' };
+      })
+      .filter((t) => t.image);
     res.json({
-      store_name: process.env.STORE_NAME || 'Zemiki',
-      whatsapp_number: process.env.WHATSAPP_NUMBER || '',
+      store_name: settings.store_name || process.env.STORE_NAME || 'Zemiki',
+      whatsapp_number: settings.whatsapp_number || process.env.WHATSAPP_NUMBER || '',
+      logo_url: settings.logo_url || '',
       currency: 'LKR',
       currency_symbol: 'Rs.',
       shipping_flat: settings.shipping_flat,
@@ -52,6 +62,26 @@ app.get('/api/config', async (req, res, next) => {
         tiktok: settings.tiktok_url || '',
         facebook: settings.facebook_url || '',
       },
+      hero: {
+        eyebrow: settings.hero_eyebrow || '',
+        title: settings.hero_title || '',
+        subtitle: settings.hero_subtitle || '',
+        image: settings.hero_image || '',
+        cta_text: settings.hero_cta_text || '',
+        cta_link: settings.hero_cta_link || '/shop',
+      },
+      about: {
+        title: settings.about_title || '',
+        body: settings.about_body || '',
+        image: settings.about_image || '',
+      },
+      contact: {
+        intro: settings.contact_intro || '',
+        email: settings.contact_email || '',
+        phone: settings.contact_phone || '',
+        address: settings.contact_address || '',
+      },
+      instagram_images: igImages,
       payment_methods: methods,
     });
   } catch (err) {
@@ -72,6 +102,7 @@ app.use('/api/orders', writeLimiter, require('./routes/orders'));
 app.use('/api/enquiries', writeLimiter, require('./routes/enquiries'));
 app.use('/api/subscribe', writeLimiter, require('./routes/subscribe'));
 app.use('/api/shipping', require('./routes/shipping'));
+app.use('/api/testimonials', require('./routes/testimonials'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/admin/login', loginLimiter);
 app.use('/api/admin', require('./routes/admin'));

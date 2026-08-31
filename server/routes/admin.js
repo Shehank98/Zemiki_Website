@@ -114,9 +114,11 @@ router.get('/analytics', async (req, res, next) => {
 router.get('/settings', async (req, res, next) => {
   try {
     const s = await getSettings();
-    // Never echo the raw KOKO secret back to the browser; expose only whether it is set.
-    const { koko_api_key, ...safe } = s;
+    // Never echo raw payment secrets back to the browser; expose only whether each is set.
+    const { koko_api_key, mintpay_api_key, payhere_secret, ...safe } = s;
     safe.koko_api_key_set = Boolean(koko_api_key);
+    safe.mintpay_api_key_set = Boolean(mintpay_api_key);
+    safe.payhere_secret_set = Boolean(payhere_secret);
     res.json(safe);
   } catch (err) {
     next(err);
@@ -485,6 +487,93 @@ router.post('/broadcast', async (req, res, next) => {
     if (result.skipped) return res.status(400).json({ error: 'Email is not configured (set APPSCRIPT_URL)' });
     if (!result.ok) return res.status(502).json({ error: 'Mail service did not accept the message' });
     res.json({ ok: true, recipients: Array.from(new Set(recipients.filter(Boolean))).length });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* -------------------------- Testimonials ------------------------ */
+
+router.get('/testimonials', async (req, res, next) => {
+  try {
+    const { rows } = await query('SELECT * FROM testimonials ORDER BY sort_order, id');
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+function parseTestimonial(body) {
+  return {
+    name: String((body.name || '').trim()).slice(0, 120),
+    location: String((body.location || '').trim()).slice(0, 120),
+    rating: Math.min(5, Math.max(1, parseInt(body.rating, 10) || 5)),
+    quote: String((body.quote || '').trim()).slice(0, 800),
+    active: body.active === undefined ? true : Boolean(body.active),
+    sort_order: parseInt(body.sort_order, 10) || 0,
+  };
+}
+
+router.post('/testimonials', async (req, res, next) => {
+  try {
+    const t = parseTestimonial(req.body || {});
+    if (!t.name || !t.quote) return res.status(400).json({ error: 'Name and quote are required' });
+    const { rows } = await query(
+      `INSERT INTO testimonials (name, location, rating, quote, active, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [t.name, t.location, t.rating, t.quote, t.active, t.sort_order]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/testimonials/:id', async (req, res, next) => {
+  try {
+    const t = parseTestimonial(req.body || {});
+    if (!t.name || !t.quote) return res.status(400).json({ error: 'Name and quote are required' });
+    const { rows } = await query(
+      `UPDATE testimonials SET name=$1, location=$2, rating=$3, quote=$4, active=$5, sort_order=$6
+        WHERE id=$7 RETURNING *`,
+      [t.name, t.location, t.rating, t.quote, t.active, t.sort_order, req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/testimonials/:id', async (req, res, next) => {
+  try {
+    await query('DELETE FROM testimonials WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ---------------------------- Account --------------------------- */
+
+// Change the admin password (requires the current password).
+router.post('/change-password', async (req, res, next) => {
+  try {
+    const { current_password, new_password } = req.body || {};
+    if (!current_password || !new_password) {
+      return res.status(400).json({ error: 'Current and new password are required' });
+    }
+    if (String(new_password).length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+    const { rows } = await query('SELECT * FROM admin_users WHERE username = $1', [req.admin.username]);
+    const user = rows[0];
+    if (!user || !(await bcrypt.compare(current_password, user.password_hash))) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    const hash = await bcrypt.hash(String(new_password), 10);
+    await query('UPDATE admin_users SET password_hash = $1 WHERE id = $2', [hash, user.id]);
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

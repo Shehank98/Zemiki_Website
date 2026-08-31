@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { payhereConfig } = require('../settings');
 
 /**
  * PayHere adapter (cards / bank, Sri Lanka).
@@ -16,11 +17,12 @@ const id = 'payhere';
 const label = 'PayHere (Card / Bank)';
 
 function isConfigured() {
-  return Boolean(process.env.PAYHERE_MERCHANT_ID && process.env.PAYHERE_SECRET);
+  const c = payhereConfig();
+  return Boolean(c.merchant_id && c.secret);
 }
 
 function isSandbox() {
-  return process.env.PAYHERE_SANDBOX === 'true' || !isConfigured();
+  return payhereConfig().sandbox || !isConfigured();
 }
 
 function md5(str) {
@@ -49,8 +51,9 @@ function createSession(order, ctx) {
     };
   }
 
-  const merchantId = process.env.PAYHERE_MERCHANT_ID;
-  const secret = process.env.PAYHERE_SECRET;
+  const cfg = payhereConfig();
+  const merchantId = cfg.merchant_id;
+  const secret = cfg.secret;
   const amount = Number(order.total).toFixed(2);
   const currency = 'LKR';
 
@@ -95,7 +98,7 @@ function createSession(order, ctx) {
  * @returns {{ ok: boolean, orderNumber: string|null, paid: boolean }}
  */
 function verify(body) {
-  const secret = process.env.PAYHERE_SECRET;
+  const secret = payhereConfig().secret;
   if (!secret) return { ok: false, orderNumber: body.order_id || null, paid: false };
 
   const local = md5(
