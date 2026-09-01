@@ -26,10 +26,36 @@
       const cta = document.getElementById('heroCta');
       if (cta) { if (h.cta_text) cta.textContent = h.cta_text; if (h.cta_link) cta.href = h.cta_link; }
     }
-    if (h.image) {
+    const images = (h.images && h.images.length) ? h.images : (h.image ? [h.image] : []);
+    if (images.length >= 2) buildHeroSlider(images);
+    else if (images.length === 1) {
       const img = document.getElementById('heroImage');
-      if (img) img.src = h.image;
+      if (img) img.src = images[0];
     }
+  }
+
+  // Build an auto-rotating crossfade slider (with dots) inside the hero art frame.
+  let heroTimer = null;
+  function buildHeroSlider(images) {
+    const art = document.querySelector('.hero-art');
+    if (!art) return;
+    art.innerHTML =
+      images.map((src, i) =>
+        `<img class="hero-slide ${i === 0 ? 'active' : ''}" src="${Z.escapeHtml(src)}" alt="Zemiki jewelry" onerror="this.remove()">`).join('') +
+      `<div class="hero-dots">${images.map((_, i) =>
+        `<button type="button" data-i="${i}" class="${i === 0 ? 'active' : ''}" aria-label="Slide ${i + 1}"></button>`).join('')}</div>`;
+    const slides = Array.from(art.querySelectorAll('.hero-slide'));
+    const dots = Array.from(art.querySelectorAll('.hero-dots button'));
+    let idx = 0;
+    const show = (n) => {
+      idx = (n + slides.length) % slides.length;
+      slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    };
+    const start = () => { stop(); heroTimer = setInterval(() => show(idx + 1), 5000); };
+    const stop = () => { if (heroTimer) clearInterval(heroTimer); };
+    dots.forEach((d) => d.addEventListener('click', () => { show(+d.dataset.i); start(); }));
+    start();
   }
 
   // Admin-managed testimonials (falls back to the static ones on empty/error).

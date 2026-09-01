@@ -165,6 +165,7 @@
       { label: 'Customer', key: 'customer_name' },
       { label: 'Phone', key: 'phone' },
       { label: 'Email', key: 'email' },
+      { label: 'Birthday', key: 'birthday' },
       { label: 'Country', get: (o) => o.country || 'Sri Lanka' },
       { label: 'District', key: 'district' },
       { label: 'City', key: 'city' },
@@ -698,6 +699,7 @@
             <div class="od-label">Customer</div>
             <div class="od-value"><strong>${esc(o.customer_name)}</strong></div>
             <div class="od-value">${esc(o.phone)}${o.email ? ' · ' + esc(o.email) : ''}</div>
+            ${o.birthday ? `<div class="od-value">🎂 Birthday: ${esc(o.birthday)}</div>` : ''}
             <div style="margin-top:8px">${contact}</div>
           </div>
           <div>
@@ -953,6 +955,9 @@
       $('#kokoMerchant').value = s.koko_merchant_id || '';
       $('#mintpayMerchant').value = s.mintpay_merchant_id || '';
       $('#payhereMerchant').value = s.payhere_merchant_id || '';
+      ['bank1_bank', 'bank1_holder', 'bank1_account', 'bank1_branch', 'bank1_code',
+       'bank2_bank', 'bank2_holder', 'bank2_account', 'bank2_branch', 'bank2_code']
+        .forEach((k) => { const el = $('#' + k); if (el) el.value = s[k] || ''; });
       payStatus('#kokoStatus', s.koko_merchant_id, s.koko_api_key_set);
       payStatus('#mintpayStatus', s.mintpay_merchant_id, s.mintpay_api_key_set);
       payStatus('#payhereStatus', s.payhere_merchant_id, s.payhere_secret_set);
@@ -980,6 +985,13 @@
     intl_enabled: $('#intlEnabled').checked,
     intl_shipping_flat: parseFloat($('#intlFlat').value) || 0,
   }));
+  wireSave('#saveBanks', 'Bank accounts', () => {
+    const body = {};
+    ['bank1_bank', 'bank1_holder', 'bank1_account', 'bank1_branch', 'bank1_code',
+     'bank2_bank', 'bank2_holder', 'bank2_account', 'bank2_branch', 'bank2_code']
+      .forEach((k) => { body[k] = ($('#' + k).value || '').trim(); });
+    return body;
+  });
   wireSave('#saveLinks', 'Links', () => ({
     instagram_url: $('#linkInstagram').value.trim(),
     tiktok_url: $('#linkTiktok').value.trim(),
@@ -1022,7 +1034,8 @@
       const setv = (id, v) => { const el = $(id); if (el) el.value = v == null ? '' : v; };
       setv('#cStoreName', s.store_name); setv('#cWhatsapp', s.whatsapp_number); setv('#cLogo', s.logo_url);
       setv('#cHeroEyebrow', s.hero_eyebrow); setv('#cHeroTitle', s.hero_title); setv('#cHeroSubtitle', s.hero_subtitle);
-      setv('#cHeroCtaText', s.hero_cta_text); setv('#cHeroCtaLink', s.hero_cta_link); setv('#cHeroImage', s.hero_image);
+      setv('#cHeroCtaText', s.hero_cta_text); setv('#cHeroCtaLink', s.hero_cta_link);
+      setv('#cHeroImage', s.hero_image); setv('#cHeroImages', s.hero_images);
       setv('#cAboutTitle', s.about_title); setv('#cAboutBody', s.about_body); setv('#cAboutImage', s.about_image);
       setv('#cContactIntro', s.contact_intro); setv('#cContactEmail', s.contact_email);
       setv('#cContactPhone', s.contact_phone); setv('#cContactAddress', s.contact_address);
@@ -1040,6 +1053,7 @@
     hero_eyebrow: $('#cHeroEyebrow').value, hero_title: $('#cHeroTitle').value,
     hero_subtitle: $('#cHeroSubtitle').value, hero_cta_text: $('#cHeroCtaText').value,
     hero_cta_link: $('#cHeroCtaLink').value, hero_image: $('#cHeroImage').value.trim(),
+    hero_images: $('#cHeroImages').value,
   }));
   wireSave('#saveAbout', 'About page', () => ({
     about_title: $('#cAboutTitle').value, about_body: $('#cAboutBody').value, about_image: $('#cAboutImage').value.trim(),

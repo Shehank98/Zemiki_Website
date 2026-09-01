@@ -121,6 +121,7 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS district TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS country TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS is_gift BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift_message TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS birthday TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured);

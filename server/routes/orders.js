@@ -16,7 +16,7 @@ function genOrderNumber() {
   return `ZM${ymd}-${rand}`;
 }
 
-const VALID_METHODS = ['koko', 'mintpay', 'payhere', 'cod', 'whatsapp'];
+const VALID_METHODS = ['koko', 'mintpay', 'payhere', 'bank', 'cod', 'whatsapp'];
 
 /**
  * POST /api/orders
@@ -82,14 +82,15 @@ router.post('/', async (req, res, next) => {
 
     const isGift = Boolean(customer.is_gift);
     const giftMessage = isGift ? (customer.gift_message || '').slice(0, 500) : null;
+    const birthday = customer.birthday ? String(customer.birthday).slice(0, 20) : null;
 
     const { order, savedItems } = await withTransaction(async (client) => {
       const { rows } = await client.query(
         `INSERT INTO orders
            (order_number, customer_name, phone, email, address, city, district, country, notes,
             subtotal, shipping, total, payment_method, payment_status, order_status,
-            is_gift, gift_message)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending','new',$14,$15)
+            is_gift, gift_message, birthday)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending','new',$14,$15,$16)
          RETURNING *`,
         [
           orderNumber,
@@ -107,6 +108,7 @@ router.post('/', async (req, res, next) => {
           method,
           isGift,
           giftMessage,
+          birthday,
         ]
       );
       const created = rows[0];

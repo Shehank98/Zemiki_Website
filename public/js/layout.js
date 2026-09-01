@@ -120,7 +120,7 @@
       <div class="wrap footer-grid">
         <div class="footer-brand">
           <a class="brand" href="/" aria-label="${Z.escapeHtml(cfg.store_name || 'Zemiki')}">
-            <img class="footer-logo" src="${Z.escapeHtml(cfg.logo_url || '/assets/logo.png')}" alt="${Z.escapeHtml(cfg.store_name || 'Zemiki')}" onerror="this.remove();var f=this.parentNode.querySelector('.brand-fallback');if(f)f.hidden=false">
+            <img class="footer-logo" src="${Z.escapeHtml(cfg.logo_url || '/assets/logo.png')}" alt="${Z.escapeHtml(cfg.store_name || 'Zemiki')}" onerror="var f=this.parentNode&&this.parentNode.querySelector('.brand-fallback');if(f)f.hidden=false;this.remove()">
             <span class="brand-fallback" hidden>${brandMark}${cfg.store_name || 'Zemiki'}</span>
           </a>
           <p>Handcrafted jewelry that celebrates every moment. Ethically made, elegantly designed, delivered across Sri Lanka.</p>

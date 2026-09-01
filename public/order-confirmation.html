@@ -19,6 +19,7 @@
         <h1>Thank you!</h1>
         <p style="color:var(--muted)">Your order has been received. We'll be in touch shortly to confirm delivery.</p>
         <div class="ordernum" id="orderNum">-</div>
+        <div id="bankBox" class="bank-details" style="text-align:left;margin:18px 0" hidden></div>
         <div id="testNote"></div>
         <p style="color:var(--muted);font-size:.9rem">A member of our team will contact you on the phone number you provided. For anything urgent, message us on WhatsApp.</p>
         <div style="margin-top:22px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
@@ -36,7 +37,29 @@
     (function () {
       var order = Z.qs('order');
       var test = Z.qs('test');
+      var method = Z.qs('method');
       document.getElementById('orderNum').textContent = order ? 'Order ' + order : 'Order placed';
+
+      // Bank transfer: show the account details to pay to.
+      if (method === 'bank') {
+        document.addEventListener('layout:ready', function (e) {
+          var accts = (e.detail.config && e.detail.config.bank_accounts) || [];
+          var box = document.getElementById('bankBox');
+          if (!box) return;
+          var row = function (l, v) { return v ? '<div class="bank-row"><span>' + l + '</span><strong>' + Z.escapeHtml(v) + '</strong></div>' : ''; };
+          var head = '<h3 style="margin:0 0 8px;font-family:\'Playfair Display\',serif;color:var(--maroon)">Complete your bank transfer</h3>' +
+            '<div class="bank-note">Transfer <strong>' + (order ? 'using reference ' + Z.escapeHtml(order) : 'your order total') + '</strong> to the account below. We confirm your order once payment is received.</div>';
+          if (!accts.length) {
+            box.innerHTML = head + '<p style="color:var(--muted);font-size:.88rem">Our team will message you the bank account details shortly.</p>';
+          } else {
+            box.innerHTML = head + accts.map(function (a) {
+              return '<div class="bank-card">' + row('Bank', a.bank) + row('Account name', a.holder) +
+                row('Account number', a.account) + row('Branch', a.branch) + row('Branch / SWIFT code', a.code) + '</div>';
+            }).join('');
+          }
+          box.hidden = false;
+        });
+      }
       if (test) {
         document.getElementById('testNote').innerHTML =
           '<p style="background:#fff3d6;color:#8a6d1f;border-radius:10px;padding:10px 14px;font-size:.86rem;display:inline-block">This order was placed in <strong>payment TEST mode</strong>. Add your provider API keys to accept real payments.</p>';

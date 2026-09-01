@@ -187,7 +187,8 @@
               <div class="field"><label>Button text</label><input id="cHeroCtaText" placeholder="Shop Collection"></div>
               <div class="field"><label>Button link</label><input id="cHeroCtaLink" placeholder="/shop"></div>
             </div>
-            <div class="field"><label>Hero image URL</label><input id="cHeroImage" placeholder="https://... image link"></div>
+            <div class="field"><label>Hero images (slider)</label><textarea id="cHeroImages" rows="4" placeholder="One image URL per line. Add 2 or more to make the hero rotate as a slider."></textarea><div class="hint">One URL per line. 2+ images rotate automatically with dots. If empty, the single image below is used.</div></div>
+            <div class="field"><label>Single hero image (fallback)</label><input id="cHeroImage" placeholder="https://... image link"></div>
             <button class="btn btn-primary" id="saveHero">Save Hero</button>
           </div>
         </div>
@@ -289,6 +290,34 @@
             <div class="field"><label>Facebook page URL</label><input id="linkFacebook" type="url" placeholder="https://facebook.com/yourpage"></div>
             <div class="hint" style="margin-bottom:12px">These show as icons in the storefront footer. Leave blank to hide an icon.</div>
             <button class="btn btn-primary" id="saveLinks">Save Links</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Bank Transfer Accounts</h2></div>
+          <div style="padding:22px;max-width:640px">
+            <div class="hint" style="margin-bottom:14px">Add one or two accounts. These show to customers who choose "Bank Transfer" at checkout and on their order confirmation. Turn the Bank Transfer method on below in Payment Methods. Leave an account's fields blank to hide it.</div>
+            <h3 style="font-family:'Playfair Display',serif;color:var(--maroon);font-size:1.05rem;margin:0 0 10px">Account 1</h3>
+            <div class="grid-2">
+              <div class="field"><label>Bank name</label><input id="bank1_bank" placeholder="e.g. Commercial Bank"></div>
+              <div class="field"><label>Account holder</label><input id="bank1_holder" placeholder="Account name"></div>
+            </div>
+            <div class="grid-3">
+              <div class="field"><label>Account number</label><input id="bank1_account"></div>
+              <div class="field"><label>Branch</label><input id="bank1_branch"></div>
+              <div class="field"><label>Branch / SWIFT code</label><input id="bank1_code"></div>
+            </div>
+            <h3 style="font-family:'Playfair Display',serif;color:var(--maroon);font-size:1.05rem;margin:16px 0 10px">Account 2 (optional)</h3>
+            <div class="grid-2">
+              <div class="field"><label>Bank name</label><input id="bank2_bank"></div>
+              <div class="field"><label>Account holder</label><input id="bank2_holder"></div>
+            </div>
+            <div class="grid-3">
+              <div class="field"><label>Account number</label><input id="bank2_account"></div>
+              <div class="field"><label>Branch</label><input id="bank2_branch"></div>
+              <div class="field"><label>Branch / SWIFT code</label><input id="bank2_code"></div>
+            </div>
+            <button class="btn btn-primary" id="saveBanks">Save Bank Accounts</button>
           </div>
         </div>
 

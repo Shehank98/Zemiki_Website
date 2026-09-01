@@ -28,6 +28,7 @@ const SETTINGS_SCHEMA = {
   hero_title: { type: 'text', def: () => 'Jewelry that tells your story' },
   hero_subtitle: { type: 'text', max: 500, def: () => 'Discover timeless necklaces, earrings and bridal sets - designed to be treasured and made to be worn every day.' },
   hero_image: { type: 'text', max: 600, def: () => '' },
+  hero_images: { type: 'text', max: 3000, def: () => '' }, // newline-separated URLs for the hero slider
   hero_cta_text: { type: 'text', def: () => 'Shop Collection' },
   hero_cta_link: { type: 'text', def: () => '/shop' },
   // About page
@@ -41,6 +42,17 @@ const SETTINGS_SCHEMA = {
   contact_address: { type: 'text', max: 400, def: () => '' },
   // Instagram / lookbook strip (newline-separated "imageUrl" or "imageUrl | linkUrl")
   instagram_images: { type: 'text', max: 4000, def: () => '' },
+  // Bank transfer accounts (up to two) shown at checkout / confirmation
+  bank1_bank: { type: 'text', def: () => '' },
+  bank1_holder: { type: 'text', def: () => '' },
+  bank1_account: { type: 'text', def: () => '' },
+  bank1_branch: { type: 'text', def: () => '' },
+  bank1_code: { type: 'text', def: () => '' },
+  bank2_bank: { type: 'text', def: () => '' },
+  bank2_holder: { type: 'text', def: () => '' },
+  bank2_account: { type: 'text', def: () => '' },
+  bank2_branch: { type: 'text', def: () => '' },
+  bank2_code: { type: 'text', def: () => '' },
   // Payment credentials (settable from the admin panel; env is the fallback)
   koko_merchant_id: { type: 'text', def: () => process.env.KOKO_MERCHANT_ID || '' },
   koko_api_key: { type: 'text', def: () => process.env.KOKO_API_KEY || '' },
@@ -208,7 +220,7 @@ async function computeShipping(subtotal, district, country) {
 /* --------------------------- Payment methods -------------------------- */
 
 // The payment methods the storefront can offer. Admin toggles visibility.
-const PAYMENT_IDS = ['koko', 'mintpay', 'payhere', 'cod', 'whatsapp'];
+const PAYMENT_IDS = ['koko', 'mintpay', 'payhere', 'bank', 'cod', 'whatsapp'];
 
 /**
  * Which payment methods are enabled (visible to customers). Defaults to all

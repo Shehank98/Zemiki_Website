@@ -29,6 +29,7 @@ function listMethods() {
 
   return [
     ...online,
+    { id: 'bank', label: 'Bank Transfer', kind: 'offline', configured: true, sandbox: false },
     { id: 'cod', label: 'Cash on Delivery', kind: 'offline', configured: true, sandbox: false },
     { id: 'whatsapp', label: 'Order via WhatsApp', kind: 'offline', configured: true, sandbox: false },
   ];

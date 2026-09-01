@@ -33,10 +33,24 @@
       koko: { desc: 'Split into 3 interest-free installments' },
       mintpay: { desc: 'Pay in 3 with Mintpay' },
       payhere: { desc: 'Visa / Mastercard / Amex / Bank' },
+      bank: { desc: 'Transfer to our bank account (details shown after)' },
       cod: { desc: 'Pay in cash when your order arrives' },
       whatsapp: { desc: 'Confirm and pay via WhatsApp chat' },
     };
     return map[m.id] || { desc: '' };
+  }
+
+  // Render the store's bank-transfer account(s) for the checkout panel.
+  function bankDetailsHtml(cfg) {
+    const accts = (cfg && cfg.bank_accounts) || [];
+    if (!accts.length) {
+      return '<p style="color:var(--muted);font-size:.85rem">Bank details will be shared with you after you place the order.</p>';
+    }
+    const row = (label, val) => val ? `<div class="bank-row"><span>${label}</span><strong>${Z.escapeHtml(val)}</strong></div>` : '';
+    return '<div class="bank-note">Transfer the total to the account below, then place your order. We confirm your order once payment is received. Use your order number as the reference.</div>' +
+      accts.map((a) => `<div class="bank-card">
+        ${row('Bank', a.bank)}${row('Account name', a.holder)}${row('Account number', a.account)}${row('Branch', a.branch)}${row('Branch / SWIFT code', a.code)}
+      </div>`).join('');
   }
 
   function render(cfg) {
@@ -51,7 +65,7 @@
     const isFreeEligible = freeOver > 0 && subtotal >= freeOver;
     const shipping = shippingFor(subtotal, cfg, '');
     const total = subtotal + shipping;
-    const methods = (cfg.payment_methods || []).filter((m) => m.kind === 'online' || m.id === 'cod' || m.id === 'whatsapp');
+    const methods = (cfg.payment_methods || []).filter((m) => m.kind === 'online' || m.id === 'bank' || m.id === 'cod' || m.id === 'whatsapp');
 
     const intlEnabled = !!(cfg.intl && cfg.intl.enabled);
     const districtOptions = ['<option value="">Select your district</option>']
@@ -85,7 +99,10 @@
               <div class="field"><label>Full Name *</label><input name="name" required></div>
               <div class="field"><label>Phone *</label><input name="phone" required placeholder="07X XXX XXXX"></div>
             </div>
-            <div class="field"><label>Email *</label><input type="email" name="email" required placeholder="you@example.com"><div class="hint">We email your invoice here.</div></div>
+            <div class="form-row">
+              <div class="field"><label>Email *</label><input type="email" name="email" required placeholder="you@example.com"><div class="hint">We email your invoice here.</div></div>
+              <div class="field"><label>Birthday (optional)</label><input type="date" name="birthday"><div class="hint">Tell us and we may surprise you with a treat.</div></div>
+            </div>
             ${intlEnabled ? `<div class="field"><label>Country *</label><select name="country" id="countrySel" required>${countryOptions}</select></div>` : ''}
             <div class="field"><label>Address *</label><input name="address" required placeholder="House no, street"></div>
             <div class="form-row">
@@ -109,6 +126,7 @@
           <div class="summary" style="position:static">
             <h3>Payment Method</h3>
             <div class="pay-methods">${payHtml || '<p style="color:var(--muted)">No payment methods are available right now. Please contact us to place your order.</p>'}</div>
+            <div id="bankDetails" class="bank-details" hidden>${bankDetailsHtml(cfg)}</div>
           </div>
         </form>
 
@@ -137,14 +155,21 @@
       });
     }
 
-    // payment selection highlight
+    // payment selection highlight + reveal bank details when Bank Transfer chosen
+    const bankBox = document.getElementById('bankDetails');
+    const syncBank = () => {
+      const chosen = (root.querySelector('input[name="pay"]:checked') || {}).value;
+      if (bankBox) bankBox.hidden = chosen !== 'bank';
+    };
     root.querySelectorAll('.pay-method').forEach((el) => {
       el.addEventListener('click', () => {
         root.querySelectorAll('.pay-method').forEach((x) => x.classList.remove('selected'));
         el.classList.add('selected');
         el.querySelector('input').checked = true;
+        syncBank();
       });
     });
+    syncBank();
 
     // Live shipping recompute when the district or country changes.
     const sel = document.getElementById('districtSel');
@@ -204,6 +229,7 @@
       address: fd.get('address'), city: fd.get('city'),
       district: isIntl ? '' : fd.get('district'),
       country: country,
+      birthday: fd.get('birthday') || '',
       notes: [notes, isIntl && postal ? ('Region/Postal: ' + postal) : ''].filter(Boolean).join(' · '),
       is_gift: !!giftOn,
       gift_message: giftOn ? (document.getElementById('giftMsg').value || '') : '',
@@ -241,6 +267,13 @@
     if (method === 'cod') {
       Cart.clear();
       window.location.href = '/order-confirmation?order=' + encodeURIComponent(order.order_number);
+      return;
+    }
+
+    // Bank transfer - order saved as pending; show bank details on confirmation.
+    if (method === 'bank') {
+      Cart.clear();
+      window.location.href = '/order-confirmation?order=' + encodeURIComponent(order.order_number) + '&method=bank';
       return;
     }
 

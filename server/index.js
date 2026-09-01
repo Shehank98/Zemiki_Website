@@ -47,6 +47,16 @@ app.get('/api/config', async (req, res, next) => {
         return { image, link: link || '' };
       })
       .filter((t) => t.image);
+    // Assemble up to two bank-transfer accounts (only those with the essentials filled in).
+    const bankAccounts = [1, 2].map((n) => ({
+      bank: settings['bank' + n + '_bank'] || '',
+      holder: settings['bank' + n + '_holder'] || '',
+      account: settings['bank' + n + '_account'] || '',
+      branch: settings['bank' + n + '_branch'] || '',
+      code: settings['bank' + n + '_code'] || '',
+    })).filter((a) => a.bank && a.account);
+    const heroImages = String(settings.hero_images || '')
+      .split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
     res.json({
       store_name: settings.store_name || process.env.STORE_NAME || 'Zemiki',
       whatsapp_number: settings.whatsapp_number || process.env.WHATSAPP_NUMBER || '',
@@ -67,9 +77,11 @@ app.get('/api/config', async (req, res, next) => {
         title: settings.hero_title || '',
         subtitle: settings.hero_subtitle || '',
         image: settings.hero_image || '',
+        images: heroImages,
         cta_text: settings.hero_cta_text || '',
         cta_link: settings.hero_cta_link || '/shop',
       },
+      bank_accounts: bankAccounts,
       about: {
         title: settings.about_title || '',
         body: settings.about_body || '',
