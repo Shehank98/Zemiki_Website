@@ -28,7 +28,14 @@ const SETTINGS_SCHEMA = {
   hero_title: { type: 'text', def: () => 'Jewelry that tells your story' },
   hero_subtitle: { type: 'text', max: 500, def: () => 'Discover timeless necklaces, earrings and bridal sets - designed to be treasured and made to be worn every day.' },
   hero_image: { type: 'text', max: 600, def: () => '' },
-  hero_images: { type: 'text', max: 3000, def: () => '' }, // newline-separated URLs for the hero slider
+  // Newline-separated URLs for the hero slider. Ships with sample jewelry
+  // photos so the slider works out of the box; admin can replace them.
+  hero_images: { type: 'text', max: 3000, def: () => [
+    'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=900&q=80',
+  ].join('\n') },
   hero_cta_text: { type: 'text', def: () => 'Shop Collection' },
   hero_cta_link: { type: 'text', def: () => '/shop' },
   // About page

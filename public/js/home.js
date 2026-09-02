@@ -26,7 +26,15 @@
       const cta = document.getElementById('heroCta');
       if (cta) { if (h.cta_text) cta.textContent = h.cta_text; if (h.cta_link) cta.href = h.cta_link; }
     }
-    const images = (h.images && h.images.length) ? h.images : (h.image ? [h.image] : []);
+    // Sample slides used only when no hero images have been configured.
+    const SAMPLE_HERO = [
+      'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=900&q=80',
+    ];
+    let images = (h.images && h.images.length) ? h.images : (h.image ? [h.image] : []);
+    if (images.length === 0) images = SAMPLE_HERO;
     if (images.length >= 2) buildHeroSlider(images);
     else if (images.length === 1) {
       const img = document.getElementById('heroImage');
