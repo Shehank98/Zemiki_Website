@@ -619,7 +619,7 @@
     let revenue = 0;
     ordersCache.forEach((o) => {
       if (counts[o.order_status] !== undefined) counts[o.order_status]++;
-      if (o.payment_status === 'paid') revenue += Number(o.total);
+      if (o.payment_status === 'paid' && o.order_status !== 'cancelled') revenue += Number(o.total);
     });
     $('#orderSummary').innerHTML =
       `<div class="chip"><strong>${ordersCache.length}</strong>Total orders</div>` +

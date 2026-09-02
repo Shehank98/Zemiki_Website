@@ -57,7 +57,7 @@ router.get('/stats', async (req, res, next) => {
     const [products, orders, revenue, enquiries, recent] = await Promise.all([
       query('SELECT COUNT(*)::int AS c FROM products'),
       query('SELECT COUNT(*)::int AS c FROM orders'),
-      query(`SELECT COALESCE(SUM(total),0)::float AS s FROM orders WHERE payment_status = 'paid'`),
+      query(`SELECT COALESCE(SUM(total),0)::float AS s FROM orders WHERE payment_status = 'paid' AND order_status <> 'cancelled'`),
       query('SELECT COUNT(*)::int AS c FROM enquiries WHERE handled = false'),
       query(`SELECT order_number, customer_name, total, payment_method, payment_status,
                      order_status, created_at
@@ -80,7 +80,7 @@ router.get('/analytics', async (req, res, next) => {
   try {
     const [rev14, statusRows, payRows, topRows, subCount, lowStock, catRows] = await Promise.all([
       query(`SELECT to_char(d.day,'YYYY-MM-DD') AS day,
-                     COALESCE(SUM(o.total) FILTER (WHERE o.payment_status='paid'),0)::float AS revenue,
+                     COALESCE(SUM(o.total) FILTER (WHERE o.payment_status='paid' AND o.order_status <> 'cancelled'),0)::float AS revenue,
                      COUNT(o.id)::int AS orders
                 FROM generate_series((CURRENT_DATE - INTERVAL '13 days'), CURRENT_DATE, INTERVAL '1 day') d(day)
                 LEFT JOIN orders o ON o.created_at >= d.day AND o.created_at < d.day + INTERVAL '1 day'
