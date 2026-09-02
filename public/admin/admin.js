@@ -16,7 +16,17 @@
       headers: opts.body ? { 'Content-Type': 'application/json' } : {},
       body: opts.body ? JSON.stringify(opts.body) : undefined,
     });
-    if (res.status === 401) { showLogin(); throw new Error('Session expired'); }
+    if (res.status === 401) {
+      // The login call's own 401 means bad credentials - show the real reason,
+      // not "session expired" (which is only for an expired/absent session).
+      if (path === '/login') {
+        let msg = 'Invalid username or password';
+        try { msg = (await res.json()).error || msg; } catch (e) {}
+        throw new Error(msg);
+      }
+      showLogin();
+      throw new Error('Session expired');
+    }
     if (!res.ok) {
       let msg = res.statusText;
       try { msg = (await res.json()).error || msg; } catch (e) {}
