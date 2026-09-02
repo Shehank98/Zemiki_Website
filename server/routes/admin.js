@@ -431,6 +431,17 @@ router.patch('/orders/:id', async (req, res, next) => {
   }
 });
 
+// Permanently delete an order (its items cascade automatically).
+router.delete('/orders/:id', async (req, res, next) => {
+  try {
+    const { rowCount } = await query('DELETE FROM orders WHERE id=$1', [req.params.id]);
+    if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Re-send the invoice email for an order.
 router.post('/orders/:id/resend-invoice', async (req, res, next) => {
   try {

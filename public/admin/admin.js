@@ -661,12 +661,14 @@
         <td><select data-pay="${o.id}">${PAY_STATUSES.map((s) => `<option ${s === o.payment_status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
         <td><select data-status="${o.id}">${ORDER_STATUSES.map((s) => `<option ${s === o.order_status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
         <td style="font-size:.82rem">${fmtDate(o.created_at)}</td>
-        <td><button class="btn btn-outline btn-sm" data-view-order="${o.id}">View</button></td></tr>`).join('')}</tbody></table>`
+        <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" data-view-order="${o.id}">View</button>
+          <button class="btn btn-danger btn-sm" data-del-order="${o.id}" data-num="${esc(o.order_number)}">Delete</button></td></tr>`).join('')}</tbody></table>`
       : '<div class="empty">No orders match.</div>';
 
     $$('[data-status]', el).forEach((s) => s.addEventListener('change', () => updateOrder(+s.dataset.status, { order_status: s.value })));
     $$('[data-pay]', el).forEach((s) => s.addEventListener('change', () => updateOrder(+s.dataset.pay, { payment_status: s.value })));
     $$('[data-view-order]', el).forEach((b) => b.addEventListener('click', () => viewOrder(+b.dataset.viewOrder)));
+    $$('[data-del-order]', el).forEach((b) => b.addEventListener('click', () => deleteOrder(+b.dataset.delOrder, b.dataset.num)));
   }
 
   $('#orderSearch').addEventListener('input', renderOrders);
@@ -679,6 +681,17 @@
       if (o) Object.assign(o, body);
       renderOrderSummary();
       toast('Order updated', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  async function deleteOrder(id, num) {
+    if (!confirm('Delete order ' + (num || '') + ' permanently? This cannot be undone.')) return;
+    try {
+      await api('/orders/' + id, { method: 'DELETE' });
+      ordersCache = ordersCache.filter((o) => o.id !== id);
+      renderOrders();
+      modal.close();
+      toast('Order deleted', 'success');
     } catch (e) { toast(e.message, 'error'); }
   }
 
@@ -732,6 +745,7 @@
         </div>`,
         `<button class="btn btn-outline" id="printSlip">🖨 Packing slip</button>
          <button class="btn btn-gold" id="resendInv" ${o.email ? '' : 'disabled title="No email on this order"'}>✉ Resend invoice</button>
+         <button class="btn btn-danger" id="delOrder">🗑 Delete</button>
          <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').classList.remove('open')">Close</button>`);
 
       // quick status actions
@@ -750,6 +764,7 @@
         btn.disabled = false; btn.textContent = '✉ Resend invoice';
       });
       $('#printSlip') && $('#printSlip').addEventListener('click', () => printPackingSlip(o));
+      $('#delOrder') && $('#delOrder').addEventListener('click', () => deleteOrder(o.id, o.order_number));
     } catch (e) { toast(e.message, 'error'); }
   }
 
