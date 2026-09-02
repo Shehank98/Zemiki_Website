@@ -79,12 +79,10 @@
 
     const payHtml = methods.map((m, idx) => {
       const meta = methodMeta(m);
-      const test = m.kind === 'online' && m.sandbox ? '<span class="test-badge">TEST MODE</span>' : '';
       return `
         <label class="pay-method ${idx === 0 ? 'selected' : ''}">
           <input type="radio" name="pay" value="${m.id}" ${idx === 0 ? 'checked' : ''}>
           <div class="pm-body"><strong>${Z.escapeHtml(m.label)}</strong><small>${meta.desc}</small></div>
-          ${test}
         </label>`;
     }).join('');
 

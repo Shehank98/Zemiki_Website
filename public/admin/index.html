@@ -324,7 +324,7 @@
         <div class="panel">
           <div class="panel-head"><h2>KOKO Payment (Pay in 3)</h2><span id="kokoStatus" class="pill grey">-</span></div>
           <div style="padding:22px;max-width:560px">
-            <div class="hint" style="margin-bottom:14px">Enter the credentials KOKO gives you when your merchant account is approved. Until both are set, KOKO checkout runs in test mode.</div>
+            <div class="hint" style="margin-bottom:14px">Enter the credentials KOKO gives you when your merchant account is approved. KOKO online payment goes live once both are saved.</div>
             <div class="field"><label>KOKO Merchant ID</label><input id="kokoMerchant" placeholder="Your KOKO merchant ID"></div>
             <div class="field"><label>KOKO API Key / Secret</label><input id="kokoKey" type="password" placeholder="Leave blank to keep the saved key"><div class="hint">Stored securely and never shown again. Enter a value only to set or replace it.</div></div>
             <button class="btn btn-primary" id="saveKoko">Save KOKO Credentials</button>
@@ -349,7 +349,7 @@
             <h2>Payment Methods</h2>
             <button class="btn btn-primary" id="savePayments">Save Payment Methods</button>
           </div>
-          <div style="padding:14px 20px 4px"><div class="hint">Turn a method on to show it to customers at checkout. KOKO runs in test mode until you add its API keys above.</div></div>
+          <div style="padding:14px 20px 4px"><div class="hint">Turn a method on to show it to customers at checkout. KOKO goes live once you add its API keys above.</div></div>
           <div id="paymentsTable"><div class="empty">Loading…</div></div>
         </div>
 

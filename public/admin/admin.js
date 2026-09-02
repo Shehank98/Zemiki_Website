@@ -975,7 +975,7 @@
   function payStatus(sel, merchant, keySet) {
     const el = $(sel); if (!el) return;
     if (merchant && keySet) { el.className = 'pill green'; el.textContent = 'Live'; }
-    else { el.className = 'pill gold'; el.textContent = 'Test mode'; }
+    else { el.className = 'pill grey'; el.textContent = 'Not connected'; }
   }
 
   function wireSave(btnSel, label, buildBody) {
@@ -1155,7 +1155,7 @@
       el.innerHTML = `<table><thead><tr><th>Method</th><th>Type</th><th>Status</th><th>Show at checkout</th></tr></thead><tbody>${
         methods.map((m) => {
           const status = m.kind === 'online'
-            ? (m.configured ? '<span class="pill green">Live</span>' : '<span class="pill gold">Test mode</span>')
+            ? (m.configured ? '<span class="pill green">Live</span>' : '<span class="pill grey">Not connected</span>')
             : '<span class="pill blue">Always available</span>';
           return `<tr>
             <td><strong>${esc(m.label)}</strong></td>
