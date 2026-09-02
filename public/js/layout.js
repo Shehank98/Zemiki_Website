@@ -148,7 +148,7 @@
         </div>
         <div>
           <h4>Pay Your Way</h4>
-          <p style="font-size:.9rem">Split your purchase with <strong style="color:#e3c988">KOKO</strong> or <strong style="color:#e3c988">Mintpay</strong>, pay by card with <strong style="color:#e3c988">PayHere</strong>, or choose Cash on Delivery.</p>
+          <p style="font-size:.9rem">Split your purchase into 3 interest-free payments with <strong style="color:#e3c988">KOKO</strong>, pay by <strong style="color:#e3c988">Bank Transfer</strong>, or choose Cash on Delivery.</p>
         </div>
       </div>
       <div class="footer-bottom">© ${year} ${cfg.store_name || 'Zemiki'}. All rights reserved. · Crafted with love in Sri Lanka</div>`;

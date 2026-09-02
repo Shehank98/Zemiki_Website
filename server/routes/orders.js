@@ -16,7 +16,7 @@ function genOrderNumber() {
   return `ZM${ymd}-${rand}`;
 }
 
-const VALID_METHODS = ['koko', 'mintpay', 'payhere', 'bank', 'cod', 'whatsapp'];
+const VALID_METHODS = ['koko', 'bank', 'cod', 'whatsapp'];
 
 /**
  * POST /api/orders

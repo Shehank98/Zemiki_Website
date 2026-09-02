@@ -1,14 +1,12 @@
 'use strict';
 
 const koko = require('./koko');
-const mintpay = require('./mintpay');
-const payhere = require('./payhere');
 
 /**
- * Online payment providers keyed by id. COD and WhatsApp are handled
- * separately (they skip the payment step entirely).
+ * Online payment providers keyed by id. COD, Bank Transfer and WhatsApp are
+ * handled separately (they skip the online payment step entirely).
  */
-const providers = { koko, mintpay, payhere };
+const providers = { koko };
 
 function getProvider(idOrName) {
   return providers[String(idOrName || '').toLowerCase()] || null;

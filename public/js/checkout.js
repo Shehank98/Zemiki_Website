@@ -31,8 +31,6 @@
   function methodMeta(m) {
     const map = {
       koko: { desc: 'Split into 3 interest-free installments' },
-      mintpay: { desc: 'Pay in 3 with Mintpay' },
-      payhere: { desc: 'Visa / Mastercard / Amex / Bank' },
       bank: { desc: 'Transfer to our bank account (details shown after)' },
       cod: { desc: 'Pay in cash when your order arrives' },
       whatsapp: { desc: 'Confirm and pay via WhatsApp chat' },
@@ -277,7 +275,7 @@
       return;
     }
 
-    // Online providers (koko / mintpay / payhere)
+    // Online providers (koko)
     const session = await Z.postJSON('/api/payments/' + method + '/init', { order_number: order.order_number });
 
     if (session.mode === 'sandbox') {

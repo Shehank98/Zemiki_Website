@@ -3,7 +3,7 @@
 const { query } = require('./db');
 
 const DEFAULT_ANNOUNCEMENT =
-  'Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay & PayHere';
+  'Free islandwide delivery on orders over Rs. 15,000 · Pay in 3 with KOKO';
 
 // Typed settings schema. Each key knows how to coerce and default itself.
 // Text keys may set `max` to allow longer values (default cap 300 chars).
@@ -227,7 +227,7 @@ async function computeShipping(subtotal, district, country) {
 /* --------------------------- Payment methods -------------------------- */
 
 // The payment methods the storefront can offer. Admin toggles visibility.
-const PAYMENT_IDS = ['koko', 'mintpay', 'payhere', 'bank', 'cod', 'whatsapp'];
+const PAYMENT_IDS = ['koko', 'bank', 'cod', 'whatsapp'];
 
 /**
  * Which payment methods are enabled (visible to customers). Defaults to all

@@ -860,7 +860,7 @@
             We hope you love your piece. Keep it away from moisture &amp; perfume for lasting shine.<br>
             Any issue with your order? Contact us within 3 days of delivery${wa ? ' on WhatsApp <strong>' + esc(wa) + '</strong>' : ''}.
           </div>
-          ${gift ? '' : '<div class="pay-badge">Pay in 3 with KOKO / Mintpay &middot; Cards via PayHere &middot; Cash on Delivery</div>'}
+          ${gift ? '' : '<div class="pay-badge">Pay in 3 with KOKO &middot; Bank Transfer &middot; Cash on Delivery</div>'}
         </div>
       </div>
       <script>window.onload=function(){setTimeout(function(){window.print()},250)}<\/script>
@@ -953,14 +953,10 @@
       $('#linkTiktok').value = s.tiktok_url || '';
       $('#linkFacebook').value = s.facebook_url || '';
       $('#kokoMerchant').value = s.koko_merchant_id || '';
-      $('#mintpayMerchant').value = s.mintpay_merchant_id || '';
-      $('#payhereMerchant').value = s.payhere_merchant_id || '';
       ['bank1_bank', 'bank1_holder', 'bank1_account', 'bank1_branch', 'bank1_code',
        'bank2_bank', 'bank2_holder', 'bank2_account', 'bank2_branch', 'bank2_code']
         .forEach((k) => { const el = $('#' + k); if (el) el.value = s[k] || ''; });
       payStatus('#kokoStatus', s.koko_merchant_id, s.koko_api_key_set);
-      payStatus('#mintpayStatus', s.mintpay_merchant_id, s.mintpay_api_key_set);
-      payStatus('#payhereStatus', s.payhere_merchant_id, s.payhere_secret_set);
     } catch (e) { toast(e.message, 'error'); }
     loadPaymentMethods();
     loadDistricts();
@@ -1010,8 +1006,6 @@
     });
   }
   wirePaymentSave('#saveKoko', 'KOKO credentials', '#kokoMerchant', 'koko_merchant_id', '#kokoKey', 'koko_api_key');
-  wirePaymentSave('#saveMintpay', 'Mintpay credentials', '#mintpayMerchant', 'mintpay_merchant_id', '#mintpayKey', 'mintpay_api_key');
-  wirePaymentSave('#savePayhere', 'PayHere credentials', '#payhereMerchant', 'payhere_merchant_id', '#payhereSecret', 'payhere_secret');
 
   $('#savePassword').addEventListener('click', async () => {
     const cur = $('#pwCurrent').value, nw = $('#pwNew').value, cf = $('#pwConfirm').value;
