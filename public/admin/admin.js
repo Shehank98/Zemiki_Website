@@ -979,6 +979,17 @@
     } catch (e) { el.innerHTML = '<div class="empty">Could not load subscribers.</div>'; }
   };
 
+  $('#mailTestBtn') && $('#mailTestBtn').addEventListener('click', async () => {
+    const to = $('#mailTestTo').value.trim();
+    if (!to) { toast('Enter an email address', 'error'); return; }
+    const btn = $('#mailTestBtn'); btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      await api('/mail-test', { method: 'POST', body: { to } });
+      toast('Test email sent - check the inbox', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Send test email';
+  });
+
   $('#sendBroadcast').addEventListener('click', async () => {
     const body = {
       subject: $('#bcSubject').value.trim(),

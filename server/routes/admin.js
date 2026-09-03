@@ -446,7 +446,7 @@ router.post('/orders/:id/send-tracking', async (req, res, next) => {
     if (!order.tracking_id) return res.status(400).json({ error: 'Enter and save a tracking ID first' });
     const result = await mailer.sendTracking(order);
     if (result.skipped) return res.status(400).json({ error: 'Email is not configured (set APPSCRIPT_URL)' });
-    if (!result.ok) return res.status(502).json({ error: 'Mail service did not accept the message' });
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Mail service did not accept the message' });
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -473,7 +473,7 @@ router.post('/orders/:id/resend-invoice', async (req, res, next) => {
     const items = await query('SELECT * FROM order_items WHERE order_id=$1', [req.params.id]);
     const result = await mailer.sendInvoice(rows[0], items.rows);
     if (result.skipped) return res.status(400).json({ error: 'Email is not configured (set APPSCRIPT_URL)' });
-    if (!result.ok) return res.status(502).json({ error: 'Mail service did not accept the message' });
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Mail service did not accept the message' });
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -500,6 +500,32 @@ router.delete('/subscribers/:id', async (req, res, next) => {
   }
 });
 
+// Send a single test email to check the Apps Script mail relay.
+router.post('/mail-test', async (req, res, next) => {
+  try {
+    const to = String((req.body || {}).to || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      return res.status(400).json({ error: 'Enter a valid email address to send the test to' });
+    }
+    if (!mailer.isConfigured()) {
+      return res.status(400).json({ error: 'APPSCRIPT_URL is not set. Add it in Railway Variables and redeploy.' });
+    }
+    const result = await mailer.sendBroadcast(
+      {
+        subject: 'Zemiki mail test',
+        heading: 'Your email relay works!',
+        body: 'This is a test message from your Zemiki admin panel. If you received this, invoices, tracking emails and promotions will all send correctly.',
+        cta_text: '', cta_url: '',
+      },
+      [to]
+    );
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Mail service did not accept the message' });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Broadcast a new-offer email to subscribers + past customers.
 router.post('/broadcast', async (req, res, next) => {
   try {
@@ -518,7 +544,7 @@ router.post('/broadcast', async (req, res, next) => {
       return res.status(400).json({ error: 'No subscribers or past customers to email yet' });
     }
     if (result.skipped) return res.status(400).json({ error: 'Email is not configured (set APPSCRIPT_URL)' });
-    if (!result.ok) return res.status(502).json({ error: 'Mail service did not accept the message' });
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Mail service did not accept the message' });
     res.json({ ok: true, recipients: Array.from(new Set(recipients.filter(Boolean))).length });
   } catch (err) {
     next(err);

@@ -35,9 +35,21 @@ async function post(payload) {
     const text = await res.text();
     if (!res.ok) {
       console.error('[mail] Apps Script responded', res.status, text.slice(0, 200));
-      return { ok: false, status: res.status };
+      return { ok: false, status: res.status, error: 'Apps Script HTTP ' + res.status };
     }
-    return { ok: true };
+    // Apps Script always replies 200; the real outcome is in the JSON body.
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch (e) { /* not JSON */ }
+    if (!parsed) {
+      // Usually an HTML login page => the web app isn't shared with "Anyone".
+      console.error('[mail] Apps Script returned non-JSON (check deployment access: Anyone).');
+      return { ok: false, error: 'Apps Script did not return JSON - redeploy the web app with access set to "Anyone".' };
+    }
+    if (parsed.ok === false) {
+      console.error('[mail] Apps Script rejected:', parsed.error);
+      return { ok: false, error: 'Apps Script: ' + (parsed.error || 'rejected') };
+    }
+    return { ok: true, sent: parsed.sent };
   } catch (err) {
     console.error('[mail] send failed:', err.message);
     return { ok: false, error: err.message };

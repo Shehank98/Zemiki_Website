@@ -139,6 +139,16 @@
       <!-- Marketing -->
       <section class="view" id="view-marketing">
         <div class="panel">
+          <div class="panel-head"><h2>Email Delivery Test</h2></div>
+          <div style="padding:22px;max-width:640px">
+            <div class="hint" style="margin-bottom:12px">Send a test email to check your Apps Script relay is set up. If it fails, the exact reason is shown so you can fix it (usually the secret or the deployment access).</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <input id="mailTestTo" type="email" placeholder="your@email.com" style="flex:1;min-width:220px">
+              <button class="btn btn-primary" id="mailTestBtn">Send test email</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
           <div class="panel-head"><h2>Send an Offer Email</h2></div>
           <div style="padding:22px;max-width:640px">
             <div class="hint" style="margin-bottom:14px">Emails go to all newsletter subscribers plus everyone who has placed an order. Requires the email service to be connected (APPSCRIPT_URL).</div>
