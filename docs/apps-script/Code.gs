@@ -21,6 +21,7 @@ function doPost(e) {
       return json({ ok: false, error: 'unauthorized' });
     }
     if (data.type === 'invoice') return handleInvoice(data);
+    if (data.type === 'tracking') return handleTracking(data);
     if (data.type === 'broadcast') return handleBroadcast(data);
     return json({ ok: false, error: 'unknown type' });
   } catch (err) {
@@ -95,6 +96,32 @@ function handleInvoice(data) {
   MailApp.sendEmail({
     to: o.email,
     subject: (store.store_name || 'Zemiki') + ' - Order ' + o.order_number + ' confirmed',
+    htmlBody: shell(store, inner),
+    name: store.store_name || 'Zemiki',
+  });
+  return json({ ok: true });
+}
+
+/* ------------------------------ tracking ----------------------------- */
+
+function handleTracking(data) {
+  var o = data.order, store = data.store || {};
+  if (!o || !o.email) return json({ ok: false, error: 'no email' });
+
+  var inner =
+    '<h2 style="font-family:Georgia,serif;color:#5a1a2b;margin:0 0 4px">Your order is on its way!</h2>' +
+    '<p style="color:#777;margin:0 0 18px">Order <strong>' + esc(o.order_number) + '</strong></p>' +
+    '<p>Hi ' + esc(o.customer_name) + ', good news - your order has been shipped.</p>' +
+    '<div style="margin:18px 0;padding:16px;background:#faf6ef;border:1px solid #eee;border-radius:10px;text-align:center">' +
+    '<div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#7a6f66">Tracking number</div>' +
+    '<div style="font-size:22px;font-weight:bold;color:#5a1a2b;margin-top:4px">' + esc(o.tracking_id) + '</div></div>' +
+    '<p style="color:#555">Delivery to:<br>' + esc(o.address || '') + '<br>' +
+    esc(o.city || '') + (o.district ? ', ' + esc(o.district) : '') + '</p>' +
+    (store.whatsapp_number ? '<p style="text-align:center;margin-top:20px"><a href="https://wa.me/' + esc(store.whatsapp_number) + '" style="background:#25d366;color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;display:inline-block">Any questions? Message us</a></p>' : '');
+
+  MailApp.sendEmail({
+    to: o.email,
+    subject: (store.store_name || 'Zemiki') + ' - Order ' + o.order_number + ' has shipped',
     htmlBody: shell(store, inner),
     name: store.store_name || 'Zemiki',
   });

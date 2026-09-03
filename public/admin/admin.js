@@ -658,15 +658,13 @@
         <td>${esc(o.district || '-')}</td>
         <td>${money(o.total)}</td>
         <td>${esc(o.payment_method)}</td>
-        <td><select data-pay="${o.id}">${PAY_STATUSES.map((s) => `<option ${s === o.payment_status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
-        <td><select data-status="${o.id}">${ORDER_STATUSES.map((s) => `<option ${s === o.order_status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+        <td>${payPill(o.payment_status)}</td>
+        <td>${statusPill(o.order_status)}</td>
         <td style="font-size:.82rem">${fmtDate(o.created_at)}</td>
         <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" data-view-order="${o.id}">View</button>
           <button class="btn btn-danger btn-sm" data-del-order="${o.id}" data-num="${esc(o.order_number)}">Delete</button></td></tr>`).join('')}</tbody></table>`
       : '<div class="empty">No orders match.</div>';
 
-    $$('[data-status]', el).forEach((s) => s.addEventListener('change', () => updateOrder(+s.dataset.status, { order_status: s.value })));
-    $$('[data-pay]', el).forEach((s) => s.addEventListener('change', () => updateOrder(+s.dataset.pay, { payment_status: s.value })));
     $$('[data-view-order]', el).forEach((b) => b.addEventListener('click', () => viewOrder(+b.dataset.viewOrder)));
     $$('[data-del-order]', el).forEach((b) => b.addEventListener('click', () => deleteOrder(+b.dataset.delOrder, b.dataset.num)));
   }
@@ -679,7 +677,7 @@
       await api('/orders/' + id, { method: 'PATCH', body });
       const o = ordersCache.find((x) => x.id === id);
       if (o) Object.assign(o, body);
-      renderOrderSummary();
+      renderOrders();
       toast('Order updated', 'success');
     } catch (e) { toast(e.message, 'error'); }
   }
@@ -742,6 +740,15 @@
         <div class="od-controls">
           <div><div class="od-label">Order status</div><div class="btn-row" id="statusBtns">${statusBtns}</div></div>
           <div><div class="od-label">Payment</div><div class="btn-row" id="payBtns">${esc(o.payment_method)} ${payBtns}</div></div>
+        </div>
+        <div style="margin-top:16px">
+          <div class="od-label">Tracking / Courier ID</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px">
+            <input id="trackInput" value="${esc(o.tracking_id || '')}" placeholder="e.g. courier waybill number" style="flex:1;min-width:180px">
+            <button class="btn btn-outline btn-sm" id="saveTrack">Save</button>
+            <button class="btn btn-primary btn-sm" id="sendTrack" ${o.email ? '' : 'disabled title="No email on this order"'}>✉ Email tracking</button>
+          </div>
+          <div class="hint" style="margin-top:6px">Save the tracking ID, then email it to the customer (uses your Apps Script mailer).</div>
         </div>`,
         `<button class="btn btn-outline" id="printSlip">🖨 Packing slip</button>
          <button class="btn btn-gold" id="resendInv" ${o.email ? '' : 'disabled title="No email on this order"'}>✉ Resend invoice</button>
@@ -765,6 +772,33 @@
       });
       $('#printSlip') && $('#printSlip').addEventListener('click', () => printPackingSlip(o));
       $('#delOrder') && $('#delOrder').addEventListener('click', () => deleteOrder(o.id, o.order_number));
+
+      // Save tracking ID
+      $('#saveTrack') && $('#saveTrack').addEventListener('click', async () => {
+        const val = $('#trackInput').value.trim();
+        const btn = $('#saveTrack'); btn.disabled = true; btn.textContent = 'Saving…';
+        try {
+          await api('/orders/' + o.id, { method: 'PATCH', body: { tracking_id: val } });
+          o.tracking_id = val;
+          const co = ordersCache.find((x) => x.id === o.id); if (co) co.tracking_id = val;
+          toast('Tracking ID saved', 'success');
+        } catch (e) { toast(e.message, 'error'); }
+        btn.disabled = false; btn.textContent = 'Save';
+      });
+      // Email the tracking details (saves the current value first)
+      $('#sendTrack') && $('#sendTrack').addEventListener('click', async () => {
+        const val = $('#trackInput').value.trim();
+        if (!val) { toast('Enter a tracking ID first', 'error'); return; }
+        const btn = $('#sendTrack'); btn.disabled = true; btn.textContent = 'Sending…';
+        try {
+          await api('/orders/' + o.id, { method: 'PATCH', body: { tracking_id: val } });
+          o.tracking_id = val;
+          const co = ordersCache.find((x) => x.id === o.id); if (co) co.tracking_id = val;
+          await api('/orders/' + o.id + '/send-tracking', { method: 'POST' });
+          toast('Tracking email sent', 'success');
+        } catch (e) { toast(e.message, 'error'); }
+        btn.disabled = false; btn.textContent = '✉ Email tracking';
+      });
     } catch (e) { toast(e.message, 'error'); }
   }
 

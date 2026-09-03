@@ -416,16 +416,38 @@ router.get('/orders/:id', async (req, res, next) => {
 
 router.patch('/orders/:id', async (req, res, next) => {
   try {
-    const { order_status, payment_status } = req.body || {};
+    const body = req.body || {};
+    const { order_status, payment_status } = body;
+    // tracking_id may be set to a value or explicitly cleared ('' -> null).
+    const trackingProvided = Object.prototype.hasOwnProperty.call(body, 'tracking_id');
+    const tracking = trackingProvided ? (String(body.tracking_id || '').trim().slice(0, 120) || null) : null;
     const { rows } = await query(
       `UPDATE orders SET
          order_status = COALESCE($1, order_status),
-         payment_status = COALESCE($2, payment_status)
-       WHERE id=$3 RETURNING *`,
-      [order_status || null, payment_status || null, req.params.id]
+         payment_status = COALESCE($2, payment_status),
+         tracking_id = CASE WHEN $4 THEN $3 ELSE tracking_id END
+       WHERE id=$5 RETURNING *`,
+      [order_status || null, payment_status || null, tracking, trackingProvided, req.params.id]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Email the tracking details for an order to the customer.
+router.post('/orders/:id/send-tracking', async (req, res, next) => {
+  try {
+    const { rows } = await query('SELECT * FROM orders WHERE id=$1', [req.params.id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    const order = rows[0];
+    if (!order.email) return res.status(400).json({ error: 'This order has no email address' });
+    if (!order.tracking_id) return res.status(400).json({ error: 'Enter and save a tracking ID first' });
+    const result = await mailer.sendTracking(order);
+    if (result.skipped) return res.status(400).json({ error: 'Email is not configured (set APPSCRIPT_URL)' });
+    if (!result.ok) return res.status(502).json({ error: 'Mail service did not accept the message' });
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

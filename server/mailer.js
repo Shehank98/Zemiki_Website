@@ -85,6 +85,28 @@ async function sendInvoice(order, items) {
 }
 
 /**
+ * Send shipping/tracking details for an order to the customer.
+ * @param {object} order  full order row (must have email + tracking_id)
+ */
+async function sendTracking(order) {
+  if (!order || !order.email) return { ok: false, skipped: true };
+  return post({
+    type: 'tracking',
+    store: storeCtx(),
+    order: {
+      order_number: order.order_number,
+      customer_name: order.customer_name,
+      email: order.email,
+      address: order.address,
+      city: order.city,
+      district: order.district,
+      order_status: order.order_status,
+      tracking_id: order.tracking_id,
+    },
+  });
+}
+
+/**
  * Broadcast a marketing / new-offer email to a list of recipients.
  * @param {object} opts { subject, heading, body, cta_text, cta_url, image_url }
  * @param {string[]} recipients
@@ -107,4 +129,4 @@ async function sendBroadcast(opts, recipients) {
   });
 }
 
-module.exports = { isConfigured, sendInvoice, sendBroadcast };
+module.exports = { isConfigured, sendInvoice, sendTracking, sendBroadcast };
