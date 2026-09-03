@@ -981,12 +981,18 @@
 
   $('#mailTestBtn') && $('#mailTestBtn').addEventListener('click', async () => {
     const to = $('#mailTestTo').value.trim();
+    const out = $('#mailTestResult');
     if (!to) { toast('Enter an email address', 'error'); return; }
     const btn = $('#mailTestBtn'); btn.disabled = true; btn.textContent = 'Sending…';
+    if (out) out.innerHTML = '';
     try {
       await api('/mail-test', { method: 'POST', body: { to } });
-      toast('Test email sent - check the inbox', 'success');
-    } catch (e) { toast(e.message, 'error'); }
+      toast('Test email sent', 'success');
+      if (out) out.innerHTML = '<div style="background:#e7f4ec;color:#2f6b45;border:1px solid #b8e0c6;border-radius:9px;padding:12px 14px;font-size:.9rem">✓ Sent successfully. Check the inbox for <strong>' + esc(to) + '</strong> (including spam). Your invoices, tracking and promo emails will all work.</div>';
+    } catch (e) {
+      if (out) out.innerHTML = '<div style="background:#fdeef0;color:#b23a48;border:1px solid #f3c9cf;border-radius:9px;padding:12px 14px;font-size:.9rem"><strong>Could not send.</strong> Reason:<br>' + esc(e.message) + '</div>';
+      else toast(e.message, 'error');
+    }
     btn.disabled = false; btn.textContent = 'Send test email';
   });
 
