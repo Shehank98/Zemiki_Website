@@ -356,7 +356,7 @@
       categoriesCache = await api('/categories');
       const el = $('#categoriesTable');
       el.innerHTML = categoriesCache.length ? `<table><thead><tr>
-        <th>Name</th><th>Slug</th><th>Products</th><th>Order</th><th></th></tr></thead><tbody>${
+        <th>Name</th><th>Slug</th><th>Products</th><th>Sort order</th><th></th></tr></thead><tbody>${
         categoriesCache.map((c) => `<tr>
           <td><strong>${esc(c.name)}</strong></td>
           <td>${esc(c.slug)}</td>
