@@ -197,7 +197,7 @@
     if (document.getElementById('zemiki-anim')) return;
     const s = document.createElement('script');
     s.id = 'zemiki-anim';
-    s.src = '/js/anim.js';
+    s.src = '/js/anim.js' + (window.__ZV ? '?v=' + window.__ZV : '');
     document.body.appendChild(s);
   }
 
