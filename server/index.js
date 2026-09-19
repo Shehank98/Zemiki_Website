@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const { migrate } = require('./migrate');
 const { listMethods } = require('./payments');
 const { getSettings, getPaymentToggles } = require('./settings');
+const { normalizeImageUrl } = require('./utils/driveImage');
 
 const app = express();
 
@@ -44,7 +45,7 @@ app.get('/api/config', async (req, res, next) => {
       .filter(Boolean)
       .map((line) => {
         const [image, link] = line.split('|').map((s) => s.trim());
-        return { image, link: link || '' };
+        return { image: normalizeImageUrl(image), link: link || '' };
       })
       .filter((t) => t.image);
     // Assemble up to two bank-transfer accounts (only those with the essentials filled in).
@@ -56,11 +57,11 @@ app.get('/api/config', async (req, res, next) => {
       code: settings['bank' + n + '_code'] || '',
     })).filter((a) => a.bank && a.account);
     const heroImages = String(settings.hero_images || '')
-      .split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      .split(/\r?\n/).map((s) => s.trim()).filter(Boolean).map(normalizeImageUrl);
     res.json({
       store_name: settings.store_name || process.env.STORE_NAME || 'Zemiki',
       whatsapp_number: settings.whatsapp_number || process.env.WHATSAPP_NUMBER || '',
-      logo_url: settings.logo_url || '',
+      logo_url: normalizeImageUrl(settings.logo_url || ''),
       currency: 'LKR',
       currency_symbol: 'Rs.',
       shipping_flat: settings.shipping_flat,
@@ -76,7 +77,7 @@ app.get('/api/config', async (req, res, next) => {
         eyebrow: settings.hero_eyebrow || '',
         title: settings.hero_title || '',
         subtitle: settings.hero_subtitle || '',
-        image: settings.hero_image || '',
+        image: normalizeImageUrl(settings.hero_image || ''),
         images: heroImages,
         cta_text: settings.hero_cta_text || '',
         cta_link: settings.hero_cta_link || '/shop',
@@ -85,7 +86,7 @@ app.get('/api/config', async (req, res, next) => {
       about: {
         title: settings.about_title || '',
         body: settings.about_body || '',
-        image: settings.about_image || '',
+        image: normalizeImageUrl(settings.about_image || ''),
       },
       contact: {
         intro: settings.contact_intro || '',
