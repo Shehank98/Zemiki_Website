@@ -64,6 +64,12 @@
     loadProducts();
   });
 
+  // On small screens, start the categories panel folded to save space.
+  const catFold = document.getElementById('catFold');
+  if (catFold && window.matchMedia('(max-width: 960px)').matches) {
+    catFold.open = false;
+  }
+
   loadCategories();
   loadProducts();
 })();

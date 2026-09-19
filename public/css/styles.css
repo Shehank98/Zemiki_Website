@@ -223,8 +223,15 @@ label { font-weight: 600; font-size: .85rem; display: block; margin-bottom: .35r
 
 /* ------------------------------ Shop layout ------------------------------ */
 .shop-layout { display: grid; grid-template-columns: 240px 1fr; gap: 34px; align-items: start; }
-.shop-sidebar { position: sticky; top: 94px; background: #fff; border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); }
-.shop-sidebar h4 { font-family: var(--sans); font-size: .85rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.shop-sidebar { position: sticky; top: 94px; }
+/* Collapsible categories panel (fold / unfold) */
+.cat-fold { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+.cat-fold > summary { list-style: none; cursor: pointer; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--sans); font-size: .85rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; user-select: none; }
+.cat-fold > summary::-webkit-details-marker { display: none; }
+.cat-fold > summary::after { content: '\25be'; font-size: .9rem; color: var(--muted); transition: transform .2s ease; }
+.cat-fold[open] > summary::after { transform: rotate(180deg); }
+.cat-fold .filter-list { padding: 0 18px 14px; }
 .filter-list a { display: flex; justify-content: space-between; padding: 8px 0; font-size: .95rem; border-bottom: 1px solid var(--line); }
 .filter-list a.active { color: var(--maroon); font-weight: 600; }
 .filter-list a span { color: var(--muted); font-size: .8rem; }
@@ -340,17 +347,9 @@ label { font-weight: 600; font-size: .85rem; display: block; margin-bottom: .35r
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
   .trust-grid { grid-template-columns: 1fr 1fr; }
   .shop-layout { grid-template-columns: 1fr; }
-  /* min-width:0 lets the chip bar's overflow scroll inside itself instead of
-     stretching the grid column and scrolling the whole page sideways. */
   .shop-layout > * { min-width: 0; }
-  /* Category filter becomes a horizontal scrolling chip bar to save space */
-  .shop-sidebar { position: static; background: transparent; box-shadow: none; padding: 0; margin-bottom: 6px; min-width: 0; max-width: 100%; }
-  .shop-sidebar h4 { display: none; }
-  .filter-list { display: flex; gap: 8px; overflow-x: auto; max-width: 100%; padding-bottom: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior-x: contain; touch-action: pan-x; }
-  .filter-list::-webkit-scrollbar { display: none; }
-  .filter-list a { flex: 0 0 auto; white-space: nowrap; border: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; background: #fff; gap: 6px; }
-  .filter-list a.active { background: var(--maroon); color: #fff; border-color: var(--maroon); }
-  .filter-list a.active span { color: rgba(255,255,255,.75); }
+  /* On mobile the categories panel is not sticky and starts folded (see shop.js) */
+  .shop-sidebar { position: static; margin-bottom: 14px; }
   .about-split { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
