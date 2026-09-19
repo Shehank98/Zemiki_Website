@@ -15,7 +15,9 @@
   async function loadCategories() {
     const list = document.getElementById('filterList');
     try {
-      const cats = await Z.getJSON('/api/categories');
+      const allCats = await Z.getJSON('/api/categories');
+      // Only show categories that have products (keep the one currently selected).
+      const cats = allCats.filter((c) => (c.product_count || 0) > 0 || c.slug === state.category);
       const all = `<a href="/shop" class="${state.category ? '' : 'active'}">All Jewelry</a>`;
       list.innerHTML = all + cats.map((c) =>
         `<a href="/shop?category=${encodeURIComponent(c.slug)}" class="${state.category === c.slug ? 'active' : ''}">${Z.escapeHtml(c.name)}<span>${c.product_count || 0}</span></a>`

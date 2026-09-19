@@ -340,7 +340,14 @@ label { font-weight: 600; font-size: .85rem; display: block; margin-bottom: .35r
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
   .trust-grid { grid-template-columns: 1fr 1fr; }
   .shop-layout { grid-template-columns: 1fr; }
-  .shop-sidebar { position: static; }
+  /* Category filter becomes a horizontal scrolling chip bar to save space */
+  .shop-sidebar { position: static; background: transparent; box-shadow: none; padding: 0; margin-bottom: 6px; }
+  .shop-sidebar h4 { display: none; }
+  .filter-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .filter-list::-webkit-scrollbar { display: none; }
+  .filter-list a { flex: 0 0 auto; white-space: nowrap; border: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; background: #fff; gap: 6px; }
+  .filter-list a.active { background: var(--maroon); color: #fff; border-color: var(--maroon); }
+  .filter-list a.active span { color: rgba(255,255,255,.75); }
   .about-split { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
