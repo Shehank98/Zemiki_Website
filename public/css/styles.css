@@ -349,10 +349,8 @@ label { font-weight: 600; font-size: .85rem; display: block; margin-bottom: .35r
   .trust-grid { grid-template-columns: 1fr 1fr; }
   .shop-layout { grid-template-columns: 1fr; }
   .shop-layout > * { min-width: 0; }
-  /* On mobile show a compact category dropdown instead of the fold panel */
-  .shop-sidebar { position: static; margin-bottom: 14px; }
-  .cat-fold { display: none; }
-  .cat-select { display: block; width: 100%; }
+  /* Categories are a desktop-only control; hide the whole sidebar on mobile */
+  .shop-sidebar { display: none; }
   .about-split { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {

@@ -76,14 +76,17 @@
     loadProducts();
   });
 
-  // Show exactly one category control: dropdown on mobile, list panel on
-  // desktop. Enforced in JS with inline styles so a stale cached stylesheet
-  // can never leave both visible at once.
+  // Categories are a desktop-only control. On mobile the sidebar (dropdown
+  // and fold list) is hidden entirely to save space. Enforced in JS with
+  // inline styles so a stale cached stylesheet can never show it anyway.
   function applyCatMode() {
+    const sidebar = document.querySelector('.shop-sidebar');
     const sel = document.getElementById('catSelect');
     const fold = document.getElementById('catFold');
     const mobile = window.matchMedia('(max-width: 960px)').matches;
-    if (sel) sel.style.display = mobile ? 'block' : 'none';
+    if (sidebar) sidebar.style.display = mobile ? 'none' : '';
+    // Never use the dropdown; the desktop fold list is the only control.
+    if (sel) sel.style.display = 'none';
     if (fold) fold.style.display = mobile ? 'none' : 'block';
   }
   applyCatMode();
