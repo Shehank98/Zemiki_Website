@@ -23,6 +23,18 @@
         `<a href="/shop?category=${encodeURIComponent(c.slug)}" class="${state.category === c.slug ? 'active' : ''}">${Z.escapeHtml(c.name)}<span>${c.product_count || 0}</span></a>`
       ).join('');
 
+      // Mobile dropdown: same categories, navigates on change.
+      const sel = document.getElementById('catSelect');
+      if (sel) {
+        sel.innerHTML = `<option value="">All Jewelry</option>` + cats.map((c) =>
+          `<option value="${Z.escapeHtml(c.slug)}" ${state.category === c.slug ? 'selected' : ''}>${Z.escapeHtml(c.name)} (${c.product_count || 0})</option>`
+        ).join('');
+        sel.onchange = () => {
+          const v = sel.value;
+          location.href = '/shop' + (v ? '?category=' + encodeURIComponent(v) : '');
+        };
+      }
+
       if (state.category) {
         const match = cats.find((c) => c.slug === state.category);
         if (match) {
@@ -63,12 +75,6 @@
     state.sort = sortSelect.value;
     loadProducts();
   });
-
-  // On small screens, start the categories panel folded to save space.
-  const catFold = document.getElementById('catFold');
-  if (catFold && window.matchMedia('(max-width: 960px)').matches) {
-    catFold.open = false;
-  }
 
   loadCategories();
   loadProducts();
