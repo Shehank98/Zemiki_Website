@@ -76,6 +76,19 @@
     loadProducts();
   });
 
+  // Show exactly one category control: dropdown on mobile, list panel on
+  // desktop. Enforced in JS with inline styles so a stale cached stylesheet
+  // can never leave both visible at once.
+  function applyCatMode() {
+    const sel = document.getElementById('catSelect');
+    const fold = document.getElementById('catFold');
+    const mobile = window.matchMedia('(max-width: 960px)').matches;
+    if (sel) sel.style.display = mobile ? 'block' : 'none';
+    if (fold) fold.style.display = mobile ? 'none' : 'block';
+  }
+  applyCatMode();
+  window.addEventListener('resize', applyCatMode);
+
   loadCategories();
   loadProducts();
 })();
