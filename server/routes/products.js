@@ -17,6 +17,11 @@ async function attachImages(products) {
       ORDER BY sort_order, id`,
     [ids]
   );
+  const hv = await query(
+    'SELECT DISTINCT product_id FROM product_variants WHERE product_id = ANY($1::int[])',
+    [ids]
+  );
+  const variantIds = new Set(hv.rows.map((r) => r.product_id));
   const byProduct = new Map();
   for (const r of rows) {
     if (!byProduct.has(r.product_id)) byProduct.set(r.product_id, []);
@@ -25,6 +30,7 @@ async function attachImages(products) {
   for (const p of products) {
     p.images = byProduct.get(p.id) || [];
     p.image = p.images[0] || null;
+    p.has_variants = variantIds.has(p.id);
   }
   return products;
 }
@@ -105,7 +111,22 @@ router.get('/:slug', async (req, res, next) => {
     );
     await attachImages(related.rows);
 
-    res.json({ ...product, related: related.rows });
+    // Variants + per-image codes for the product page (listings stay light).
+    const [vr, ir] = await Promise.all([
+      query(
+        `SELECT id, a_value, b_value, sku, stock FROM product_variants
+          WHERE product_id = $1 ORDER BY sort_order, id`,
+        [product.id]
+      ),
+      query(
+        `SELECT url, code, a_value FROM product_images
+          WHERE product_id = $1 ORDER BY sort_order, id`,
+        [product.id]
+      ),
+    ]);
+    const image_items = ir.rows.map((r) => ({ url: r.url, code: r.code || '', a_value: r.a_value || '' }));
+
+    res.json({ ...product, variants: vr.rows, image_items, related: related.rows });
   } catch (err) {
     next(err);
   }

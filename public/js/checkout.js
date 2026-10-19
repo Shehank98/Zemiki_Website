@@ -74,7 +74,7 @@
       .join('');
 
     const summaryLines = items.map((i) =>
-      `<div class="summary-row"><span>${Z.escapeHtml(i.name)} × ${i.qty}</span><span>${Z.money(i.price * i.qty)}</span></div>`
+      `<div class="summary-row"><span>${Z.escapeHtml(i.name)}${i.variant_label ? ' (' + Z.escapeHtml(i.variant_label) + ')' : ''} × ${i.qty}</span><span>${Z.money(i.price * i.qty)}</span></div>`
     ).join('');
 
     const payHtml = methods.map((m, idx) => {
@@ -232,7 +232,7 @@
     };
     if (!isIntl && !customer.district) { Z.toast('Please select your district', 'error'); return; }
     const method = (root.querySelector('input[name="pay"]:checked') || {}).value || 'cod';
-    const items = Cart.items().map((i) => ({ id: i.id, qty: i.qty }));
+    const items = Cart.items().map((i) => ({ id: i.id, qty: i.qty, variant_id: i.variant_id || null }));
 
     btn.disabled = true; btn.textContent = 'Placing order…';
     try {

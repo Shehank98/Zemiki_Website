@@ -24,7 +24,9 @@
           ${cat}
           <h3><a href="/product?slug=${encodeURIComponent(p.slug)}">${Z.escapeHtml(p.name)}</a></h3>
           <div class="price">${priceHtml}</div>
-          <button class="btn btn-outline" data-add='${encodeURIComponent(JSON.stringify({ id: p.id, name: p.name, slug: p.slug, price: p.price, sale_price: p.sale_price, images: img ? [img] : [] }))}'>Add to Cart</button>
+          ${p.has_variants
+            ? `<a class="btn btn-outline" href="/product?slug=${encodeURIComponent(p.slug)}">Select Options</a>`
+            : `<button class="btn btn-outline" data-add='${encodeURIComponent(JSON.stringify({ id: p.id, name: p.name, slug: p.slug, price: p.price, sale_price: p.sale_price, images: img ? [img] : [] }))}'>Add to Cart</button>`}
         </div>
       </div>`;
   }

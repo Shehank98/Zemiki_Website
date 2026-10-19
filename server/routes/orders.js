@@ -4,6 +4,7 @@ const express = require('express');
 const { query, withTransaction } = require('../db');
 const { computeShipping, getPaymentToggles, getSettings } = require('../settings');
 const mailer = require('../mailer');
+const { adjustStock } = require('../stock');
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ const VALID_METHODS = ['koko', 'bank', 'cod', 'whatsapp'];
 
 /**
  * POST /api/orders
- * body: { customer:{name,phone,email,address,city,notes}, items:[{id,qty}], payment_method }
+ * body: { customer:{name,phone,email,address,city,notes}, items:[{id,qty,variant_id?}], payment_method }
  * Prices are re-fetched server-side from the DB (never trust client totals).
  */
 router.post('/', async (req, res, next) => {
@@ -57,24 +58,53 @@ router.post('/', async (req, res, next) => {
     }
 
     const { rows: dbProducts } = await query(
-      `SELECT id, name, price, sale_price, active FROM products WHERE id = ANY($1::int[])`,
+      `SELECT id, name, price, sale_price, active, option_a_name, option_b_name
+         FROM products WHERE id = ANY($1::int[])`,
       [ids]
     );
     const byId = new Map(dbProducts.map((p) => [p.id, p]));
+    const { rows: dbVariants } = await query(
+      `SELECT id, product_id, a_value, b_value, sku FROM product_variants
+        WHERE product_id = ANY($1::int[])`,
+      [ids]
+    );
+    const variantsById = new Map(dbVariants.map((v) => [v.id, v]));
+    const productHasVariants = new Set(dbVariants.map((v) => v.product_id));
 
-    const lineItems = [];
-    let subtotal = 0;
+    // Build order lines. Same product+variant on two lines is merged so the
+    // stock check below sees the real total.
+    const merged = new Map();
     for (const item of items) {
       const p = byId.get(parseInt(item.id, 10));
       if (!p || !p.active) continue;
       const qty = Math.max(1, parseInt(item.qty, 10) || 1);
-      const unit = Number(p.sale_price != null ? p.sale_price : p.price);
-      subtotal += unit * qty;
-      lineItems.push({ product_id: p.id, product_name: p.name, unit_price: unit, qty });
+      let variant = null;
+      if (productHasVariants.has(p.id)) {
+        variant = variantsById.get(parseInt(item.variant_id, 10));
+        if (!variant || variant.product_id !== p.id) {
+          return res.status(400).json({ error: `Please choose options for ${p.name}` });
+        }
+      }
+      const key = p.id + ':' + (variant ? variant.id : 0);
+      if (merged.has(key)) { merged.get(key).qty += qty; continue; }
+      const label = variant
+        ? [variant.a_value, variant.b_value].filter(Boolean).join(' / ')
+        : null;
+      merged.set(key, {
+        product_id: p.id,
+        product_name: p.name,
+        unit_price: Number(p.sale_price != null ? p.sale_price : p.price),
+        qty,
+        variant_id: variant ? variant.id : null,
+        variant_label: label,
+        sku: variant ? variant.sku : null,
+      });
     }
+    const lineItems = [...merged.values()];
     if (lineItems.length === 0) {
       return res.status(400).json({ error: 'No valid items in cart' });
     }
+    const subtotal = lineItems.reduce((n, li) => n + li.unit_price * li.qty, 0);
 
     const shipping = await computeShipping(subtotal, customer.district, country);
     const total = subtotal + shipping;
@@ -85,12 +115,29 @@ router.post('/', async (req, res, next) => {
     const birthday = customer.birthday ? String(customer.birthday).slice(0, 20) : null;
 
     const { order, savedItems } = await withTransaction(async (client) => {
+      // Take the stock first, atomically: lock each row, refuse if short.
+      // Locking in a stable order avoids deadlocks between concurrent orders.
+      const sorted = [...lineItems].sort((a, b) => (a.variant_id || 0) - (b.variant_id || 0) || a.product_id - b.product_id);
+      for (const li of sorted) {
+        const r = li.variant_id
+          ? await client.query('SELECT stock FROM product_variants WHERE id=$1 FOR UPDATE', [li.variant_id])
+          : await client.query('SELECT stock FROM products WHERE id=$1 FOR UPDATE', [li.product_id]);
+        const have = r.rows.length ? r.rows[0].stock : 0;
+        if (have < li.qty) {
+          const what = li.product_name + (li.variant_label ? ` (${li.variant_label})` : '');
+          const err = new Error(have > 0 ? `Only ${have} left of ${what}` : `${what} is sold out`);
+          err.status = 409;
+          throw err;
+        }
+      }
+      await adjustStock(client, sorted, -1);
+
       const { rows } = await client.query(
         `INSERT INTO orders
            (order_number, customer_name, phone, email, address, city, district, country, notes,
             subtotal, shipping, total, payment_method, payment_status, order_status,
-            is_gift, gift_message, birthday)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending','new',$14,$15,$16)
+            is_gift, gift_message, birthday, stock_deducted)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending','new',$14,$15,$16,true)
          RETURNING *`,
         [
           orderNumber,
@@ -115,9 +162,11 @@ router.post('/', async (req, res, next) => {
       const saved = [];
       for (const li of lineItems) {
         await client.query(
-          `INSERT INTO order_items (order_id, product_id, product_name, unit_price, qty)
-           VALUES ($1,$2,$3,$4,$5)`,
-          [created.id, li.product_id, li.product_name, li.unit_price, li.qty]
+          `INSERT INTO order_items
+             (order_id, product_id, product_name, unit_price, qty, variant_id, variant_label, sku)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [created.id, li.product_id, li.product_name, li.unit_price, li.qty,
+           li.variant_id, li.variant_label, li.sku]
         );
         saved.push(li);
       }
@@ -143,6 +192,7 @@ router.post('/', async (req, res, next) => {
       payment_method: order.payment_method,
     });
   } catch (err) {
+    if (err.status === 409) return res.status(409).json({ error: err.message });
     next(err);
   }
 });

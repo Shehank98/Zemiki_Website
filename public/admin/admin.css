@@ -118,6 +118,15 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 
 .image-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
 .image-row input { flex: 1; }
+.image-fields { flex: 1; display: grid; gap: 6px; min-width: 0; }
+.image-meta { display: grid; grid-template-columns: 1.3fr 1fr; gap: 6px; }
+.image-meta select[hidden] { display: none; }
+.image-meta:has(select[hidden]) { grid-template-columns: 1fr; }
+.variant-box { border: 1px dashed var(--line, #e5ddd0); border-radius: 12px; padding: 14px; margin-bottom: 16px; background: rgba(201,162,75,.05); }
+.var-table { width: 100%; font-size: .88rem; }
+.var-table input { width: 100%; min-width: 70px; }
+.var-table .v-stock { max-width: 90px; }
+.stock-variants { font-size: .75rem; color: var(--muted); display: block; }
 .image-preview { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; background: var(--bg); flex: none; }
 
 /* Modal */
@@ -269,3 +278,5 @@ tbody tr { transition: background .12s ease; }
 @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
 @media (max-width: 820px) { .quick-actions { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { .quick-actions { grid-template-columns: 1fr; } }
+
+.it-var { font-size: .78rem; color: var(--muted); margin-top: 2px; }

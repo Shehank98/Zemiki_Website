@@ -444,7 +444,7 @@
         <td><strong>${esc(p.name)}</strong></td>
         <td>${esc(p.category_name || '-')}</td>
         <td>${p.sale_price != null ? `<strong>${money(p.sale_price)}</strong> <s style="color:#999">${money(p.price)}</s>` : money(p.price)}</td>
-        <td class="${p.stock <= LOW_STOCK ? 'stock-low' : 'stock-ok'}">${p.stock}${p.stock <= LOW_STOCK ? ' ⚠' : ''}</td>
+        <td class="${p.stock <= LOW_STOCK ? 'stock-low' : 'stock-ok'}">${p.stock}${p.stock <= LOW_STOCK ? ' ⚠' : ''}${p.variants && p.variants.length ? `<span class="stock-variants">${p.variants.length} variants</span>` : ''}</td>
         <td>${toggleHtml(p.id, 'featured', p.featured)}</td>
         <td>${toggleHtml(p.id, 'active', p.active)}</td>
         <td style="text-align:right;white-space:nowrap">
@@ -470,7 +470,8 @@
     const catOptions = ['<option value="">- Select category -</option>']
       .concat(categoriesCache.map((c) => `<option value="${c.id}" ${p.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`))
       .join('');
-    const images = (p.images && p.images.length ? p.images : ['']);
+    const imgItems = (p.image_items && p.image_items.length ? p.image_items
+      : (p.images && p.images.length ? p.images.map((u) => ({ url: u })) : [{ url: '' }]));
     return `
       <div class="field"><label>Product name *</label><input id="pName" value="${esc(p.name || '')}" placeholder="e.g. Golden Peacock Necklace"></div>
       <div class="field"><label>Description</label><textarea id="pDesc" rows="3" placeholder="Describe the piece…">${esc(p.description || '')}</textarea></div>
@@ -483,25 +484,162 @@
       <div class="hint" style="margin:-6px 0 14px">Set a <strong>Discount %</strong> or type a <strong>Sale price</strong> - each updates the other. Leave both blank for no discount.</div>
       <div class="grid-3">
         <div class="field"><label>Category</label><select id="pCat">${catOptions}</select></div>
-        <div class="field"><label>Stock</label><input id="pStock" type="number" value="${p.stock != null ? p.stock : 0}"></div>
-        <div class="field"><label>SKU (optional)</label><input id="pSku" value="${esc(p.sku || '')}"></div>
+        <div class="field"><label>Stock</label><input id="pStock" type="number" value="${p.stock != null ? p.stock : 0}"><div class="hint" id="stockHint"></div></div>
+        <div class="field"><label>Item code / SKU (optional)</label><input id="pSku" value="${esc(p.sku || '')}"></div>
       </div>
+      ${variantSection(p)}
       <div class="field">
-        <label>Image links (Google Drive)</label>
-        <div class="hint" style="margin-bottom:8px">Paste a Drive share link (or any image URL). First image is the main photo. Share as “Anyone with the link”.</div>
-        <div id="imageList">${images.map((u) => imageRow(u)).join('')}</div>
+        <label>Images</label>
+        <div class="hint" style="margin-bottom:8px">Paste a Drive share link (or any image URL). First image is the main photo. Share as “Anyone with the link”. Give each image an <strong>item code</strong> - customers see it under the photo.</div>
+        <div id="imageList">${imgItems.map((it) => imageRow(it)).join('')}</div>
         <button type="button" class="btn btn-outline btn-sm" id="addImageBtn">+ Add another image</button>
+        <button type="button" class="btn btn-outline btn-sm" id="autoCodesBtn" title="Fill empty item codes from the product code and colour/design">Auto-fill item codes</button>
       </div>
       <div class="check-row"><input type="checkbox" id="pFeatured" ${p.featured ? 'checked' : ''}><label for="pFeatured">Featured on homepage</label></div>
       <div class="check-row"><input type="checkbox" id="pActive" ${p.active === false ? '' : 'checked'}><label for="pActive">Active (visible in store)</label></div>`;
   }
 
-  function imageRow(url) {
+  function imageRow(it) {
+    it = typeof it === 'string' ? { url: it } : (it || {});
+    const url = it.url || '';
     return `<div class="image-row">
-      <img class="image-preview" src="${esc(url || '')}" onerror="this.style.visibility='hidden'" ${url ? '' : 'style="visibility:hidden"'}>
-      <input class="img-input" value="${esc(url || '')}" placeholder="https://drive.google.com/file/d/…">
+      <img class="image-preview" src="${esc(url)}" onerror="this.style.visibility='hidden'" ${url ? '' : 'style="visibility:hidden"'}>
+      <div class="image-fields">
+        <input class="img-input" value="${esc(url)}" placeholder="https://drive.google.com/file/d/…">
+        <div class="image-meta">
+          <input class="img-code" value="${esc(it.code || '')}" placeholder="Item code e.g. ZM101-RED" maxlength="60">
+          <select class="img-a" data-val="${esc(it.a_value || '')}" title="Which colour/design this photo shows"></select>
+        </div>
+      </div>
       <button type="button" class="btn btn-danger btn-sm rm-img">✕</button>
     </div>`;
+  }
+
+  /* ---------------------------- Variants ---------------------------- */
+  function variantSection(p) {
+    const has = Boolean(p.option_a_name);
+    const vs = p.variants || [];
+    const uniq = (arr) => arr.filter((x, i) => x && arr.indexOf(x) === i);
+    const aVals = uniq(vs.map((v) => v.a_value)).join(', ');
+    const bVals = uniq(vs.map((v) => v.b_value)).join(', ');
+    return `
+      <div class="variant-box">
+        <div class="check-row"><input type="checkbox" id="pHasVar" ${has ? 'checked' : ''}><label for="pHasVar"><strong>This product has variants</strong> (sizes, colours or different designs, each with its own stock)</label></div>
+        <div id="varWrap" ${has ? '' : 'hidden'}>
+          <div class="grid-2">
+            <div class="field"><label>Option 1 name</label><input id="pOptA" value="${esc(p.option_a_name || 'Color')}" placeholder="Color or Design"></div>
+            <div class="field"><label>Option 1 values (comma separated)</label><input id="pValsA" value="${esc(aVals)}" placeholder="Red, Blue, Black"></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Option 2 name (optional)</label><input id="pOptB" value="${esc(p.option_b_name || '')}" placeholder="Size"></div>
+            <div class="field"><label>Option 2 values</label><input id="pValsB" value="${esc(bVals)}" placeholder="S, M, L, XL"></div>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" id="buildGridBtn">Build / update stock grid</button>
+          <div id="varGridWrap" style="margin-top:12px">${variantGrid(vs, p.option_a_name, p.option_b_name)}</div>
+        </div>
+      </div>`;
+  }
+
+  function variantGrid(vs, nameA, nameB) {
+    if (!vs.length) return '<div class="hint">Enter the option values above, then click <strong>Build / update stock grid</strong>.</div>';
+    return `<div style="overflow-x:auto"><table class="var-table"><thead><tr>
+      <th>${esc(nameA || 'Option 1')}</th>${nameB ? `<th>${esc(nameB)}</th>` : ''}<th>Item code (SKU)</th><th>Stock</th><th></th></tr></thead><tbody>${
+      vs.map((v) => `<tr data-a="${esc(v.a_value)}" data-b="${esc(v.b_value || '')}">
+        <td>${esc(v.a_value)}</td>${nameB ? `<td>${esc(v.b_value || '')}</td>` : ''}
+        <td><input class="v-sku" value="${esc(v.sku || '')}" maxlength="60"></td>
+        <td><input class="v-stock" type="number" min="0" value="${v.stock != null ? v.stock : 0}"></td>
+        <td><button type="button" class="btn btn-danger btn-sm rm-var">✕</button></td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  const splitVals = (str) => String(str || '').split(',').map((x) => x.trim()).filter((x, i, a) => x && a.findIndex((y) => y.toLowerCase() === x.toLowerCase()) === i);
+  const codePart = (x) => String(x).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+
+  // Base for generated codes: the SKU if given, else initials of the name.
+  function baseCode() {
+    const sku = $('#pSku').value.trim();
+    if (sku) return sku;
+    const ini = ($('#pName').value.match(/[A-Za-z0-9]+/g) || []).map((w) => w[0]).join('').toUpperCase().slice(0, 4);
+    return 'ZM' + (ini || '');
+  }
+
+  function readGrid() {
+    return $$('#varGridWrap tbody tr').map((tr) => ({
+      a_value: tr.dataset.a, b_value: tr.dataset.b,
+      sku: tr.querySelector('.v-sku').value.trim(),
+      stock: parseInt(tr.querySelector('.v-stock').value, 10) || 0,
+    }));
+  }
+
+  function updateTotals() {
+    const has = $('#pHasVar').checked;
+    const stockEl = $('#pStock');
+    stockEl.disabled = has;
+    if (has) {
+      const total = readGrid().reduce((n, v) => n + v.stock, 0);
+      stockEl.value = total;
+      $('#stockHint').textContent = 'Total of all variants';
+    } else $('#stockHint').textContent = '';
+  }
+
+  // Keep every image's colour/design dropdown in sync with option 1's values.
+  function refreshImageSelects() {
+    const has = $('#pHasVar').checked;
+    const vals = splitVals($('#pValsA').value);
+    $$('#imageList .img-a').forEach((sel) => {
+      const cur = sel.value || sel.dataset.val || '';
+      sel.hidden = !has;
+      sel.innerHTML = `<option value="">All ${esc($('#pOptA').value || 'options')}</option>` +
+        vals.map((v) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(v)}</option>`).join('');
+      sel.dataset.val = sel.value;
+    });
+  }
+
+  function wireVariants() {
+    const has = $('#pHasVar'), wrap = $('#varWrap');
+    has.addEventListener('change', () => { wrap.hidden = !has.checked; updateTotals(); refreshImageSelects(); });
+
+    $('#buildGridBtn').addEventListener('click', () => {
+      const nameA = $('#pOptA').value.trim();
+      const nameB = $('#pOptB').value.trim();
+      const A = splitVals($('#pValsA').value);
+      const B = nameB ? splitVals($('#pValsB').value) : [];
+      if (!nameA || !A.length) { toast('Enter option 1 name and at least one value', 'error'); return; }
+      if (nameB && !B.length) { toast('Enter option 2 values or clear its name', 'error'); return; }
+      const old = readGrid();
+      const base = baseCode();
+      const rows = [];
+      for (const a of A) for (const b of (nameB ? B : [''])) {
+        const prev = old.find((o) => o.a_value.toLowerCase() === a.toLowerCase() && o.b_value.toLowerCase() === b.toLowerCase());
+        rows.push(prev || {
+          a_value: a, b_value: b, stock: 0,
+          sku: [base, codePart(a), b ? codePart(b) : ''].filter(Boolean).join('-'),
+        });
+        if (prev) { prev.a_value = a; prev.b_value = b; }
+      }
+      $('#varGridWrap').innerHTML = variantGrid(rows, nameA, nameB);
+      updateTotals(); refreshImageSelects();
+    });
+
+    $('#varGridWrap').addEventListener('input', updateTotals);
+    $('#varGridWrap').addEventListener('click', (e) => {
+      if (e.target.classList.contains('rm-var')) { e.target.closest('tr').remove(); updateTotals(); }
+    });
+    $('#pValsA').addEventListener('input', refreshImageSelects);
+    $('#pOptA').addEventListener('input', refreshImageSelects);
+
+    $('#autoCodesBtn').addEventListener('click', () => {
+      const base = baseCode();
+      let n = 0;
+      $$('#imageList .image-row').forEach((row, i) => {
+        const code = row.querySelector('.img-code');
+        if (code.value.trim()) return;
+        const a = row.querySelector('.img-a').value;
+        code.value = [base, a ? codePart(a) : (i + 1)].join('-'); n++;
+      });
+      toast(n ? n + ' item code(s) filled' : 'All images already have a code', n ? 'success' : 'info');
+    });
+
+    updateTotals(); refreshImageSelects();
   }
 
   // Two-way binding between Discount % and Sale price, relative to Price.
@@ -541,7 +679,7 @@
     const list = $('#imageList');
     list.addEventListener('input', (e) => {
       if (e.target.classList.contains('img-input')) {
-        const img = e.target.parentNode.querySelector('.image-preview');
+        const img = e.target.closest('.image-row').querySelector('.image-preview');
         img.src = e.target.value; img.style.visibility = e.target.value ? 'visible' : 'hidden';
       }
     });
@@ -551,8 +689,12 @@
         else e.target.closest('.image-row').querySelector('.img-input').value = '';
       }
     });
+    list.addEventListener('change', (e) => {
+      if (e.target.classList.contains('img-a')) e.target.dataset.val = e.target.value;
+    });
     $('#addImageBtn').addEventListener('click', () => {
       list.insertAdjacentHTML('beforeend', imageRow(''));
+      refreshImageSelects();
     });
   }
 
@@ -564,6 +706,7 @@
        <button class="btn btn-primary" id="saveProd">Save Product</button>`);
     wireImageList();
     wireDiscount();
+    wireVariants();
     $('#saveProd').addEventListener('click', () => saveProduct(null));
   });
 
@@ -575,12 +718,19 @@
          <button class="btn btn-primary" id="saveProd">Save Changes</button>`);
       wireImageList();
       wireDiscount();
+      wireVariants();
       $('#saveProd').addEventListener('click', () => saveProduct(id));
     } catch (e) { toast(e.message, 'error'); }
   }
 
   function collectProduct() {
-    const images = $$('#imageList .img-input').map((i) => i.value.trim()).filter(Boolean);
+    const has = $('#pHasVar').checked;
+    const image_items = $$('#imageList .image-row').map((row) => ({
+      url: row.querySelector('.img-input').value.trim(),
+      code: row.querySelector('.img-code').value.trim(),
+      a_value: has ? row.querySelector('.img-a').value : '',
+    })).filter((it) => it.url);
+    const optB = has ? $('#pOptB').value.trim() : '';
     return {
       name: $('#pName').value.trim(),
       description: $('#pDesc').value,
@@ -591,7 +741,10 @@
       sku: $('#pSku').value.trim(),
       featured: $('#pFeatured').checked,
       active: $('#pActive').checked,
-      images,
+      option_a_name: has ? $('#pOptA').value.trim() : '',
+      option_b_name: optB,
+      variants: has ? readGrid().map((v) => ({ ...v, b_value: optB ? v.b_value : '' })) : [],
+      image_items,
     };
   }
 
@@ -599,6 +752,7 @@
     const body = collectProduct();
     if (!body.name) { toast('Product name is required', 'error'); return; }
     if (!body.price && !body.sale_price) { toast('Set a price', 'error'); return; }
+    if ($('#pHasVar').checked && !body.variants.length) { toast('Build the stock grid for your variants first', 'error'); return; }
     const btn = $('#saveProd'); btn.disabled = true; btn.textContent = 'Saving…';
     try {
       await api('/products' + (id ? '/' + id : ''), { method: id ? 'PUT' : 'POST', body });
@@ -698,7 +852,7 @@
     try {
       const o = await api('/orders/' + id);
       currentOrder = o;
-      const items = (o.items || []).map((it) => `<tr><td>${esc(it.product_name)}</td><td>${it.qty}</td><td>${money(it.unit_price)}</td><td style="text-align:right">${money(it.unit_price * it.qty)}</td></tr>`).join('');
+      const items = (o.items || []).map((it) => `<tr><td>${esc(it.product_name)}${it.variant_label ? `<div class="it-var">${esc(it.variant_label)}${it.sku ? ' · ' + esc(it.sku) : ''}</div>` : ''}</td><td>${it.qty}</td><td>${money(it.unit_price)}</td><td style="text-align:right">${money(it.unit_price * it.qty)}</td></tr>`).join('');
       const waNum = String(o.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '94');
       const contact =
         `<a class="btn btn-outline btn-sm" href="tel:${esc(o.phone)}">📞 Call</a> ` +
@@ -814,7 +968,7 @@
 
     const rows = (o.items || []).map((it) => `
       <tr>
-        <td class="it-name">${esc(it.product_name)}</td>
+        <td class="it-name">${esc(it.product_name)}${it.variant_label ? `<br><span style="font-size:.85em;color:#6b5b60">${esc(it.variant_label)}${it.sku ? ' &middot; ' + esc(it.sku) : ''}</span>` : ''}</td>
         <td class="it-qty">${it.qty}</td>
         ${gift ? '' : `<td class="it-price">${money(it.unit_price)}</td><td class="it-total">${money(it.unit_price * it.qty)}</td>`}
       </tr>`).join('');

@@ -31,16 +31,17 @@
           ${media}
           <div>
             <h4><a href="/product?slug=${encodeURIComponent(i.slug)}">${Z.escapeHtml(i.name)}</a></h4>
+            ${i.variant_label ? `<div class="cart-variant">${Z.escapeHtml(i.variant_label)}${i.sku ? ` <span>· ${Z.escapeHtml(i.sku)}</span>` : ''}</div>` : ''}
             <div style="color:var(--muted);font-size:.88rem">${Z.money(i.price)} each</div>
             <div class="qty-stepper" style="margin-top:8px">
-              <button type="button" data-dec="${i.id}">−</button>
-              <input type="number" value="${i.qty}" min="1" data-qty="${i.id}">
-              <button type="button" data-inc="${i.id}">+</button>
+              <button type="button" data-dec="${i.key}">−</button>
+              <input type="number" value="${i.qty}" min="1" data-qty="${i.key}">
+              <button type="button" data-inc="${i.key}">+</button>
             </div>
           </div>
           <div style="text-align:right">
             <div style="font-weight:700;color:var(--maroon)">${Z.money(i.price * i.qty)}</div>
-            <button class="rm" data-rm="${i.id}">Remove</button>
+            <button class="rm" data-rm="${i.key}">Remove</button>
           </div>
         </div>`;
     }).join('');
@@ -60,18 +61,18 @@
       </div>`;
 
     root.querySelectorAll('[data-inc]').forEach((b) => b.addEventListener('click', () => {
-      const id = +b.dataset.inc; const it = Cart.items().find((x) => x.id === id);
+      const id = b.dataset.inc; const it = Cart.items().find((x) => x.key === id);
       Cart.setQty(id, it.qty + 1); render();
     }));
     root.querySelectorAll('[data-dec]').forEach((b) => b.addEventListener('click', () => {
-      const id = +b.dataset.dec; const it = Cart.items().find((x) => x.id === id);
+      const id = b.dataset.dec; const it = Cart.items().find((x) => x.key === id);
       Cart.setQty(id, it.qty - 1); render();
     }));
     root.querySelectorAll('[data-qty]').forEach((inp) => inp.addEventListener('change', () => {
-      Cart.setQty(+inp.dataset.qty, parseInt(inp.value, 10) || 1); render();
+      Cart.setQty(inp.dataset.qty, parseInt(inp.value, 10) || 1); render();
     }));
     root.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => {
-      Cart.remove(+b.dataset.rm); render();
+      Cart.remove(b.dataset.rm); render();
     }));
   }
 

@@ -8,6 +8,7 @@ const { normalizeImageUrl } = require('../utils/driveImage');
 const { getSettings, updateSettings, getAllDistricts, setDistricts, getPaymentToggles, setPaymentToggles } = require('../settings');
 const { listMethods } = require('../payments');
 const mailer = require('../mailer');
+const { syncProductStock, adjustStock } = require('../stock');
 const {
   requireAdmin,
   signToken,
@@ -228,12 +229,32 @@ router.delete('/categories/:id', async (req, res, next) => {
 
 /* ---------------------------- Products -------------------------- */
 
-async function loadProductImages(productId) {
+async function loadProductImageItems(productId) {
   const { rows } = await query(
-    'SELECT url FROM product_images WHERE product_id=$1 ORDER BY sort_order, id',
+    'SELECT url, code, a_value FROM product_images WHERE product_id=$1 ORDER BY sort_order, id',
     [productId]
   );
-  return rows.map((r) => r.url);
+  return rows.map((r) => ({ url: r.url, code: r.code || '', a_value: r.a_value || '' }));
+}
+
+async function loadProductImages(productId) {
+  return (await loadProductImageItems(productId)).map((r) => r.url);
+}
+
+async function loadVariants(productId) {
+  const { rows } = await query(
+    'SELECT id, a_value, b_value, sku, stock FROM product_variants WHERE product_id=$1 ORDER BY sort_order, id',
+    [productId]
+  );
+  return rows;
+}
+
+// Attach images, image_items and variants to a product row for the admin form.
+async function decorateProduct(p) {
+  p.image_items = await loadProductImageItems(p.id);
+  p.images = p.image_items.map((i) => i.url);
+  p.variants = await loadVariants(p.id);
+  return p;
 }
 
 router.get('/products', async (req, res, next) => {
@@ -243,7 +264,7 @@ router.get('/products', async (req, res, next) => {
          FROM products p LEFT JOIN categories c ON c.id = p.category_id
         ORDER BY p.created_at DESC`
     );
-    for (const p of rows) p.images = await loadProductImages(p.id);
+    for (const p of rows) await decorateProduct(p);
     res.json(rows);
   } catch (err) {
     next(err);
@@ -254,7 +275,7 @@ router.get('/products/:id', async (req, res, next) => {
   try {
     const { rows } = await query('SELECT * FROM products WHERE id=$1', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
-    rows[0].images = await loadProductImages(rows[0].id);
+    await decorateProduct(rows[0]);
     res.json(rows[0]);
   } catch (err) {
     next(err);
@@ -276,7 +297,50 @@ async function uniqueSlug(base, excludeId) {
   }
 }
 
+function cleanText(v, max) {
+  return String(v == null ? '' : v).trim().slice(0, max || 80);
+}
+
 function parsePayload(body) {
+  const optA = cleanText(body.option_a_name, 40) || null;
+  const optB = optA ? (cleanText(body.option_b_name, 40) || null) : null;
+
+  // Variants: only meaningful when an option name is set. De-duplicate combos.
+  const seen = new Set();
+  const variants = [];
+  if (optA && Array.isArray(body.variants)) {
+    for (const v of body.variants) {
+      const a = cleanText(v.a_value, 60);
+      const b = optB ? cleanText(v.b_value, 60) : '';
+      if (!a || (optB && !b)) continue;
+      const key = a.toLowerCase() + '|' + b.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      variants.push({
+        a_value: a,
+        b_value: b,
+        sku: cleanText(v.sku, 60) || null,
+        stock: Math.max(0, parseInt(v.stock, 10) || 0),
+      });
+    }
+  }
+
+  // Images: prefer image_items [{url, code, a_value}], fall back to plain URLs.
+  let imageItems = [];
+  if (Array.isArray(body.image_items)) {
+    imageItems = body.image_items
+      .map((it) => ({
+        url: normalizeImageUrl(it && it.url),
+        code: cleanText(it && it.code, 60) || null,
+        a_value: optA ? (cleanText(it && it.a_value, 60) || null) : null,
+      }))
+      .filter((it) => it.url);
+  } else if (Array.isArray(body.images)) {
+    imageItems = body.images
+      .map((u) => ({ url: normalizeImageUrl(u), code: null, a_value: null }))
+      .filter((it) => it.url);
+  }
+
   return {
     name: (body.name || '').trim(),
     description: body.description || '',
@@ -288,9 +352,10 @@ function parsePayload(body) {
     stock: parseInt(body.stock, 10) || 0,
     featured: Boolean(body.featured),
     active: body.active === undefined ? true : Boolean(body.active),
-    images: Array.isArray(body.images)
-      ? body.images.map((u) => normalizeImageUrl(u)).filter(Boolean)
-      : [],
+    option_a_name: optA,
+    option_b_name: optB,
+    variants,
+    image_items: imageItems,
   };
 }
 
@@ -303,19 +368,23 @@ router.post('/products', async (req, res, next) => {
     const created = await withTransaction(async (client) => {
       const { rows } = await client.query(
         `INSERT INTO products
-           (name, slug, description, price, sale_price, sku, category_id, stock, featured, active)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+           (name, slug, description, price, sale_price, sku, category_id, stock, featured, active,
+            option_a_name, option_b_name)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
         [
           data.name, slug, data.description, data.price, data.sale_price,
           data.sku, data.category_id, data.stock, data.featured, data.active,
+          data.option_a_name, data.option_b_name,
         ]
       );
       const product = rows[0];
-      await insertImages(client, product.id, data.images);
+      await insertImages(client, product.id, data.image_items);
+      await saveVariants(client, product.id, data.variants);
       return product;
     });
-    created.images = await loadProductImages(created.id);
-    res.status(201).json(created);
+    const fresh = await query('SELECT * FROM products WHERE id=$1', [created.id]);
+    await decorateProduct(fresh.rows[0]);
+    res.status(201).json(fresh.rows[0]);
   } catch (err) {
     next(err);
   }
@@ -332,33 +401,67 @@ router.put('/products/:id', async (req, res, next) => {
       const { rows } = await client.query(
         `UPDATE products SET
            name=$1, slug=$2, description=$3, price=$4, sale_price=$5, sku=$6,
-           category_id=$7, stock=$8, featured=$9, active=$10, updated_at=now()
-         WHERE id=$11 RETURNING *`,
+           category_id=$7, stock=$8, featured=$9, active=$10,
+           option_a_name=$11, option_b_name=$12, updated_at=now()
+         WHERE id=$13 RETURNING *`,
         [
           data.name, slug, data.description, data.price, data.sale_price, data.sku,
-          data.category_id, data.stock, data.featured, data.active, id,
+          data.category_id, data.stock, data.featured, data.active,
+          data.option_a_name, data.option_b_name, id,
         ]
       );
       if (rows.length === 0) return null;
       await client.query('DELETE FROM product_images WHERE product_id=$1', [id]);
-      await insertImages(client, id, data.images);
+      await insertImages(client, id, data.image_items);
+      await saveVariants(client, id, data.variants);
       return rows[0];
     });
     if (!updated) return res.status(404).json({ error: 'Not found' });
-    updated.images = await loadProductImages(updated.id);
-    res.json(updated);
+    const fresh = await query('SELECT * FROM products WHERE id=$1', [id]);
+    await decorateProduct(fresh.rows[0]);
+    res.json(fresh.rows[0]);
   } catch (err) {
     next(err);
   }
 });
 
-async function insertImages(client, productId, images) {
-  for (let i = 0; i < images.length; i++) {
+async function insertImages(client, productId, items) {
+  for (let i = 0; i < items.length; i++) {
     await client.query(
-      'INSERT INTO product_images (product_id, url, sort_order) VALUES ($1,$2,$3)',
-      [productId, images[i], i]
+      'INSERT INTO product_images (product_id, url, sort_order, a_value, code) VALUES ($1,$2,$3,$4,$5)',
+      [productId, items[i].url, i, items[i].a_value, items[i].code]
     );
   }
+}
+
+/**
+ * Upsert variants by (a_value, b_value) so ids stay stable (customers' carts
+ * reference them), delete the ones the admin removed, then roll the stock up
+ * into the product. With no variants the product's own stock is left alone.
+ */
+async function saveVariants(client, productId, variants) {
+  if (!variants.length) {
+    await client.query('DELETE FROM product_variants WHERE product_id=$1', [productId]);
+    return;
+  }
+  const keep = [];
+  for (let i = 0; i < variants.length; i++) {
+    const v = variants[i];
+    const { rows } = await client.query(
+      `INSERT INTO product_variants (product_id, a_value, b_value, sku, stock, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       ON CONFLICT (product_id, a_value, b_value)
+       DO UPDATE SET sku = EXCLUDED.sku, stock = EXCLUDED.stock, sort_order = EXCLUDED.sort_order
+       RETURNING id`,
+      [productId, v.a_value, v.b_value, v.sku, v.stock, i]
+    );
+    keep.push(rows[0].id);
+  }
+  await client.query(
+    'DELETE FROM product_variants WHERE product_id=$1 AND NOT (id = ANY($2::int[]))',
+    [productId, keep]
+  );
+  await syncProductStock(client, productId);
 }
 
 // Lightweight partial update for inline toggles (featured / active / stock).
@@ -369,7 +472,12 @@ router.patch('/products/:id', async (req, res, next) => {
     const body = req.body || {};
     if (body.featured !== undefined) { params.push(Boolean(body.featured)); fields.push(`featured=$${params.length}`); }
     if (body.active !== undefined) { params.push(Boolean(body.active)); fields.push(`active=$${params.length}`); }
-    if (body.stock !== undefined) { params.push(parseInt(body.stock, 10) || 0); fields.push(`stock=$${params.length}`); }
+    if (body.stock !== undefined) {
+      // Variant products keep stock per variant; the product total is derived.
+      const hv = await query('SELECT 1 FROM product_variants WHERE product_id=$1 LIMIT 1', [req.params.id]);
+      if (hv.rows.length) return res.status(400).json({ error: 'This product has variants. Edit stock per variant in the product form.' });
+      params.push(parseInt(body.stock, 10) || 0); fields.push(`stock=$${params.length}`);
+    }
     if (fields.length === 0) return res.status(400).json({ error: 'Nothing to update' });
     params.push(req.params.id);
     const { rows } = await query(
@@ -421,16 +529,36 @@ router.patch('/orders/:id', async (req, res, next) => {
     // tracking_id may be set to a value or explicitly cleared ('' -> null).
     const trackingProvided = Object.prototype.hasOwnProperty.call(body, 'tracking_id');
     const tracking = trackingProvided ? (String(body.tracking_id || '').trim().slice(0, 120) || null) : null;
-    const { rows } = await query(
-      `UPDATE orders SET
-         order_status = COALESCE($1, order_status),
-         payment_status = COALESCE($2, payment_status),
-         tracking_id = CASE WHEN $4 THEN $3 ELSE tracking_id END
-       WHERE id=$5 RETURNING *`,
-      [order_status || null, payment_status || null, tracking, trackingProvided, req.params.id]
-    );
-    if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
-    res.json(rows[0]);
+
+    const updated = await withTransaction(async (client) => {
+      const cur = await client.query('SELECT * FROM orders WHERE id=$1 FOR UPDATE', [req.params.id]);
+      if (cur.rows.length === 0) return null;
+      const before = cur.rows[0];
+      const { rows } = await client.query(
+        `UPDATE orders SET
+           order_status = COALESCE($1, order_status),
+           payment_status = COALESCE($2, payment_status),
+           tracking_id = CASE WHEN $4 THEN $3 ELSE tracking_id END
+         WHERE id=$5 RETURNING *`,
+        [order_status || null, payment_status || null, tracking, trackingProvided, req.params.id]
+      );
+      const after = rows[0];
+
+      // Orders placed since stock tracking began (stock_deducted) hold their
+      // quantities unless cancelled: cancelling puts them back, un-cancelling
+      // takes them out again. Older orders never touched stock, so are skipped.
+      const wasCancelled = before.order_status === 'cancelled';
+      const isCancelled = after.order_status === 'cancelled';
+      if (before.stock_deducted && isCancelled !== wasCancelled) {
+        const lines = (await client.query(
+          'SELECT product_id, variant_id, qty FROM order_items WHERE order_id=$1', [after.id]
+        )).rows;
+        await adjustStock(client, lines, isCancelled ? +1 : -1);
+      }
+      return after;
+    });
+    if (!updated) return res.status(404).json({ error: 'Not found' });
+    res.json(updated);
   } catch (err) {
     next(err);
   }
@@ -453,11 +581,24 @@ router.post('/orders/:id/send-tracking', async (req, res, next) => {
   }
 });
 
-// Permanently delete an order (its items cascade automatically).
+// Permanently delete an order (its items cascade automatically). Stock it was
+// holding is returned first.
 router.delete('/orders/:id', async (req, res, next) => {
   try {
-    const { rowCount } = await query('DELETE FROM orders WHERE id=$1', [req.params.id]);
-    if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
+    const found = await withTransaction(async (client) => {
+      const cur = await client.query('SELECT * FROM orders WHERE id=$1 FOR UPDATE', [req.params.id]);
+      if (cur.rows.length === 0) return false;
+      const o = cur.rows[0];
+      if (o.stock_deducted && o.order_status !== 'cancelled') {
+        const lines = (await client.query(
+          'SELECT product_id, variant_id, qty FROM order_items WHERE order_id=$1', [o.id]
+        )).rows;
+        await adjustStock(client, lines, +1);
+      }
+      await client.query('DELETE FROM orders WHERE id=$1', [o.id]);
+      return true;
+    });
+    if (!found) return res.status(404).json({ error: 'Not found' });
     res.json({ ok: true });
   } catch (err) {
     next(err);

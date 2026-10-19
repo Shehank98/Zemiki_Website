@@ -91,6 +91,7 @@ async function sendInvoice(order, items) {
       created_at: order.created_at,
       items: (items || []).map((i) => ({
         name: i.product_name, qty: i.qty, unit_price: Number(i.unit_price),
+        variant: i.variant_label || '', sku: i.sku || '',
       })),
     },
   });

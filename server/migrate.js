@@ -124,6 +124,37 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS gift_message TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS birthday TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_id TEXT;
 
+-- Variants: up to two option types per product (e.g. Color + Size). Each
+-- combination is a row with its own stock and item code (SKU). A product with
+-- no option names behaves exactly as before.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS option_a_name TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS option_b_name TEXT;
+
+CREATE TABLE IF NOT EXISTS product_variants (
+  id          SERIAL PRIMARY KEY,
+  product_id  INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  a_value     TEXT NOT NULL DEFAULT '',
+  b_value     TEXT NOT NULL DEFAULT '',
+  sku         TEXT,
+  stock       INTEGER NOT NULL DEFAULT 0,
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (product_id, a_value, b_value)
+);
+CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id);
+
+-- Each image can carry an item code caption and belong to one option-A value
+-- (e.g. the Red colour) so picking/swiping to it selects that variant.
+ALTER TABLE product_images ADD COLUMN IF NOT EXISTS a_value TEXT;
+ALTER TABLE product_images ADD COLUMN IF NOT EXISTS code TEXT;
+
+-- Order lines remember which variant was bought (snapshot of label + SKU).
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id INTEGER;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_label TEXT;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS sku TEXT;
+-- true for orders placed since stock tracking began: their quantities are held
+-- in stock until cancelled/deleted (older orders never touched stock).
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_deducted BOOLEAN NOT NULL DEFAULT false;
+
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured);
 CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
@@ -283,7 +314,7 @@ async function seedShippingDefaults() {
     shipping_flat: process.env.SHIPPING_FLAT_LKR || '350',
     free_shipping_over: process.env.FREE_SHIPPING_OVER_LKR || '0',
     announcement_text:
-      'Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay & PayHere',
+      'Free islandwide delivery on orders over Rs. 15,000 · Pay in 3 with KOKO',
     announcement_enabled: 'true',
   };
   for (const [key, value] of Object.entries(defaults)) {
@@ -292,6 +323,14 @@ async function seedShippingDefaults() {
       [key, String(value)]
     );
   }
+  // Mintpay and PayHere were removed: upgrade the old seeded default text, but
+  // only if the admin never customised it (exact match on the old default).
+  await query(
+    `UPDATE settings SET value = $1
+      WHERE key = 'announcement_text'
+        AND value = 'Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay & PayHere'`,
+    ['Free islandwide delivery on orders over Rs. 15,000 · Pay in 3 with KOKO']
+  );
 }
 
 // Sri Lanka's 25 administrative districts with sensible default delivery fees.
