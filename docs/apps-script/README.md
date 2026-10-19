@@ -28,6 +28,23 @@ In your Railway service **Variables**, add:
 Redeploy. That's it - order invoices now send automatically, and **Admin →
 Marketing → Send an Offer Email** will reach your subscribers + past customers.
 
+## Updating the script (needed for tracking links and variants)
+
+The invoice now lists each item's size/colour and item code and includes a
+**Track my order** button, and tracking emails are sent for **Dispatched** and
+**Delivered**. To get these:
+
+1. Open your Apps Script project and replace the code with the new `Code.gs`
+   (keep your `SECRET` value).
+2. **Deploy > Manage deployments > pencil icon > Version: New version > Deploy.**
+   Editing an existing deployment keeps the same `/exec` URL, so nothing changes
+   in Railway.
+3. In Railway, set `PUBLIC_BASE_URL` to your site (e.g. `https://www.zemiki.com`)
+   so the tracking links in emails use your real domain.
+
+The new script is backward compatible: if you update it before or after the site,
+nothing breaks, you simply get the new email details once both are updated.
+
 ## Notes & limits
 
 - Gmail free accounts can send ~100 recipients/day; Google Workspace ~1,500/day.

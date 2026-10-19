@@ -79,7 +79,7 @@ from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 | `ADMIN_PASSWORD` | ✅ | Admin login password (set a strong one!) |
 | `WHATSAPP_NUMBER` | ✅ | International format, no `+`, e.g. `94771234567` |
 | `STORE_NAME` | – | Defaults to `Zemiki` |
-| `PUBLIC_BASE_URL` | – | Your Railway domain, used for payment return URLs |
+| `PUBLIC_BASE_URL` | – | Your public site URL (e.g. `https://www.zemiki.com`). Used for payment return URLs and the customer tracking links in emails |
 | `SHIPPING_FLAT_LKR` | – | Initial flat shipping fee (default 350). Editable later in **Admin → Settings**. |
 | `FREE_SHIPPING_OVER_LKR` | – | Initial free-shipping threshold (default 0 = always charge). Editable in **Admin → Settings**. |
 | `KOKO_MERCHANT_ID`, `KOKO_API_KEY` | – | Leave blank → KOKO runs in test mode |

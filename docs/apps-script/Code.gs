@@ -111,7 +111,9 @@ function handleInvoice(data) {
   var rows = (o.items || []).map(function (i, idx) {
     var bg = idx % 2 ? '#ffffff' : CREAM;
     return '<tr>' +
-      '<td style="padding:11px 14px;font-size:14px;background:' + bg + '">' + esc(i.name) + '</td>' +
+      '<td style="padding:11px 14px;font-size:14px;background:' + bg + '">' + esc(i.name) +
+        (i.variant ? '<div style="font-size:12px;color:' + MAROON + ';margin-top:2px">' + esc(i.variant) + (i.sku ? ' &middot; ' + esc(i.sku) : '') + '</div>' : '') +
+      '</td>' +
       '<td style="padding:11px 8px;font-size:14px;text-align:center;color:' + MUTED + ';background:' + bg + '">x' + i.qty + '</td>' +
       '<td style="padding:11px 14px;font-size:14px;text-align:right;font-weight:bold;background:' + bg + '">' + money(i.unit_price * i.qty) + '</td>' +
       '</tr>';
@@ -151,7 +153,10 @@ function handleInvoice(data) {
       esc(o.city || '') + (o.district ? ', ' + esc(o.district) : '') + '<br>' + esc(o.phone) +
       '<div style="margin-top:8px;color:' + MUTED + '">Payment: ' + esc(o.payment_method) + ' (' + esc(o.payment_status) + ')</div>' +
     '</div>' +
-    '<p style="font-size:13px;color:' + MUTED + ';text-align:center;margin:18px 0 0">We will email you the tracking details as soon as your order ships.</p>' +
+    '<p style="font-size:13px;color:' + MUTED + ';text-align:center;margin:18px 0 0">' +
+      (o.track_url ? 'Follow your order any time with your personal tracking link. We will also email you when it ships.'
+                   : 'We will email you the tracking details as soon as your order ships.') + '</p>' +
+    (o.track_url ? button('Track my order', o.track_url) : '') +
     (store.whatsapp_number ? button('Message us on WhatsApp', 'https://wa.me/' + store.whatsapp_number, '#25d366', '#083a1e') : '');
 
   MailApp.sendEmail({
@@ -168,27 +173,46 @@ function handleInvoice(data) {
 function handleTracking(data) {
   var o = data.order, store = data.store || {};
   if (!o || !o.email) return json({ ok: false, error: 'no email' });
+  var delivered = o.stage === 'delivered';
 
-  var inner =
-    eyebrow('On its way') +
-    '<h1 style="font-family:Georgia,serif;color:' + MAROON + ';font-size:26px;margin:6px 0 4px">Your order has shipped!</h1>' +
-    '<p style="font-size:15px;color:' + MUTED + ';margin:0 0 20px">Hi ' + firstName(o.customer_name) + ', great news - order ' +
-      '<strong style="color:' + INK + '">' + esc(o.order_number) + '</strong> is on the way to you.</p>' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' +
-      '<tr><td align="center" style="background:' + CREAM + ';border:2px solid ' + GOLD + ';border-radius:14px;padding:22px">' +
-        '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:' + MUTED + '">Tracking number</div>' +
-        '<div style="font-family:Georgia,serif;font-size:26px;font-weight:bold;color:' + MAROON + ';margin-top:6px;letter-spacing:1px">' + esc(o.tracking_id) + '</div>' +
-      '</td></tr>' +
-    '</table>' +
-    '<div style="margin-top:20px;padding:16px 18px;background:#ffffff;border:1px solid ' + LINE + ';border-radius:12px;font-size:14px;line-height:1.6">' +
-      '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:' + MUTED + ';margin-bottom:6px">Shipping to</div>' +
-      esc(o.address || '') + '<br>' + esc(o.city || '') + (o.district ? ', ' + esc(o.district) : '') +
-    '</div>' +
+  var courierBlock = '';
+  if (!delivered && (o.tracking_id || o.courier)) {
+    courierBlock =
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' +
+        '<tr><td align="center" style="background:' + CREAM + ';border:2px solid ' + GOLD + ';border-radius:14px;padding:22px">' +
+          (o.courier ? '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:' + MUTED + '">Courier: ' + esc(o.courier) + '</div>' : '') +
+          (o.tracking_id
+            ? '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:' + MUTED + ';margin-top:10px">Tracking number</div>' +
+              '<div style="font-family:Georgia,serif;font-size:26px;font-weight:bold;color:' + MAROON + ';margin-top:6px;letter-spacing:1px">' + esc(o.tracking_id) + '</div>'
+            : '') +
+        '</td></tr>' +
+      '</table>';
+  }
+
+  var inner = delivered
+    ? eyebrow('Delivered') +
+      '<h1 style="font-family:Georgia,serif;color:' + MAROON + ';font-size:26px;margin:6px 0 4px">Your order has arrived!</h1>' +
+      '<p style="font-size:15px;color:' + MUTED + ';margin:0 0 20px">Hi ' + firstName(o.customer_name) + ', order ' +
+        '<strong style="color:' + INK + '">' + esc(o.order_number) + '</strong> has been delivered. We hope you love your new pieces.</p>' +
+      '<p style="font-size:14px;color:' + MUTED + ';margin:0">If anything is not perfect, message us within 3 days of delivery and we will make it right.</p>'
+    : eyebrow('On its way') +
+      '<h1 style="font-family:Georgia,serif;color:' + MAROON + ';font-size:26px;margin:6px 0 4px">Your order has shipped!</h1>' +
+      '<p style="font-size:15px;color:' + MUTED + ';margin:0 0 20px">Hi ' + firstName(o.customer_name) + ', great news. Order ' +
+        '<strong style="color:' + INK + '">' + esc(o.order_number) + '</strong> is on the way to you.</p>' +
+      courierBlock +
+      '<div style="margin-top:20px;padding:16px 18px;background:#ffffff;border:1px solid ' + LINE + ';border-radius:12px;font-size:14px;line-height:1.6">' +
+        '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:' + MUTED + ';margin-bottom:6px">Shipping to</div>' +
+        esc(o.address || '') + '<br>' + esc(o.city || '') + (o.district ? ', ' + esc(o.district) : '') +
+      '</div>' +
+      (o.courier_url ? button('Track with ' + (o.courier || 'the courier'), o.courier_url, GOLD, '#2b2320') : '');
+
+  inner +=
+    (o.track_url ? button('View my order status', o.track_url) : '') +
     (store.whatsapp_number ? button('Any questions? Message us', 'https://wa.me/' + store.whatsapp_number, '#25d366', '#083a1e') : '');
 
   MailApp.sendEmail({
     to: o.email,
-    subject: (store.store_name || 'Zemiki') + ' - Order ' + o.order_number + ' has shipped',
+    subject: (store.store_name || 'Zemiki') + ' - Order ' + o.order_number + (delivered ? ' has been delivered' : ' has shipped'),
     htmlBody: shell(store, inner),
     name: store.store_name || 'Zemiki',
   });
