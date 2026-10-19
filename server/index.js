@@ -59,7 +59,14 @@ function renderHtml(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');
   html = html.replace(/(href|src)="(\/[^"?]+\.(?:css|js))"/g,
     (m, attr, url) => `${attr}="${url}?v=${ASSET_VERSION}"`);
-  const inject = `<script>window.__ZV=${JSON.stringify(ASSET_VERSION)};</script>`;
+  const icons =
+    '<link rel="icon" href="/favicon.ico" sizes="any">' +
+    '<link rel="icon" type="image/svg+xml" href="/favicon.svg">' +
+    '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">' +
+    '<link rel="apple-touch-icon" href="/apple-touch-icon.png">' +
+    '<link rel="manifest" href="/site.webmanifest">' +
+    '<meta name="theme-color" content="#5a1a2b">';
+  const inject = icons + `<script>window.__ZV=${JSON.stringify(ASSET_VERSION)};</script>`;
   html = html.includes('</head>') ? html.replace('</head>', inject + '</head>') : inject + html;
   htmlCache.set(filePath, html);
   return html;
