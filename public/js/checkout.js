@@ -237,6 +237,8 @@
     btn.disabled = true; btn.textContent = 'Placing order…';
     try {
       const order = await Z.postJSON('/api/orders', { customer, items, payment_method: method });
+      // Remember the secret tracking link so the confirmation page can show it.
+      try { sessionStorage.setItem('zemiki_track', JSON.stringify({ order: order.order_number, url: order.track_url })); } catch (e) {}
       await handlePayment(method, order, customer);
     } catch (e) {
       Z.toast(e.message || 'Could not place order', 'error');

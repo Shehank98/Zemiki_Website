@@ -280,3 +280,10 @@ tbody tr { transition: background .12s ease; }
 @media (max-width: 480px) { .quick-actions { grid-template-columns: 1fr; } }
 
 .it-var { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+
+.ship-box { margin-top: 16px; padding: 14px; border: 1px solid var(--line, #e5ddd0); border-radius: 12px; background: rgba(201,162,75,.05); }
+.track-link-row { margin-top: 14px; }
+.order-hist { list-style: none; margin: 6px 0 0; padding: 0; font-size: .84rem; }
+.order-hist li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.order-hist li span:last-child { margin-left: auto; color: var(--muted); }
+.h-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex: none; }

@@ -244,7 +244,8 @@
 
   /* ----------------------------- charts ------------------------------ */
   const PALETTE = ['#5a1a2b', '#c9a24b', '#3f7d54', '#2f5ecf', '#a8842f', '#b23a48', '#7a6f66', '#8a5a2b'];
-  const STATUS_COLORS = { new: '#2f5ecf', processing: '#c9a24b', shipped: '#5a8fd6', delivered: '#3f7d54', cancelled: '#b23a48' };
+  const STATUS_COLORS = { new: '#2f5ecf', processing: '#c9a24b', packed: '#a8842f', shipped: '#5a8fd6', delivered: '#3f7d54', cancelled: '#b23a48' };
+  const STATUS_LABEL = { new: 'New', processing: 'Confirmed', packed: 'Packed', shipped: 'Dispatched', delivered: 'Delivered', cancelled: 'Cancelled' };
 
   function donut(rows, colorFor) {
     const total = rows.reduce((n, r) => n + Number(r.c), 0);
@@ -345,8 +346,8 @@
     return `<span class="pill ${map[s] || 'grey'}">${esc(s)}</span>`;
   }
   function statusPill(s) {
-    const map = { new: 'blue', processing: 'gold', shipped: 'blue', delivered: 'green', cancelled: 'red' };
-    return `<span class="pill ${map[s] || 'grey'}">${esc(s)}</span>`;
+    const map = { new: 'blue', processing: 'gold', packed: 'gold', shipped: 'blue', delivered: 'green', cancelled: 'red' };
+    return `<span class="pill ${map[s] || 'grey'}">${esc(STATUS_LABEL[s] || s)}</span>`;
   }
 
   /* --------------------------- categories ---------------------------- */
@@ -767,7 +768,7 @@
   }
 
   /* ----------------------------- orders ------------------------------ */
-  const ORDER_STATUSES = ['new', 'processing', 'shipped', 'delivered', 'cancelled'];
+  const ORDER_STATUSES = ['new', 'processing', 'packed', 'shipped', 'delivered', 'cancelled'];
   const PAY_STATUSES = ['pending', 'paid', 'failed'];
 
   let ordersCache = [];
@@ -779,7 +780,7 @@
   };
 
   function renderOrderSummary() {
-    const counts = { new: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0 };
+    const counts = { new: 0, processing: 0, packed: 0, shipped: 0, delivered: 0, cancelled: 0 };
     let revenue = 0;
     ordersCache.forEach((o) => {
       if (counts[o.order_status] !== undefined) counts[o.order_status]++;
@@ -788,7 +789,8 @@
     $('#orderSummary').innerHTML =
       `<div class="chip"><strong>${ordersCache.length}</strong>Total orders</div>` +
       `<div class="chip"><strong>${counts.new}</strong>New</div>` +
-      `<div class="chip"><strong>${counts.processing}</strong>Processing</div>` +
+      `<div class="chip"><strong>${counts.processing + counts.packed}</strong>In progress</div>` +
+      `<div class="chip"><strong>${counts.shipped}</strong>Dispatched</div>` +
       `<div class="chip"><strong>${counts.delivered}</strong>Delivered</div>` +
       `<div class="chip"><strong>${money(revenue)}</strong>Paid revenue</div>`;
   }
@@ -828,11 +830,14 @@
 
   async function updateOrder(id, body) {
     try {
-      await api('/orders/' + id, { method: 'PATCH', body });
+      const res = await api('/orders/' + id, { method: 'PATCH', body });
       const o = ordersCache.find((x) => x.id === id);
       if (o) Object.assign(o, body);
       renderOrders();
-      toast('Order updated', 'success');
+      if (res && res.emailed === 'sent') toast('Order updated. Customer emailed their tracking link.', 'success');
+      else if (res && res.emailed === 'failed') toast('Order updated, but the customer email failed. Check Marketing > Email Delivery Test.', 'error');
+      else toast('Order updated', 'success');
+      return res;
     } catch (e) { toast(e.message, 'error'); }
   }
 
@@ -863,8 +868,9 @@
         ? `<div class="gift-note-admin">🎁 <strong>Gift order</strong> - anonymous, prices hidden on the delivery note.${o.gift_message ? `<div class="gift-msg">“${esc(o.gift_message)}”</div>` : ''}</div>`
         : '';
 
-      const statusBtns = ['new', 'processing', 'shipped', 'delivered', 'cancelled']
-        .map((s) => `<button class="btn btn-sm ${s === o.order_status ? 'btn-primary' : 'btn-outline'}" data-set-status="${s}">${s}</button>`).join(' ');
+      const statusBtns = ORDER_STATUSES
+        .map((s) => `<button class="btn btn-sm ${s === o.order_status ? 'btn-primary' : 'btn-outline'}" data-set-status="${s}">${STATUS_LABEL[s]}</button>`).join(' ');
+      const hist = (o.events || []).map((e) => `<li><span class="h-dot"></span><strong>${esc(STATUS_LABEL[e.status] || e.status)}</strong><span>${esc(new Date(e.created_at).toLocaleString('en-LK', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }))}</span></li>`).join('');
       const payBtns = ['pending', 'paid', 'failed']
         .map((s) => `<button class="btn btn-sm ${s === o.payment_status ? 'btn-primary' : 'btn-outline'}" data-set-pay="${s}">${s}</button>`).join(' ');
 
@@ -895,14 +901,23 @@
           <div><div class="od-label">Order status</div><div class="btn-row" id="statusBtns">${statusBtns}</div></div>
           <div><div class="od-label">Payment</div><div class="btn-row" id="payBtns">${esc(o.payment_method)} ${payBtns}</div></div>
         </div>
-        <div style="margin-top:16px">
-          <div class="od-label">Tracking / Courier ID</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px">
-            <input id="trackInput" value="${esc(o.tracking_id || '')}" placeholder="e.g. courier waybill number" style="flex:1;min-width:180px">
-            <button class="btn btn-outline btn-sm" id="saveTrack">Save</button>
-            <button class="btn btn-primary btn-sm" id="sendTrack" ${o.email ? '' : 'disabled title="No email on this order"'}>✉ Email tracking</button>
+        <div class="ship-box">
+          <div class="od-label">Shipping &amp; tracking</div>
+          <div class="grid-2" style="margin-top:8px">
+            <div class="field" style="margin:0"><label>Courier</label><input id="courierInput" value="${esc(o.courier || '')}" placeholder="e.g. Pronto, DHL, Domex" maxlength="80"></div>
+            <div class="field" style="margin:0"><label>Tracking number</label><input id="trackInput" value="${esc(o.tracking_id || '')}" placeholder="courier waybill number" maxlength="120"></div>
           </div>
-          <div class="hint" style="margin-top:6px">Save the tracking ID, then email it to the customer (uses your Apps Script mailer).</div>
+          <div class="field" style="margin:10px 0 0"><label>Courier tracking link (optional)</label><input id="courierUrlInput" value="${esc(o.courier_url || '')}" placeholder="https://..." maxlength="500"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
+            <button class="btn btn-outline btn-sm" id="saveTrack">Save details</button>
+            <button class="btn btn-primary btn-sm" id="sendTrack" ${o.email ? '' : 'disabled title="No email on this order"'}>✉ Email update to customer</button>
+          </div>
+          <div class="hint" style="margin-top:6px">Enter the courier details and save <strong>before</strong> setting the status to Dispatched. Dispatched and Delivered email the customer automatically.</div>
+          <div class="track-link-row">
+            <div class="od-label">Customer tracking link</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:6px"><input id="trackLink" readonly value="${esc(o.track_url || '')}" style="flex:1;min-width:0"><button class="btn btn-outline btn-sm" id="copyTrackLink">Copy</button><a class="btn btn-outline btn-sm" href="${esc(o.track_url || '#')}" target="_blank" rel="noopener">Open</a></div>
+          </div>
+          ${hist ? `<div class="od-label" style="margin-top:14px">History</div><ul class="order-hist">${hist}</ul>` : ''}
         </div>`,
         `<button class="btn btn-outline" id="printSlip">🖨 Packing slip</button>
          <button class="btn btn-gold" id="resendInv" ${o.email ? '' : 'disabled title="No email on this order"'}>✉ Resend invoice</button>
@@ -911,7 +926,12 @@
 
       // quick status actions
       $$('[data-set-status]').forEach((btn) => btn.addEventListener('click', async () => {
-        await updateOrder(o.id, { order_status: btn.dataset.setStatus });
+        const st = btn.dataset.setStatus;
+        if (st === o.order_status) return;
+        if (st === 'shipped' && !o.tracking_id && !o.courier && o.email &&
+            !confirm('No courier or tracking number is saved yet. The customer will be emailed a dispatch notice with only their tracking link. Continue?')) return;
+        if (st === 'cancelled' && !confirm('Cancel this order? Its items go back into stock.')) return;
+        await updateOrder(o.id, { order_status: st });
         viewOrder(o.id); // refresh modal
       }));
       $$('[data-set-pay]').forEach((btn) => btn.addEventListener('click', async () => {
@@ -927,31 +947,39 @@
       $('#printSlip') && $('#printSlip').addEventListener('click', () => printPackingSlip(o));
       $('#delOrder') && $('#delOrder').addEventListener('click', () => deleteOrder(o.id, o.order_number));
 
-      // Save tracking ID
-      $('#saveTrack') && $('#saveTrack').addEventListener('click', async () => {
-        const val = $('#trackInput').value.trim();
-        const btn = $('#saveTrack'); btn.disabled = true; btn.textContent = 'Saving…';
-        try {
-          await api('/orders/' + o.id, { method: 'PATCH', body: { tracking_id: val } });
-          o.tracking_id = val;
-          const co = ordersCache.find((x) => x.id === o.id); if (co) co.tracking_id = val;
-          toast('Tracking ID saved', 'success');
-        } catch (e) { toast(e.message, 'error'); }
-        btn.disabled = false; btn.textContent = 'Save';
+      // Save courier / tracking details
+      const shipBody = () => ({
+        tracking_id: $('#trackInput').value.trim(),
+        courier: $('#courierInput').value.trim(),
+        courier_url: $('#courierUrlInput').value.trim(),
       });
-      // Email the tracking details (saves the current value first)
+      const saveShip = async () => {
+        const body = shipBody();
+        await api('/orders/' + o.id, { method: 'PATCH', body });
+        Object.assign(o, body);
+        const co = ordersCache.find((x) => x.id === o.id); if (co) Object.assign(co, body);
+      };
+      $('#saveTrack') && $('#saveTrack').addEventListener('click', async () => {
+        const btn = $('#saveTrack'); btn.disabled = true; btn.textContent = 'Saving…';
+        try { await saveShip(); toast('Shipping details saved', 'success'); }
+        catch (e) { toast(e.message, 'error'); }
+        btn.disabled = false; btn.textContent = 'Save details';
+      });
+      // Email the update (saves the current values first)
       $('#sendTrack') && $('#sendTrack').addEventListener('click', async () => {
-        const val = $('#trackInput').value.trim();
-        if (!val) { toast('Enter a tracking ID first', 'error'); return; }
         const btn = $('#sendTrack'); btn.disabled = true; btn.textContent = 'Sending…';
         try {
-          await api('/orders/' + o.id, { method: 'PATCH', body: { tracking_id: val } });
-          o.tracking_id = val;
-          const co = ordersCache.find((x) => x.id === o.id); if (co) co.tracking_id = val;
+          await saveShip();
           await api('/orders/' + o.id + '/send-tracking', { method: 'POST' });
-          toast('Tracking email sent', 'success');
+          toast('Update emailed to the customer', 'success');
         } catch (e) { toast(e.message, 'error'); }
-        btn.disabled = false; btn.textContent = '✉ Email tracking';
+        btn.disabled = false; btn.textContent = '✉ Email update to customer';
+      });
+      $('#copyTrackLink') && $('#copyTrackLink').addEventListener('click', () => {
+        const v = $('#trackLink').value;
+        (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(
+          () => toast('Tracking link copied', 'success'),
+          () => { $('#trackLink').select(); toast('Press Ctrl+C to copy', 'info'); });
       });
     } catch (e) { toast(e.message, 'error'); }
   }

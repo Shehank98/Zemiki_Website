@@ -5,6 +5,9 @@ const { query, withTransaction } = require('../db');
 const { computeShipping, getPaymentToggles, getSettings } = require('../settings');
 const mailer = require('../mailer');
 const { adjustStock } = require('../stock');
+const { recordEvent } = require('../orderEvents');
+const { trackUrl } = require('../utils/siteUrl');
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -109,6 +112,7 @@ router.post('/', async (req, res, next) => {
     const shipping = await computeShipping(subtotal, customer.district, country);
     const total = subtotal + shipping;
     const orderNumber = genOrderNumber();
+    const token = crypto.randomBytes(18).toString('base64url'); // secret tracking link id
 
     const isGift = Boolean(customer.is_gift);
     const giftMessage = isGift ? (customer.gift_message || '').slice(0, 500) : null;
@@ -136,8 +140,8 @@ router.post('/', async (req, res, next) => {
         `INSERT INTO orders
            (order_number, customer_name, phone, email, address, city, district, country, notes,
             subtotal, shipping, total, payment_method, payment_status, order_status,
-            is_gift, gift_message, birthday, stock_deducted)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending','new',$14,$15,$16,true)
+            is_gift, gift_message, birthday, stock_deducted, track_token)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending','new',$14,$15,$16,true,$17)
          RETURNING *`,
         [
           orderNumber,
@@ -156,9 +160,11 @@ router.post('/', async (req, res, next) => {
           isGift,
           giftMessage,
           birthday,
+          token,
         ]
       );
       const created = rows[0];
+      await recordEvent(created.id, 'new', null, client);
       const saved = [];
       for (const li of lineItems) {
         await client.query(
@@ -182,7 +188,7 @@ router.post('/', async (req, res, next) => {
     }
 
     // Best-effort: email the customer their invoice (never blocks the order).
-    mailer.sendInvoice(order, savedItems).catch(() => {});
+    mailer.sendInvoice(order, savedItems, { trackUrl: trackUrl(req, order.track_token) }).catch(() => {});
 
     res.status(201).json({
       order_number: order.order_number,
@@ -190,6 +196,8 @@ router.post('/', async (req, res, next) => {
       shipping: Number(order.shipping),
       total: Number(order.total),
       payment_method: order.payment_method,
+      track_token: order.track_token,
+      track_url: trackUrl(req, order.track_token),
     });
   } catch (err) {
     if (err.status === 409) return res.status(409).json({ error: err.message });

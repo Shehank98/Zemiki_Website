@@ -155,6 +155,22 @@ ALTER TABLE order_items ADD COLUMN IF NOT EXISTS sku TEXT;
 -- in stock until cancelled/deleted (older orders never touched stock).
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_deducted BOOLEAN NOT NULL DEFAULT false;
 
+-- Customer tracking: a secret link token per order, courier details, and a
+-- timestamped history of status changes (drives the tracking page timeline).
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS track_token TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_url TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_track_token ON orders(track_token);
+
+CREATE TABLE IF NOT EXISTS order_events (
+  id          SERIAL PRIMARY KEY,
+  order_id    INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  status      TEXT NOT NULL,
+  note        TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events(order_id);
+
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured);
 CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
@@ -377,7 +393,26 @@ async function migrate() {
   await seedSampleProducts();
   await seedAdmin();
   await seedTestimonials();
+  await backfillTracking();
   console.log('[migrate] Schema is up to date.');
+}
+
+// Give orders placed before tracking existed a link token and a first history
+// entry (their created_at), so every order has a working tracking page.
+async function backfillTracking() {
+  const crypto = require('crypto');
+  const { rows } = await query('SELECT id FROM orders WHERE track_token IS NULL');
+  for (const r of rows) {
+    await query('UPDATE orders SET track_token = $1 WHERE id = $2 AND track_token IS NULL', [
+      crypto.randomBytes(18).toString('base64url'),
+      r.id,
+    ]);
+  }
+  await query(
+    `INSERT INTO order_events (order_id, status, created_at)
+     SELECT o.id, 'new', o.created_at FROM orders o
+      WHERE NOT EXISTS (SELECT 1 FROM order_events e WHERE e.order_id = o.id)`
+  );
 }
 
 // Seed a few starter testimonials once (guarded by a settings marker), so the

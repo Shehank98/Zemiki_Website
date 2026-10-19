@@ -79,7 +79,7 @@
   const HIDE_MINICART_ON = ['/cart', '/checkout', '/order-confirmation'];
 
   function buildMiniCart() {
-    if (HIDE_MINICART_ON.some((p) => location.pathname.endsWith(p))) return;
+    if (HIDE_MINICART_ON.some((p) => location.pathname.endsWith(p)) || location.pathname.indexOf('/track') === 0) return;
     const bar = document.createElement('div');
     bar.id = 'miniCart';
     bar.innerHTML =

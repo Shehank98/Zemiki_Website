@@ -68,8 +68,10 @@ function storeCtx() {
  * Send an order invoice to the customer.
  * @param {object} order  full order row
  * @param {Array}  items  order_items rows
+ * @param {{trackUrl?:string}} opts  customer tracking link to include
  */
-async function sendInvoice(order, items) {
+async function sendInvoice(order, items, opts) {
+  opts = opts || {};
   if (!order || !order.email) return { ok: false, skipped: true };
   return post({
     type: 'invoice',
@@ -89,6 +91,7 @@ async function sendInvoice(order, items) {
       payment_status: order.payment_status,
       is_gift: order.is_gift,
       created_at: order.created_at,
+      track_url: opts.trackUrl || '',
       items: (items || []).map((i) => ({
         name: i.product_name, qty: i.qty, unit_price: Number(i.unit_price),
         variant: i.variant_label || '', sku: i.sku || '',
@@ -98,10 +101,12 @@ async function sendInvoice(order, items) {
 }
 
 /**
- * Send shipping/tracking details for an order to the customer.
- * @param {object} order  full order row (must have email + tracking_id)
+ * Email a status update with the customer's tracking link.
+ * @param {object} order  full order row (must have email)
+ * @param {{stage?:'shipped'|'delivered', trackUrl?:string}} opts
  */
-async function sendTracking(order) {
+async function sendTracking(order, opts) {
+  opts = opts || {};
   if (!order || !order.email) return { ok: false, skipped: true };
   return post({
     type: 'tracking',
@@ -114,7 +119,11 @@ async function sendTracking(order) {
       city: order.city,
       district: order.district,
       order_status: order.order_status,
-      tracking_id: order.tracking_id,
+      tracking_id: order.tracking_id || '',
+      courier: order.courier || '',
+      courier_url: order.courier_url || '',
+      stage: opts.stage || (order.order_status === 'delivered' ? 'delivered' : 'shipped'),
+      track_url: opts.trackUrl || '',
     },
   });
 }

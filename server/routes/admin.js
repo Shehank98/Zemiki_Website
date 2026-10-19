@@ -9,6 +9,8 @@ const { getSettings, updateSettings, getAllDistricts, setDistricts, getPaymentTo
 const { listMethods } = require('../payments');
 const mailer = require('../mailer');
 const { syncProductStock, adjustStock } = require('../stock');
+const { recordEvent } = require('../orderEvents');
+const { trackUrl } = require('../utils/siteUrl');
 const {
   requireAdmin,
   signToken,
@@ -516,7 +518,10 @@ router.get('/orders/:id', async (req, res, next) => {
     const { rows } = await query('SELECT * FROM orders WHERE id=$1', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
     const items = await query('SELECT * FROM order_items WHERE order_id=$1', [req.params.id]);
-    res.json({ ...rows[0], items: items.rows });
+    const events = await query(
+      'SELECT status, note, created_at FROM order_events WHERE order_id=$1 ORDER BY created_at, id', [req.params.id]
+    );
+    res.json({ ...rows[0], items: items.rows, events: events.rows, track_url: trackUrl(req, rows[0].track_token) });
   } catch (err) {
     next(err);
   }
@@ -526,10 +531,25 @@ router.patch('/orders/:id', async (req, res, next) => {
   try {
     const body = req.body || {};
     const { order_status, payment_status } = body;
-    // tracking_id may be set to a value or explicitly cleared ('' -> null).
-    const trackingProvided = Object.prototype.hasOwnProperty.call(body, 'tracking_id');
-    const tracking = trackingProvided ? (String(body.tracking_id || '').trim().slice(0, 120) || null) : null;
+    if (order_status && !['new', 'processing', 'packed', 'shipped', 'delivered', 'cancelled'].includes(order_status)) {
+      return res.status(400).json({ error: 'Unknown order status' });
+    }
+    if (payment_status && !['pending', 'paid', 'failed'].includes(payment_status)) {
+      return res.status(400).json({ error: 'Unknown payment status' });
+    }
+    // Text fields may be set to a value or explicitly cleared ('' -> null).
+    const textField = (name, max) => {
+      const provided = Object.prototype.hasOwnProperty.call(body, name);
+      return [provided, provided ? (String(body[name] || '').trim().slice(0, max) || null) : null];
+    };
+    const [trackingProvided, tracking] = textField('tracking_id', 120);
+    const [courierProvided, courier] = textField('courier', 80);
+    const [courierUrlProvided, courierUrl] = textField('courier_url', 500);
+    if (courierUrl && !/^https?:\/\//i.test(courierUrl)) {
+      return res.status(400).json({ error: 'Courier link must start with http:// or https://' });
+    }
 
+    let statusChanged = false;
     const updated = await withTransaction(async (client) => {
       const cur = await client.query('SELECT * FROM orders WHERE id=$1 FOR UPDATE', [req.params.id]);
       if (cur.rows.length === 0) return null;
@@ -538,11 +558,18 @@ router.patch('/orders/:id', async (req, res, next) => {
         `UPDATE orders SET
            order_status = COALESCE($1, order_status),
            payment_status = COALESCE($2, payment_status),
-           tracking_id = CASE WHEN $4 THEN $3 ELSE tracking_id END
-         WHERE id=$5 RETURNING *`,
-        [order_status || null, payment_status || null, tracking, trackingProvided, req.params.id]
+           tracking_id = CASE WHEN $4 THEN $3 ELSE tracking_id END,
+           courier = CASE WHEN $6 THEN $5 ELSE courier END,
+           courier_url = CASE WHEN $8 THEN $7 ELSE courier_url END
+         WHERE id=$9 RETURNING *`,
+        [order_status || null, payment_status || null, tracking, trackingProvided,
+         courier, courierProvided, courierUrl, courierUrlProvided, req.params.id]
       );
       const after = rows[0];
+
+      // Every status change goes into the history that drives the tracking page.
+      statusChanged = after.order_status !== before.order_status;
+      if (statusChanged) await recordEvent(after.id, after.order_status, null, client);
 
       // Orders placed since stock tracking began (stock_deducted) hold their
       // quantities unless cancelled: cancelling puts them back, un-cancelling
@@ -558,7 +585,17 @@ router.patch('/orders/:id', async (req, res, next) => {
       return after;
     });
     if (!updated) return res.status(404).json({ error: 'Not found' });
-    res.json(updated);
+
+    // Dispatched / Delivered automatically email the customer their tracking
+    // link (best effort; the admin sees the outcome in the response).
+    let emailed = null;
+    if (statusChanged && updated.email && (updated.order_status === 'shipped' || updated.order_status === 'delivered')) {
+      const r = await mailer.sendTracking(updated, {
+        stage: updated.order_status, trackUrl: trackUrl(req, updated.track_token),
+      }).catch((e) => ({ ok: false, error: e.message }));
+      emailed = r.skipped ? 'not_configured' : (r.ok ? 'sent' : 'failed');
+    }
+    res.json({ ...updated, emailed });
   } catch (err) {
     next(err);
   }
@@ -571,8 +608,10 @@ router.post('/orders/:id/send-tracking', async (req, res, next) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
     const order = rows[0];
     if (!order.email) return res.status(400).json({ error: 'This order has no email address' });
-    if (!order.tracking_id) return res.status(400).json({ error: 'Enter and save a tracking ID first' });
-    const result = await mailer.sendTracking(order);
+    const result = await mailer.sendTracking(order, {
+      stage: order.order_status === 'delivered' ? 'delivered' : 'shipped',
+      trackUrl: trackUrl(req, order.track_token),
+    });
     if (result.skipped) return res.status(400).json({ error: 'Email is not configured (set APPSCRIPT_URL)' });
     if (!result.ok) return res.status(502).json({ error: result.error || 'Mail service did not accept the message' });
     res.json({ ok: true });
@@ -612,7 +651,7 @@ router.post('/orders/:id/resend-invoice', async (req, res, next) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
     if (!rows[0].email) return res.status(400).json({ error: 'This order has no email address' });
     const items = await query('SELECT * FROM order_items WHERE order_id=$1', [req.params.id]);
-    const result = await mailer.sendInvoice(rows[0], items.rows);
+    const result = await mailer.sendInvoice(rows[0], items.rows, { trackUrl: trackUrl(req, rows[0].track_token) });
     if (result.skipped) return res.status(400).json({ error: 'Email is not configured (set APPSCRIPT_URL)' });
     if (!result.ok) return res.status(502).json({ error: result.error || 'Mail service did not accept the message' });
     res.json({ ok: true });

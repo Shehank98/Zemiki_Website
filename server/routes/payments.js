@@ -4,6 +4,7 @@ const express = require('express');
 const { query } = require('../db');
 const { getProvider, listMethods } = require('../payments');
 
+const { recordEvent } = require('../orderEvents');
 const router = express.Router();
 
 function baseUrlFor(req) {
@@ -18,11 +19,13 @@ async function findOrder(orderNumber) {
 }
 
 async function markPaid(orderNumber, providerRef) {
+  const before = await findOrder(orderNumber);
   await query(
     `UPDATE orders SET payment_status = 'paid', order_status = 'processing', provider_ref = $2
       WHERE order_number = $1`,
     [orderNumber, providerRef || null]
   );
+  if (before && before.order_status !== 'processing') await recordEvent(before.id, 'processing');
 }
 
 // GET /api/payments/methods - available methods + live/test status
@@ -74,6 +77,7 @@ router.post('/:provider/sandbox-complete', async (req, res, next) => {
       `UPDATE orders SET order_status = 'processing', provider_ref = $2 WHERE order_number = $1`,
       [order.order_number, `TEST-${provider.id}`]
     );
+    if (order.order_status !== 'processing') await recordEvent(order.id, 'processing');
     res.json({ ok: true, test_mode: true, order_number: order.order_number });
   } catch (err) {
     next(err);

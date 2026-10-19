@@ -108,6 +108,12 @@ app.get(/^\/(?!api\/|admin(?:\/|$))[^.]*$/, (req, res, next) => {
   next();
 });
 
+// Customer tracking page: /track/<secret token> (the token is read client-side).
+app.get(['/track', '/track/:token'], (req, res, next) => {
+  if (sendHtml(res, path.join(PUBLIC_DIR, 'track.html'))) return;
+  next();
+});
+
 // Admin SPA shell, also through the version rewriter (before express.static,
 // which would otherwise serve/redirect it unversioned).
 app.get(['/admin', '/admin/', '/admin/index.html'], (req, res, next) => {
@@ -200,6 +206,7 @@ app.use('/api/orders', writeLimiter, require('./routes/orders'));
 app.use('/api/enquiries', writeLimiter, require('./routes/enquiries'));
 app.use('/api/subscribe', writeLimiter, require('./routes/subscribe'));
 app.use('/api/shipping', require('./routes/shipping'));
+app.use('/api/track', rateLimit({ windowMs: 60000, max: 60 }), require('./routes/track'));
 app.use('/api/testimonials', require('./routes/testimonials'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/admin/login', loginLimiter);
