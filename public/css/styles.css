@@ -876,3 +876,12 @@ body.has-placebar { padding-bottom: 76px; }
 .product-body .price { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }
 .product-body .price .now { white-space: nowrap; }
 .product-body .price .was { white-space: nowrap; font-size: .85rem; }
+
+/* Hero on phones/tablets: headline + text, then the image, then the buttons under it */
+@media (max-width: 960px) {
+  .hero-copy { display: contents; }
+  .hero-copy > * { order: 1; }
+  .hero-art { order: 2; margin-top: 4px; }
+  .hero-copy > .hero-cta { order: 3; }
+  .hero-inner { gap: 18px; }
+}
