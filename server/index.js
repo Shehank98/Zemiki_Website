@@ -7,6 +7,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
 
 const { migrate } = require('./migrate');
 const { listMethods } = require('./payments');
@@ -19,6 +20,7 @@ const { securityHeaders, rateLimit } = require('./middleware/security');
 
 app.set('trust proxy', 1);
 app.use(securityHeaders);
+app.use(compression()); // gzip HTML/CSS/JS/JSON
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -66,7 +68,11 @@ function renderHtml(filePath) {
     '<link rel="apple-touch-icon" href="/apple-touch-icon.png">' +
     '<link rel="manifest" href="/site.webmanifest">' +
     '<meta name="theme-color" content="#5a1a2b">';
-  const inject = icons + `<script>window.__ZV=${JSON.stringify(ASSET_VERSION)};</script>`;
+  const hints =
+    '<link rel="preconnect" href="https://drive.google.com">' +
+    '<link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>' +
+    (filePath.includes(path.sep + 'admin' + path.sep) ? '' : '<link rel="preload" href="/api/config" as="fetch" crossorigin="anonymous">');
+  const inject = icons + hints + `<script>window.__ZV=${JSON.stringify(ASSET_VERSION)};</script>`;
   html = html.includes('</head>') ? html.replace('</head>', inject + '</head>') : inject + html;
   htmlCache.set(filePath, html);
   return html;
@@ -124,12 +130,20 @@ app.get(['/admin', '/admin/', '/admin/index.html'], (req, res, next) => {
 
 /* ------------------------- Public config ------------------------ */
 // Non-secret settings the storefront needs (store name, WhatsApp, etc.)
+// Short shared caching for read-only public data: faster loads, and admin edits
+// still show up within a minute.
+function publicCache(req, res, next) {
+  if (req.method === 'GET') res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=120');
+  next();
+}
+app.use(['/api/config', '/api/categories', '/api/products', '/api/testimonials'], publicCache);
+
 app.get('/api/config', async (req, res, next) => {
   try {
     const settings = await getSettings();
     const toggles = await getPaymentToggles();
     // Only surface methods the admin has enabled.
-    const methods = listMethods().filter((m) => toggles[m.id]);
+    const methods = listMethods().filter((m) => toggles[m.id] && (m.kind !== 'online' || m.configured));
     const igImages = String(settings.instagram_images || '')
       .split(/\r?\n/)
       .map((line) => line.trim())
@@ -186,6 +200,7 @@ app.get('/api/config', async (req, res, next) => {
         address: settings.contact_address || '',
       },
       instagram_images: igImages,
+      season: settings.season_theme || 'none',
       payment_methods: methods,
     });
   } catch (err) {
@@ -215,12 +230,17 @@ app.use('/api/admin', require('./routes/admin'));
 /* --------------------------- Static site ------------------------ */
 app.use(express.static(PUBLIC_DIR, {
   extensions: ['html'],
-  setHeaders(res) {
-    // Assets (css/js/images) are cache-busted via ?v=<hash> in the HTML, so
-    // a URL only changes when its content does. Force revalidation with
-    // no-cache to defeat the browser's heuristic caching, which is what
-    // leaves stale CSS/JS on screen after a deploy.
-    res.set('Cache-Control', 'no-cache');
+  setHeaders(res, filePath) {
+    // CSS/JS are requested as ?v=<content hash> (see renderHtml), so their URL
+    // changes whenever they do and they can be cached for a year. HTML must
+    // always revalidate so it points at the current version. Images and icons
+    // get a day; the server's ETag makes revalidation cheap.
+    if (/\.html$/.test(filePath)) res.set('Cache-Control', 'no-cache');
+    else if (/\.(css|js)$/.test(filePath)) {
+      // Only versioned URLs are safe to cache long; an unversioned one revalidates.
+      res.set('Cache-Control', /[?&]v=/.test(res.req.url) ? 'public, max-age=31536000, immutable' : 'no-cache');
+    }
+    else res.set('Cache-Control', 'public, max-age=86400');
   },
 }));
 

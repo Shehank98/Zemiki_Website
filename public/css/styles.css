@@ -770,3 +770,6 @@ img.js-fade.loaded { opacity: 1; }
   .testimonial .see-more { display: block; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--maroon); font: inherit; font-size: .78rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
   .testimonial .see-more[hidden] { display: none; }
 }
+
+.season-toggle { position: fixed; left: 14px; bottom: 14px; z-index: 95; border: 1px solid var(--line); background: rgba(255,255,255,.92); color: var(--maroon); font: inherit; font-size: .72rem; padding: 6px 12px; border-radius: 999px; cursor: pointer; box-shadow: var(--shadow-sm); backdrop-filter: blur(4px); }
+.season-toggle:hover { border-color: var(--gold); }

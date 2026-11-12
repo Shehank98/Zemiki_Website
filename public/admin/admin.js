@@ -1269,6 +1269,8 @@
       $('#setFree').value = s.free_shipping_over;
       $('#annText').value = s.announcement_text || '';
       $('#annEnabled').checked = !!s.announcement_enabled;
+      const seasonRadio = document.querySelector('input[name=season][value="' + (s.season_theme || 'none') + '"]');
+      if (seasonRadio) seasonRadio.checked = true;
       $('#intlEnabled').checked = !!s.intl_enabled;
       $('#intlFlat').value = s.intl_shipping_flat || 0;
       $('#linkInstagram').value = s.instagram_url || '';
@@ -1458,6 +1460,16 @@
       toast('Announcement saved', 'success');
     } catch (e) { toast(e.message, 'error'); }
     btn.disabled = false; btn.textContent = 'Save Announcement';
+  });
+
+  $('#saveSeason').addEventListener('click', async () => {
+    const val = (document.querySelector('input[name=season]:checked') || {}).value || 'none';
+    const btn = $('#saveSeason'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await api('/settings', { method: 'PUT', body: { season_theme: val } });
+      toast(val === 'none' ? 'Seasonal theme turned off' : 'Theme saved. It shows on the site within a minute.', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Save Theme';
   });
 
   async function loadPaymentMethods() {

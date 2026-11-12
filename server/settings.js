@@ -3,7 +3,7 @@
 const { query } = require('./db');
 
 const DEFAULT_ANNOUNCEMENT =
-  'Islandwide delivery across Sri Lanka · Pay in 3 with KOKO';
+  'Islandwide delivery across Sri Lanka · Handcrafted with love';
 
 // Typed settings schema. Each key knows how to coerce and default itself.
 // Text keys may set `max` to allow longer values (default cap 300 chars).
@@ -12,6 +12,7 @@ const SETTINGS_SCHEMA = {
   free_shipping_over: { type: 'number', def: () => Number(process.env.FREE_SHIPPING_OVER_LKR || 0) },
   announcement_text: { type: 'text', def: () => DEFAULT_ANNOUNCEMENT },
   announcement_enabled: { type: 'bool', def: () => true },
+  season_theme: { type: 'text', def: () => 'none' },
   // Store identity
   store_name: { type: 'text', def: () => process.env.STORE_NAME || 'Zemiki' },
   whatsapp_number: { type: 'text', def: () => process.env.WHATSAPP_NUMBER || '' },
@@ -136,6 +137,7 @@ async function updateSettings(patch) {
     if (spec.type === 'number') value = String(Math.max(0, Number(patch[key]) || 0));
     else if (spec.type === 'bool') value = patch[key] ? 'true' : 'false';
     else value = String(patch[key]).slice(0, spec.max || 300);
+    if (key === 'season_theme' && !['none', 'christmas', 'deepavali', 'vesak', 'avurudu', 'valentine', 'eid'].includes(value)) value = 'none';
     await query(
       'INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value',
       [key, value]

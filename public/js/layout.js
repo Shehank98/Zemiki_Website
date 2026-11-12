@@ -107,6 +107,7 @@
 
   function buildFooter(cfg) {
     const year = new Date().getFullYear();
+    const kokoLive = (cfg.payment_methods || []).some((m) => m.id === 'koko');
     const social = cfg.social || {};
     const wa = cfg.whatsapp_number
       ? `<a href="${Z.whatsappUrl(cfg.whatsapp_number, 'Hi Zemiki, I have a question')}" target="_blank" rel="noopener">WhatsApp us</a>` : '';
@@ -156,8 +157,11 @@
         </div>
         <div class="footer-pay">
           <h4>Pay Your Way</h4>
-          <p class="pay-text" style="font-size:.9rem">Split your purchase into 3 interest-free payments with <strong style="color:#e3c988">KOKO</strong>, pay by <strong style="color:#e3c988">Bank Transfer</strong>, or choose Cash on Delivery.</p>
-          <div class="pay-chips"><span>KOKO</span><span>Bank Transfer</span><span>Cash on Delivery</span></div>
+          ${kokoLive
+            ? `<p class="pay-text" style="font-size:.9rem">Split your purchase into 3 interest-free payments with <strong style="color:#e3c988">KOKO</strong>, pay by <strong style="color:#e3c988">Bank Transfer</strong>, or choose Cash on Delivery.</p>
+          <div class="pay-chips"><span>KOKO</span><span>Bank Transfer</span><span>Cash on Delivery</span></div>`
+            : `<p class="pay-text" style="font-size:.9rem">Pay by <strong style="color:#e3c988">Bank Transfer</strong> or choose Cash on Delivery.</p>
+          <div class="pay-chips"><span>Bank Transfer</span><span>Cash on Delivery</span></div>`}
         </div>
       </div>
       <div class="footer-bottom"><span>© ${year} ${cfg.store_name || 'Zemiki'}. All rights reserved.</span><span class="fb-sep"> · </span><span>Crafted with love in Sri Lanka</span></div>`;
@@ -199,6 +203,15 @@
     document.addEventListener('cart:changed', refreshBadge);
     document.dispatchEvent(new CustomEvent('layout:ready', { detail: { config: cfg } }));
     loadAnim();
+    if (cfg.season && cfg.season !== 'none') loadScript('zemiki-season', '/js/season.js');
+  }
+
+  function loadScript(id, src) {
+    if (document.getElementById(id)) return;
+    const el = document.createElement('script');
+    el.id = id;
+    el.src = src + (window.__ZV ? '?v=' + window.__ZV : '');
+    document.body.appendChild(el);
   }
 
   // Load the animation/polish layer once, on every page that uses the layout.

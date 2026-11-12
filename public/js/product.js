@@ -42,14 +42,14 @@
     const slides = items.length
       ? `<div class="gallery-track" id="galTrack">${items.map((it, i) =>
           `<figure class="gal-slide">
-            <img src="${Z.escapeHtml(it.url)}"${Z.cropStyle(it.crop)} alt="${Z.escapeHtml(p.name)}${it.code ? ' ' + Z.escapeHtml(it.code) : ''}" ${i === 0 ? '' : 'loading="lazy"'} onerror="this.style.visibility='hidden'">
+            <img src="${Z.escapeHtml(Z.img(it.url, 900))}"${Z.cropStyle(it.crop)} alt="${Z.escapeHtml(p.name)}${it.code ? ' ' + Z.escapeHtml(it.code) : ''}" ${i === 0 ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"'} onerror="this.style.visibility='hidden'">
             ${it.code ? `<figcaption class="gal-code">Item code <strong>${Z.escapeHtml(it.code)}</strong></figcaption>` : ''}
           </figure>`).join('')}</div>
         ${items.length > 1 ? `<button type="button" class="gal-nav prev" id="galPrev" aria-label="Previous image">‹</button><button type="button" class="gal-nav next" id="galNext" aria-label="Next image">›</button><div class="gal-count" id="galCount">1 / ${items.length}</div>` : ''}`
       : Z.placeholder();
     const thumbs = items.length > 1
       ? `<div class="gallery-thumbs">${items.map((it, i) =>
-          `<img src="${Z.escapeHtml(it.url)}" data-i="${i}" class="${i === 0 ? 'active' : ''}" alt="view ${i + 1}" onerror="this.style.display='none'">`).join('')}</div>`
+          `<img src="${Z.escapeHtml(Z.img(it.url, 160))}" loading="lazy" decoding="async" data-i="${i}" class="${i === 0 ? 'active' : ''}" alt="view ${i + 1}" onerror="this.style.display='none'">`).join('')}</div>`
       : '';
 
     const cfg = window.__cfg || {};
@@ -83,10 +83,10 @@
 
           <p class="pdp-desc">${Z.escapeHtml(p.description || 'A beautiful handcrafted piece from the Zemiki collection.')}</p>
 
-          <div class="bnpl-card">
+          ${(cfg.payment_methods || []).some((m) => m.id === 'koko') ? `<div class="bnpl-card">
             <div class="bnpl-lead">or <strong id="bnplAmt">3 × ${Z.money(three)}</strong> interest-free</div>
             <div class="bnpl-brands"><span>KOKO</span></div>
-          </div>
+          </div>` : ''}
 
           <div class="qty-row">
             <span class="qty-label">Quantity</span>

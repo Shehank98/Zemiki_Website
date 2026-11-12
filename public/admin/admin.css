@@ -299,3 +299,11 @@ tbody tr { transition: background .12s ease; }
 .crop-zoom { display: flex; align-items: center; gap: 12px; margin: 14px 0; font-size: .85rem; }
 .crop-zoom input { flex: 1; }
 .crop-actions { display: flex; gap: 8px; align-items: center; }
+
+.season-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.season-opt { cursor: pointer; }
+.season-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.season-opt span { display: flex; flex-direction: column; gap: 2px; align-items: center; text-align: center; padding: 14px 10px; border: 1.5px solid var(--line, #e5ddd0); border-radius: 12px; background: #fff; font-weight: 600; font-size: .9rem; transition: border-color .15s, box-shadow .15s; }
+.season-opt span b { font-size: 1.6rem; font-weight: 400; }
+.season-opt small { font-weight: 400; color: var(--muted); font-size: .74rem; }
+.season-opt input:checked + span { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,162,75,.25); background: #fffaf0; }

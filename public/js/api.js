@@ -79,5 +79,11 @@
     return ` style="--tx:${m[0]}%;--ty:${m[1]}%;--cs:${m[2]}"`;
   }
 
-  window.Z = { cropStyle, getJSON, postJSON, getConfig, money, escapeHtml, qs, toast, placeholder, whatsappUrl };
+  // Ask Google Drive for a thumbnail sized for where the image is shown
+  // (the stored link asks for w1200, far larger than a product card needs).
+  function img(url, w) {
+    return String(url || '').replace(/(drive\.google\.com\/thumbnail\?[^"']*?)sz=w\d+/, '$1sz=w' + w);
+  }
+
+  window.Z = { img, cropStyle, getJSON, postJSON, getConfig, money, escapeHtml, qs, toast, placeholder, whatsappUrl };
 })();

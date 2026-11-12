@@ -332,7 +332,7 @@ async function seedShippingDefaults() {
     shipping_flat: process.env.SHIPPING_FLAT_LKR || '350',
     free_shipping_over: process.env.FREE_SHIPPING_OVER_LKR || '0',
     announcement_text:
-      'Islandwide delivery across Sri Lanka · Pay in 3 with KOKO',
+      'Islandwide delivery across Sri Lanka · Handcrafted with love',
     announcement_enabled: 'true',
   };
   for (const [key, value] of Object.entries(defaults)) {
@@ -347,8 +347,9 @@ async function seedShippingDefaults() {
     `UPDATE settings SET value = $1
       WHERE key = 'announcement_text'
         AND value IN ('Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay & PayHere',
-                      'Free islandwide delivery on orders over Rs. 15,000 · Pay in 3 with KOKO')`,
-    ['Islandwide delivery across Sri Lanka · Pay in 3 with KOKO']
+                      'Free islandwide delivery on orders over Rs. 15,000 · Pay in 3 with KOKO',
+                      'Islandwide delivery across Sri Lanka · Pay in 3 with KOKO')`,
+    ['Islandwide delivery across Sri Lanka · Handcrafted with love']
   );
 }
 

@@ -24,7 +24,7 @@
 
     const lines = items.map((i) => {
       const media = i.image
-        ? `<img src="${Z.escapeHtml(i.image)}" alt="${Z.escapeHtml(i.name)}" onerror="this.outerHTML='<div class=&quot;ph&quot;>'+Z.placeholder()+'</div>'">`
+        ? `<img src="${Z.escapeHtml(Z.img(i.image, 240))}" alt="${Z.escapeHtml(i.name)}" onerror="this.outerHTML='<div class=&quot;ph&quot;>'+Z.placeholder()+'</div>'">`
         : `<div class="ph">${Z.placeholder()}</div>`;
       return `
         <div class="cart-line">

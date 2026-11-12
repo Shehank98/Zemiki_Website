@@ -38,7 +38,7 @@
     if (images.length >= 2) buildHeroSlider(images);
     else if (images.length === 1) {
       const img = document.getElementById('heroImage');
-      if (img) img.src = images[0];
+      if (img) img.src = Z.img(images[0], 900);
     }
   }
 
@@ -49,9 +49,17 @@
     if (!art) return;
     art.innerHTML =
       images.map((src, i) =>
-        `<img class="hero-slide ${i === 0 ? 'active' : ''}" src="${Z.escapeHtml(src)}" alt="Zemiki jewelry" onerror="this.remove()">`).join('') +
+        i === 0
+          ? `<img class="hero-slide active" src="${Z.escapeHtml(Z.img(src, 900))}" fetchpriority="high" decoding="async" alt="Zemiki jewelry" onerror="this.remove()">`
+          : `<img class="hero-slide" data-src="${Z.escapeHtml(Z.img(src, 900))}" decoding="async" alt="Zemiki jewelry" onerror="this.remove()">`).join('') +
       `<div class="hero-dots">${images.map((_, i) =>
         `<button type="button" data-i="${i}" class="${i === 0 ? 'active' : ''}" aria-label="Slide ${i + 1}"></button>`).join('')}</div>`;
+    // Later slides load only after the first is on screen, so they never
+    // compete with it (or the rest of the page) for bandwidth.
+    const loadRest = () => art.querySelectorAll('.hero-slide[data-src]').forEach((im) => { im.src = im.dataset.src; im.removeAttribute('data-src'); });
+    const first = art.querySelector('.hero-slide');
+    if (first && first.complete) setTimeout(loadRest, 300); else if (first) first.addEventListener('load', () => setTimeout(loadRest, 300), { once: true });
+    setTimeout(loadRest, 4000);
     const slides = Array.from(art.querySelectorAll('.hero-slide'));
     const dots = Array.from(art.querySelectorAll('.hero-dots button'));
     let idx = 0;
@@ -146,7 +154,7 @@
     strip.innerHTML = tiles.slice(0, 8).map((t) => {
       const href = t.link || '#';
       return `<a class="ig-tile" href="${Z.escapeHtml(href)}" ${t.link ? 'target="_blank" rel="noopener"' : ''} aria-label="Zemiki">
-          <img src="${Z.escapeHtml(t.image)}" alt="Zemiki" loading="lazy" onerror="this.closest('.ig-tile').style.display='none'">
+          <img src="${Z.escapeHtml(Z.img(t.image, 400))}" alt="Zemiki" loading="lazy" decoding="async" onerror="this.closest('.ig-tile').style.display='none'">
           <span class="ig-overlay"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1"/></svg></span>
         </a>`;
     }).join('');
@@ -205,7 +213,7 @@
     strip.innerHTML = withImg.slice(0, 6).map((p) => {
       const img = p.image || p.images[0];
       return `<a class="ig-tile" href="/product?slug=${encodeURIComponent(p.slug)}" aria-label="${Z.escapeHtml(p.name)}">
-          <img src="${Z.escapeHtml(img)}" alt="${Z.escapeHtml(p.name)}" loading="lazy" onerror="this.closest('.ig-tile').style.display='none'">
+          <img src="${Z.escapeHtml(Z.img(img, 400))}" alt="${Z.escapeHtml(p.name)}" loading="lazy" decoding="async" onerror="this.closest('.ig-tile').style.display='none'">
           <span class="ig-overlay"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1"/></svg></span>
         </a>`;
     }).join('');
