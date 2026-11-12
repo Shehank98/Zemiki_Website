@@ -70,6 +70,8 @@
   function makeMarquee(grid) {
     const cards = Array.from(grid.querySelectorAll('.testimonial'));
     if (!cards.length) return;
+    // "See more" appears only where the (mobile) quote is cut off.
+    cards.forEach((c) => c.insertAdjacentHTML('beforeend', '<button type="button" class="see-more" hidden>See more</button>'));
     // Need enough cards per half to overfill the widest screens.
     let set = cards.map((c) => c.cloneNode(true));
     while (set.length < 6) set = set.concat(cards.map((c) => c.cloneNode(true)));
@@ -85,6 +87,29 @@
     grid.innerHTML = '';
     grid.classList.add('marquee');
     grid.appendChild(track);
+
+    const flagTruncated = () => grid.querySelectorAll('.testimonial').forEach((c) => {
+      const q = c.querySelector('blockquote'), b = c.querySelector('.see-more');
+      if (q && b) b.hidden = !(q.scrollHeight > q.clientHeight + 1);
+    });
+    flagTruncated();
+    window.addEventListener('resize', flagTruncated);
+
+    grid.addEventListener('click', (e) => {
+      const btn = e.target.closest('.see-more');
+      if (!btn) return;
+      const card = btn.closest('.testimonial');
+      const ov = document.createElement('div');
+      ov.className = 'tm-overlay';
+      ov.innerHTML = '<div class="tm-modal" role="dialog" aria-modal="true"><button type="button" class="tm-close" aria-label="Close">&times;</button>' +
+        card.querySelector('.stars').outerHTML + '<blockquote>' + card.querySelector('blockquote').innerHTML + '</blockquote>' +
+        card.querySelector('figcaption').outerHTML + '</div>';
+      const close = () => { ov.remove(); document.removeEventListener('keydown', onKey); };
+      const onKey = (ev) => { if (ev.key === 'Escape') close(); };
+      ov.addEventListener('click', (ev) => { if (ev.target === ov || ev.target.closest('.tm-close')) close(); });
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(ov);
+    });
   }
 
   // Admin-managed testimonials (falls back to the static ones on empty/error).
