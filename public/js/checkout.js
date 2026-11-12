@@ -97,7 +97,10 @@
             </div>
             <div class="form-row">
               <div class="field"><label>Email *</label><input type="email" name="email" required placeholder="you@example.com"><div class="hint">We email your invoice here.</div></div>
-              <div class="field"><label>Birthday (optional)</label><input type="date" name="birthday"><div class="hint">Tell us and we may surprise you with a treat.</div></div>
+              <div class="field"><label>Birthday (optional)</label>
+                <div class="bday-row"><select id="bdayDay" aria-label="Birthday day"><option value="">Day</option>${Array.from({ length: 31 }, (_, i) => `<option>${i + 1}</option>`).join('')}</select>
+                <select id="bdayMonth" aria-label="Birthday month"><option value="">Month</option>${['January','February','March','April','May','June','July','August','September','October','November','December'].map((m) => `<option>${m}</option>`).join('')}</select></div>
+                <input type="hidden" name="birthday" id="bdayVal"><div class="hint">Tell us and we may surprise you with a treat.</div></div>
             </div>
             ${intlEnabled ? `<div class="field"><label>Country *</label><select name="country" id="countrySel" required>${countryOptions}</select></div>` : ''}
             <div class="field"><label>Address *</label><input name="address" required placeholder="House no, street"></div>
@@ -136,6 +139,33 @@
           <p style="font-size:.78rem;color:var(--muted);text-align:center;margin-top:10px">By placing your order you agree to our terms. Your details are used only to process this order.</p>
         </div>
       </div>`;
+
+    if (Z.linkLabels) Z.linkLabels(root);
+
+    // Birthday: day + month only (no year needed), combined into one value.
+    const bd = document.getElementById('bdayDay'), bm = document.getElementById('bdayMonth'), bv = document.getElementById('bdayVal');
+    const syncBday = () => { bv.value = (bd.value && bm.value) ? bd.value + ' ' + bm.value : ''; };
+    if (bd && bm) { bd.addEventListener('change', syncBday); bm.addEventListener('change', syncBday); }
+
+    // Sticky "Place order" bar: shown while the main button is off-screen.
+    const placeBtn0 = document.getElementById('placeBtn');
+    if (placeBtn0 && 'IntersectionObserver' in window) {
+      const bar = document.createElement('div');
+      bar.id = 'placeBar';
+      bar.innerHTML = '<div class="pb-total"><small>Total</small><strong id="pbTotal"></strong></div><button type="button" class="btn btn-primary" id="pbBtn">Place Order</button>';
+      document.body.appendChild(bar);
+      const totalEl0 = document.getElementById('totalVal');
+      const syncTotal = () => { document.getElementById('pbTotal').textContent = totalEl0.textContent; };
+      syncTotal();
+      new MutationObserver(syncTotal).observe(totalEl0, { childList: true, characterData: true, subtree: true });
+      document.getElementById('pbBtn').addEventListener('click', () => placeBtn0.click());
+      new IntersectionObserver((es) => {
+        const on = !es[0].isIntersecting;
+        bar.classList.toggle('show', on);
+        document.body.classList.toggle('has-placebar', on);
+        document.getElementById('pbBtn').disabled = placeBtn0.disabled;
+      }).observe(placeBtn0);
+    }
 
     // No enabled payment methods -> block ordering.
     if (!methods.length) {

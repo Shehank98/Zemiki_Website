@@ -1119,7 +1119,7 @@
           <div>
             <img class="brand-logo" src="${logoUrl}" alt="${esc(store)}"
                  onerror="this.outerHTML='<div class=&quot;brand-word&quot;>${esc(store)}</div>'">
-            <div class="brand-tag">Handcrafted Jewelry</div>
+            <div class="brand-tag">Elegant Jewelry</div>
           </div>
           <div class="doc">
             <div class="title">Packing Slip</div>

@@ -35,7 +35,7 @@
             <div style="color:var(--muted);font-size:.88rem">${Z.money(i.price)} each</div>
             <div class="qty-stepper" style="margin-top:8px">
               <button type="button" data-dec="${i.key}">−</button>
-              <input type="number" value="${i.qty}" min="1" data-qty="${i.key}">
+              <input type="number" aria-label="Quantity" value="${i.qty}" min="1" data-qty="${i.key}">
               <button type="button" data-inc="${i.key}">+</button>
             </div>
           </div>

@@ -12,6 +12,17 @@
   const countEl = document.getElementById('resultCount');
   const sortSelect = document.getElementById('sortSelect');
 
+  // Show what is currently filtered, with a one-tap way to clear it.
+  function renderActiveFilters(catName) {
+    const box = document.getElementById('activeFilters');
+    const chips = [];
+    if (state.category) chips.push(`<a class="chip-x" href="${state.q ? '/shop?q=' + encodeURIComponent(state.q) : '/shop'}" aria-label="Clear category filter">${Z.escapeHtml(catName || state.category)} <span>&times;</span></a>`);
+    if (state.q) chips.push(`<a class="chip-x" href="${state.category ? '/shop?category=' + encodeURIComponent(state.category) : '/shop'}" aria-label="Clear search">&ldquo;${Z.escapeHtml(state.q)}&rdquo; <span>&times;</span></a>`);
+    box.hidden = !chips.length;
+    box.innerHTML = chips.length ? '<span class="af-label">Showing:</span>' + chips.join('') + (chips.length > 1 ? '<a class="af-clear" href="/shop">Clear all</a>' : '') : '';
+  }
+  renderActiveFilters();
+
   async function loadCategories() {
     const list = document.getElementById('filterList');
     try {
@@ -39,6 +50,7 @@
         const match = cats.find((c) => c.slug === state.category);
         if (match) {
           document.getElementById('shopTitle').textContent = match.name;
+          renderActiveFilters(match.name);
           document.getElementById('shopSubtitle').textContent = `${match.product_count || 0} beautiful pieces`;
         }
       } else if (state.q) {

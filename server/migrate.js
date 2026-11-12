@@ -221,7 +221,7 @@ const SAMPLE_PRODUCTS = [
     description: 'A statement peacock-motif necklace with intricate gold detailing.',
     images: ['https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1000&q=80'] },
   { name: 'Kundan Bridal Necklace Set', category: 'bridal-sets', price: 24500, sale_price: 19999, featured: true, stock: 4,
-    description: 'Complete bridal set with matching earrings - timeless Kundan craftsmanship.',
+    description: 'Complete bridal set with matching earrings - timeless Kundan style.',
     images: ['https://images.unsplash.com/photo-1602752250015-52934bc45613?auto=format&fit=crop&w=1000&q=80'] },
   { name: 'Rose Gold Jhumka Earrings', category: 'earrings', price: 4500, sale_price: 3999, featured: false, stock: 15,
     description: 'Classic jhumka silhouette in a warm rose-gold finish.',
@@ -332,7 +332,7 @@ async function seedShippingDefaults() {
     shipping_flat: process.env.SHIPPING_FLAT_LKR || '350',
     free_shipping_over: process.env.FREE_SHIPPING_OVER_LKR || '0',
     announcement_text:
-      'Islandwide delivery across Sri Lanka · Handcrafted with love',
+      'Islandwide delivery across Sri Lanka · Quality jewelry for every occasion',
     announcement_enabled: 'true',
   };
   for (const [key, value] of Object.entries(defaults)) {
@@ -349,7 +349,15 @@ async function seedShippingDefaults() {
         AND value IN ('Free islandwide delivery on orders over Rs. 15,000 · Pay with KOKO, Mintpay & PayHere',
                       'Free islandwide delivery on orders over Rs. 15,000 · Pay in 3 with KOKO',
                       'Islandwide delivery across Sri Lanka · Pay in 3 with KOKO')`,
-    ['Islandwide delivery across Sri Lanka · Handcrafted with love']
+    ['Islandwide delivery across Sri Lanka · Quality jewelry for every occasion']
+  );
+  await query(
+    `UPDATE settings SET value = 'Islandwide delivery across Sri Lanka · Quality jewelry for every occasion'
+      WHERE key = 'announcement_text' AND value = 'Islandwide delivery across Sri Lanka · Handcrafted with love'`
+  );
+  // Same for the hero label if it was saved with the old default.
+  await query(
+    `UPDATE settings SET value = 'Elegant jewelry in Sri Lanka' WHERE key = 'hero_eyebrow' AND value = 'Handcrafted in Sri Lanka'`
   );
 }
 
@@ -427,7 +435,7 @@ async function seedTestimonials() {
     if (marker.rows.length) return;
     const seed = [
       ['Dilani P.', 'Colombo', 5, 'The necklace is even more beautiful in person. Delivery was quick and the packaging felt so premium. I keep getting compliments!'],
-      ['Nethmi R.', 'Kandy', 5, "Bought a bridal set for my sister's wedding. Stunning craftsmanship and paying with KOKO made it so easy. Highly recommend Zemiki."],
+      ['Nethmi R.', 'Kandy', 5, "Bought a bridal set for my sister's wedding. Stunning quality and easy checkout. Highly recommend Zemiki."],
       ['Ayesha F.', 'Galle', 5, 'Great quality for the price and lovely customer service on WhatsApp. My earrings arrived next day. Will definitely shop again.'],
     ];
     for (let i = 0; i < seed.length; i++) {

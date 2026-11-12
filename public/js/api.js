@@ -85,5 +85,18 @@
     return String(url || '').replace(/(drive\.google\.com\/thumbnail\?[^"']*?)sz=w\d+/, '$1sz=w' + w);
   }
 
-  window.Z = { img, cropStyle, getJSON, postJSON, getConfig, money, escapeHtml, qs, toast, placeholder, whatsappUrl };
+  // Connect every <label> to the input in the same .field (adds ids + "for"), so
+  // tapping a label focuses its field and screen readers announce it.
+  let lblSeq = 0;
+  function linkLabels(root) {
+    (root || document).querySelectorAll('.field').forEach((f) => {
+      const lab = f.querySelector('label:not([for])');
+      const ctl = f.querySelector('input:not([type=hidden]), select, textarea');
+      if (!lab || !ctl || lab.contains(ctl)) return;
+      if (!ctl.id) ctl.id = 'f' + (++lblSeq) + '_' + (ctl.name || 'field');
+      lab.setAttribute('for', ctl.id);
+    });
+  }
+
+  window.Z = { linkLabels, img, cropStyle, getJSON, postJSON, getConfig, money, escapeHtml, qs, toast, placeholder, whatsappUrl };
 })();

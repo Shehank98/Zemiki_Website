@@ -8,6 +8,7 @@
   const sel = { a: null, b: null };   // chosen option values
   let qtyVal = 1;
   let galIdx = 0;
+  let buyObserver = null;
 
   if (!slug) {
     root.innerHTML = '<div class="empty-state"><p>Product not specified.</p><a class="btn btn-primary" href="/shop">Back to shop</a></div>';
@@ -81,7 +82,7 @@
           <div class="pdp-code" id="pdpCode"></div>
           <div class="pdp-stock" id="pdpStock"></div>
 
-          <p class="pdp-desc">${Z.escapeHtml(p.description || 'A beautiful handcrafted piece from the Zemiki collection.')}</p>
+          <p class="pdp-desc">${Z.escapeHtml(p.description || 'A beautiful piece from the Zemiki collection.')}</p>
 
           ${(cfg.payment_methods || []).some((m) => m.id === 'koko') ? `<div class="bnpl-card">
             <div class="bnpl-lead">or <strong id="bnplAmt">3 × ${Z.money(three)}</strong> interest-free</div>
@@ -92,7 +93,7 @@
             <span class="qty-label">Quantity</span>
             <div class="qty-stepper">
               <button type="button" id="qtyMinus" aria-label="decrease">−</button>
-              <input type="number" id="qtyInput" value="${qtyVal}" min="1" />
+              <input type="number" id="qtyInput" aria-label="Quantity" value="${qtyVal}" min="1" />
               <button type="button" id="qtyPlus" aria-label="increase">+</button>
             </div>
           </div>
@@ -109,12 +110,46 @@
           </div>
 
           <div class="pdp-accordion" id="pdpAccordion">
-            <details open><summary>Product details</summary><div>${Z.escapeHtml(p.description || 'A beautiful handcrafted piece from the Zemiki collection.')}${p.sku ? `<div class="acc-sku">SKU: ${Z.escapeHtml(p.sku)}</div>` : ''}</div></details>
+            <details open><summary>Product details</summary><div>${Z.escapeHtml(p.description || 'A beautiful piece from the Zemiki collection.')}${p.sku ? `<div class="acc-sku">SKU: ${Z.escapeHtml(p.sku)}</div>` : ''}</div></details>
             <details><summary>Delivery &amp; returns</summary><div>Islandwide delivery, calculated by district at checkout. Contact us within 3 days of delivery for any issue with your piece.</div></details>
             <details><summary>Care guide</summary><div>Keep your jewelry away from moisture, perfume and direct sunlight. Wipe gently with a soft dry cloth and store in a pouch to keep it shining.</div></details>
           </div>
         </div>
       </div>`;
+
+    // Sticky buy bar: appears once the main Add to Cart button scrolls out of view.
+    const oldBar = document.getElementById('buyBar');
+    if (oldBar) oldBar.remove();
+    if (buyObserver) buyObserver.disconnect();
+    const buyBar = document.createElement('div');
+    buyBar.id = 'buyBar';
+    buyBar.innerHTML = `<div class="buy-price">${priceBlock(p)}</div><button type="button" class="btn btn-gold" id="buyBarBtn">Add to Cart</button>`;
+    document.body.appendChild(buyBar);
+    function syncBuyBar() {
+      const main = document.getElementById('addBtn'), b = document.getElementById('buyBarBtn');
+      if (!main || !b) return;
+      b.textContent = main.textContent;
+      b.classList.toggle('is-off', main.disabled && !/^Select/.test(main.textContent));
+    }
+    document.getElementById('buyBarBtn').addEventListener('click', () => {
+      const main = document.getElementById('addBtn');
+      if (/^Select/.test(main.textContent)) {
+        document.getElementById('optionsBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (!main.disabled) main.click();
+    });
+    // Visible whenever the main button is off-screen (above or below), but not
+    // right at the top of the page where the photo should have the stage.
+    let btnVisible = true;
+    const showBar = () => {
+      const on = !btnVisible && window.scrollY > 250;
+      buyBar.classList.toggle('show', on);
+      document.body.classList.toggle('has-buybar', on);
+    };
+    buyObserver = new IntersectionObserver((es) => { btnVisible = es[0].isIntersecting; showBar(); });
+    buyObserver.observe(document.getElementById('addBtn'));
+    window.removeEventListener('scroll', window.__buyScroll || (() => {}));
+    window.__buyScroll = showBar;
+    window.addEventListener('scroll', showBar, { passive: true });
 
     const track = document.getElementById('galTrack');
     let programmatic = false;
@@ -183,6 +218,7 @@
       else if (!(stockNow > 0)) { btn.disabled = true; btn.textContent = 'Sold Out'; }
       else { btn.disabled = false; btn.textContent = 'Add to Cart'; }
       if (window.__updateBnpl) window.__updateBnpl();
+      syncBuyBar();
     }
 
     // Gallery interactions
@@ -274,11 +310,34 @@
     document.getElementById('relatedGrid').innerHTML = list.map(ZC.productCard).join('');
   }
 
+  // Remember the last few products this shopper looked at (this browser only).
+  const RECENT_KEY = 'zemiki_recent_v1';
+  function recentList() { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch (e) { return []; } }
+  function saveRecent(p) {
+    try {
+      const keep = recentList().filter((x) => x.slug !== p.slug);
+      keep.unshift({
+        id: p.id, name: p.name, slug: p.slug, price: p.price, sale_price: p.sale_price,
+        image: p.images && p.images[0], image_crop: (p.image_items && p.image_items[0] && p.image_items[0].crop) || '',
+        has_variants: (p.variants || []).length > 0, category_name: p.category_name,
+      });
+      localStorage.setItem(RECENT_KEY, JSON.stringify(keep.slice(0, 9)));
+    } catch (e) {}
+  }
+  function renderRecent(currentSlug) {
+    const list = recentList().filter((x) => x.slug !== currentSlug).slice(0, 4);
+    if (!list.length) return;
+    document.getElementById('recentSection').hidden = false;
+    document.getElementById('recentGrid').innerHTML = list.map(ZC.productCard).join('');
+  }
+
   async function load() {
     try {
       product = await Z.getJSON('/api/products/' + encodeURIComponent(slug));
       render(product);
       renderRelated(product.related);
+      renderRecent(product.slug);
+      saveRecent(product);
     } catch (e) {
       root.innerHTML = '<div class="empty-state"><h3>Product not found</h3><p>It may have been removed.</p><a class="btn btn-primary" href="/shop">Back to shop</a></div>';
     }

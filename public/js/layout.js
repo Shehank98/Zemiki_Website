@@ -38,7 +38,7 @@
     const header = document.createElement('div');
     const ann = cfg.announcement || {};
     const topbar = (ann.enabled && ann.text)
-      ? `<div class="topbar">${Z.escapeHtml(ann.text)}</div>`
+      ? `<div class="topbar"><span class="topbar-text">${Z.escapeHtml(ann.text)}</span></div>`
       : '';
 
     header.innerHTML = `
@@ -76,6 +76,20 @@
         </div>
       </aside>`;
     document.body.insertBefore(header, document.body.firstChild);
+
+    // One-line announcement: if it doesn't fit (phones), let it glide slowly.
+    const tb = header.querySelector('.topbar'), tt = header.querySelector('.topbar-text');
+    const fitTopbar = () => {
+      if (!tb || !tt) return;
+      tb.classList.remove('scrolling');
+      if (tt.scrollWidth > tb.clientWidth + 2) {
+        tb.classList.add('scrolling');
+        tt.style.animationDuration = Math.max(10, Math.round(tt.scrollWidth / 40)) + 's';
+      }
+    };
+    fitTopbar();
+    window.addEventListener('resize', fitTopbar);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTopbar);
 
     // interactions
     const searchBar = document.getElementById('searchBar');
@@ -132,7 +146,7 @@
             <img class="footer-logo" src="${Z.escapeHtml(cfg.logo_url || '/assets/logo.png')}" alt="${Z.escapeHtml(cfg.store_name || 'Zemiki')}" onerror="var f=this.parentNode&&this.parentNode.querySelector('.brand-fallback');if(f)f.hidden=false;this.remove()">
             <span class="brand-fallback" hidden>${brandMark}${cfg.store_name || 'Zemiki'}</span>
           </a>
-          <p>Handcrafted jewelry that celebrates every moment. Ethically made, elegantly designed, delivered across Sri Lanka.</p>
+          <p>Elegant jewelry for every moment, delivered across Sri Lanka.</p>
           <div class="social-row">
             ${social.instagram ? `<a href="${Z.escapeHtml(social.instagram)}" target="_blank" rel="noopener" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>` : ''}
             ${social.tiktok ? `<a href="${Z.escapeHtml(social.tiktok)}" target="_blank" rel="noopener" aria-label="TikTok"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c.4 2.3 1.9 3.9 4 4.1v2.7c-1.4.1-2.8-.3-4-1v6.3a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v2.8a2.8 2.8 0 1 0 2 2.7V3h2.7z"/></svg></a>` : ''}
@@ -152,6 +166,7 @@
           <h4>Help</h4>
           <a href="/about">About Us</a>
           <a href="/contact">Contact</a>
+          <a href="/#faq">How to Order &amp; FAQ</a>
           ${wa}
           <a href="/privacy">Privacy Policy</a>
         </div>
@@ -164,7 +179,7 @@
           <div class="pay-chips"><span>Bank Transfer</span><span>Cash on Delivery</span></div>`}
         </div>
       </div>
-      <div class="footer-bottom"><span>© ${year} ${cfg.store_name || 'Zemiki'}. All rights reserved.</span><span class="fb-sep"> · </span><span>Crafted with love in Sri Lanka</span></div>`;
+      <div class="footer-bottom"><span>© ${year} ${cfg.store_name || 'Zemiki'}. All rights reserved.</span><span class="fb-sep"> · </span><span>Proudly Sri Lankan</span></div>`;
     document.body.appendChild(footer);
 
     const nf = document.getElementById('newsletterForm');

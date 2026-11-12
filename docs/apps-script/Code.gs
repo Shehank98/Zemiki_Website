@@ -85,7 +85,7 @@ function shell(store, inner) {
       '</td></tr>'
     : '<tr><td align="center" style="background:' + MAROON + ';padding:26px 24px;border-bottom:3px solid ' + GOLD + '">' +
         '<div style="font-family:Georgia,\'Times New Roman\',serif;font-size:28px;font-weight:bold;color:#ffffff;letter-spacing:1px">' + name + '</div>' +
-        '<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:' + GOLD_SOFT + ';margin-top:4px">Handcrafted Jewelry</div>' +
+        '<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:' + GOLD_SOFT + ';margin-top:4px">Elegant Jewelry</div>' +
       '</td></tr>';
 
   return '' +
@@ -96,7 +96,7 @@ function shell(store, inner) {
     '<tr><td style="padding:30px 30px 26px;font-family:Arial,Helvetica,sans-serif;color:' + INK + '">' + inner + '</td></tr>' +
     '<tr><td style="background:' + CREAM + ';border-top:1px solid ' + LINE + ';padding:20px;text-align:center;' +
       'font-family:Arial,Helvetica,sans-serif;font-size:12px;color:' + MUTED + '">' +
-      '&copy; ' + new Date().getFullYear() + ' ' + name + '<br>Crafted with love in Sri Lanka' +
+      '&copy; ' + new Date().getFullYear() + ' ' + name + '<br>Proudly Sri Lankan' +
       (store.whatsapp_number ? '<br><a href="https://wa.me/' + esc(store.whatsapp_number) + '" style="color:' + MAROON + ';text-decoration:none">Message us on WhatsApp</a>' : '') +
     '</td></tr>' +
     '</table></div>';

@@ -3,7 +3,7 @@
 const { query } = require('./db');
 
 const DEFAULT_ANNOUNCEMENT =
-  'Islandwide delivery across Sri Lanka · Handcrafted with love';
+  'Islandwide delivery across Sri Lanka · Quality jewelry for every occasion';
 
 // Typed settings schema. Each key knows how to coerce and default itself.
 // Text keys may set `max` to allow longer values (default cap 300 chars).
@@ -25,7 +25,7 @@ const SETTINGS_SCHEMA = {
   tiktok_url: { type: 'text', def: () => process.env.TIKTOK_URL || '' },
   facebook_url: { type: 'text', def: () => process.env.FACEBOOK_URL || '' },
   // Hero banner (home page)
-  hero_eyebrow: { type: 'text', def: () => 'Handcrafted in Sri Lanka' },
+  hero_eyebrow: { type: 'text', def: () => 'Elegant jewelry in Sri Lanka' },
   hero_title: { type: 'text', def: () => 'Jewelry that tells your story' },
   hero_subtitle: { type: 'text', max: 500, def: () => 'Discover timeless necklaces, earrings and bridal sets - designed to be treasured and made to be worn every day.' },
   hero_image: { type: 'text', max: 600, def: () => '' },

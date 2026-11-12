@@ -11,12 +11,16 @@
     const priceHtml = onSale
       ? `<span class="now">${Z.money(p.sale_price)}</span><span class="was">${Z.money(p.price)}</span>`
       : `<span class="now">${Z.money(p.price)}</span>`;
-    const tags =
-      (p.featured ? '<span class="tag">Featured</span>' : '') +
-      (onSale ? '<span class="tag sale">Sale</span>' : '');
+    const stock = p.stock == null ? 99 : Number(p.stock);
+    const soldOut = stock <= 0;
+    const low = stock > 0 && stock <= 3;
+    const tags = soldOut
+      ? '<span class="tag soldout">Sold out</span>'
+      : (p.featured ? '<span class="tag">Featured</span>' : '') +
+        (onSale ? '<span class="tag sale">Sale</span>' : '');
     const cat = p.category_name ? `<div class="cat">${Z.escapeHtml(p.category_name)}</div>` : '';
     return `
-      <div class="product-card">
+      <div class="product-card${soldOut ? ' is-soldout' : ''}">
         <a class="product-media" href="/product?slug=${encodeURIComponent(p.slug)}">
           ${media}${tags}
         </a>
@@ -24,7 +28,10 @@
           ${cat}
           <h3><a href="/product?slug=${encodeURIComponent(p.slug)}">${Z.escapeHtml(p.name)}</a></h3>
           <div class="price">${priceHtml}</div>
-          ${p.has_variants
+          ${low ? `<div class="low-stock">Only ${stock} left</div>` : ''}
+          ${soldOut
+            ? `<button class="btn btn-outline" disabled>Sold Out</button>`
+            : p.has_variants
             ? `<a class="btn btn-outline" href="/product?slug=${encodeURIComponent(p.slug)}">Select Options</a>`
             : `<button class="btn btn-outline" data-add='${encodeURIComponent(JSON.stringify({ id: p.id, name: p.name, slug: p.slug, price: p.price, sale_price: p.sale_price, images: img ? [img] : [] }))}'>Add to Cart</button>`}
         </div>

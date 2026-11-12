@@ -76,7 +76,7 @@
   }
 
   /* --- Sticky mini-cart bar ---------------------------------------- */
-  const HIDE_MINICART_ON = ['/cart', '/checkout', '/order-confirmation'];
+  const HIDE_MINICART_ON = ['/cart', '/checkout', '/order-confirmation', '/product'];
 
   function buildMiniCart() {
     if (HIDE_MINICART_ON.some((p) => location.pathname.endsWith(p)) || location.pathname.indexOf('/track') === 0) return;
@@ -92,21 +92,24 @@
     document.addEventListener('cart:changed', updateMiniCart);
   }
 
+  // The bar only pops up briefly after something is added, then tucks away
+  // (the header cart icon is always there). It never sits over page content.
+  let lastCount = window.Cart ? Cart.count() : 0, miniTimer = null;
   function updateMiniCart() {
     const bar = document.getElementById('miniCart');
     if (!bar || !window.Cart) return;
     const count = Cart.count();
-    if (count <= 0) {
-      bar.classList.remove('show');
-      document.body.classList.remove('has-minicart');
-      return;
-    }
+    const added = count > lastCount;
+    lastCount = count;
+    if (count <= 0) { bar.classList.remove('show'); return; }
     const info = bar.querySelector('.mini-cart-info');
     info.innerHTML = '<strong>' + count + '</strong> item' + (count > 1 ? 's' : '') +
       ' &middot; ' + (window.Z ? Z.money(Cart.subtotal()) : Cart.subtotal());
-    bar.classList.add('show');
-    // Reserve space so the fixed bar never covers footer content on mobile.
-    document.body.classList.add('has-minicart');
+    if (added) {
+      bar.classList.add('show');
+      clearTimeout(miniTimer);
+      miniTimer = setTimeout(() => bar.classList.remove('show'), 5000);
+    }
   }
 
   /* --- Cart badge bounce ------------------------------------------- */
@@ -121,6 +124,7 @@
 
   /* --- Init --------------------------------------------------------- */
   function init() {
+    if (window.Z && Z.linkLabels) Z.linkLabels(document);
     tagReveal(document);
     fadeImages(document);
     buildScrollProgress();
