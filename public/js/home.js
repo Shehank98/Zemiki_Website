@@ -66,13 +66,34 @@
     start();
   }
 
+  // Turn the testimonial cards into a seamless strip that drifts left to right.
+  function makeMarquee(grid) {
+    const cards = Array.from(grid.querySelectorAll('.testimonial'));
+    if (!cards.length) return;
+    // Need enough cards per half to overfill the widest screens.
+    let set = cards.map((c) => c.cloneNode(true));
+    while (set.length < 6) set = set.concat(cards.map((c) => c.cloneNode(true)));
+    const half = (clones, hidden) => clones.map((c) => {
+      const n = c.cloneNode(true);
+      if (hidden) n.setAttribute('aria-hidden', 'true');
+      return n;
+    });
+    const track = document.createElement('div');
+    track.className = 'marquee-track';
+    half(set, false).concat(half(set, true)).forEach((n) => track.appendChild(n));
+    track.style.animationDuration = Math.max(30, set.length * 7) + 's';
+    grid.innerHTML = '';
+    grid.classList.add('marquee');
+    grid.appendChild(track);
+  }
+
   // Admin-managed testimonials (falls back to the static ones on empty/error).
   async function loadTestimonials() {
     const grid = document.getElementById('testimonialsGrid');
     if (!grid) return;
     try {
       const list = await Z.getJSON('/api/testimonials');
-      if (!list.length) return;
+      if (!list.length) { makeMarquee(grid); return; }
       grid.innerHTML = list.map((t) => {
         const stars = '★★★★★'.slice(0, Math.max(1, Math.min(5, Number(t.rating) || 5)));
         return `<figure class="testimonial">
@@ -81,8 +102,8 @@
           <figcaption><strong>${Z.escapeHtml(t.name)}</strong>${t.location ? '<span>' + Z.escapeHtml(t.location) + '</span>' : ''}</figcaption>
         </figure>`;
       }).join('');
-      if (window.Anim) Anim.retag();
-    } catch (e) { /* keep static fallback */ }
+      makeMarquee(grid);
+    } catch (e) { makeMarquee(grid); /* static fallback cards */ }
   }
 
   // Config-driven pieces (hero + optional custom Instagram tiles).

@@ -698,3 +698,17 @@ img.js-fade.loaded { opacity: 1; }
 .drawer-cats { display: flex; flex-direction: column; margin: -4px 0 6px 14px; padding-left: 14px; border-left: 2px solid var(--gold-soft); }
 .drawer-cats a { font-size: .95rem; min-height: 42px; padding: 6px 4px; color: var(--muted); }
 .drawer-cats a.active { color: var(--maroon); font-weight: 600; }
+
+/* Testimonials drifting left to right */
+.testimonials.marquee { display: block; overflow: hidden; padding: 6px 0 14px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.marquee-track { display: flex; width: max-content; animation: tmRight 60s linear infinite; will-change: transform; }
+.testimonials.marquee:hover .marquee-track, .testimonials.marquee:active .marquee-track { animation-play-state: paused; }
+.testimonials.marquee .testimonial { flex: 0 0 340px; margin-right: 26px; opacity: 1 !important; transform: none !important; transition: none; }
+@keyframes tmRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@media (max-width: 640px) { .testimonials.marquee .testimonial { flex-basis: 280px; margin-right: 16px; } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+  .testimonials.marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+}
