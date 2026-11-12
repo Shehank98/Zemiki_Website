@@ -746,3 +746,13 @@ img.js-fade.loaded { opacity: 1; }
 @media (max-width: 640px) {
   .trust, .pdp-trust { display: none; }
 }
+
+/* Mobile: compact testimonial cards */
+@media (max-width: 640px) {
+  .testimonials.marquee .testimonial { flex-basis: 250px; padding: 14px 16px; }
+  .testimonial .stars { font-size: .85rem; letter-spacing: 2px; margin-bottom: 6px; }
+  .testimonial blockquote { font-size: .84rem; line-height: 1.5; margin-bottom: 10px;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .testimonial figcaption strong { font-size: .92rem; }
+  .testimonial figcaption span { font-size: .74rem; }
+}
