@@ -72,5 +72,12 @@
     return `https://wa.me/${clean}?text=${encodeURIComponent(text)}`;
   }
 
-  window.Z = { getJSON, postJSON, getConfig, money, escapeHtml, qs, toast, placeholder, whatsappUrl };
+  // "tx,ty,zoom" (set by the admin crop tool) -> inline CSS variables for an <img>.
+  function cropStyle(crop) {
+    const m = String(crop || '').split(',').map(Number);
+    if (m.length !== 3 || m.some((n) => !isFinite(n)) || m[2] <= 1) return '';
+    return ` style="--tx:${m[0]}%;--ty:${m[1]}%;--cs:${m[2]}"`;
+  }
+
+  window.Z = { cropStyle, getJSON, postJSON, getConfig, money, escapeHtml, qs, toast, placeholder, whatsappUrl };
 })();

@@ -12,7 +12,7 @@ async function attachImages(products) {
   if (products.length === 0) return products;
   const ids = products.map((p) => p.id);
   const { rows } = await query(
-    `SELECT product_id, url FROM product_images
+    `SELECT product_id, url, crop FROM product_images
       WHERE product_id = ANY($1::int[])
       ORDER BY sort_order, id`,
     [ids]
@@ -23,13 +23,16 @@ async function attachImages(products) {
   );
   const variantIds = new Set(hv.rows.map((r) => r.product_id));
   const byProduct = new Map();
+  const cropByProduct = new Map(); // crop of each product's first image
   for (const r of rows) {
     if (!byProduct.has(r.product_id)) byProduct.set(r.product_id, []);
     byProduct.get(r.product_id).push(r.url);
+    if (!cropByProduct.has(r.product_id)) cropByProduct.set(r.product_id, r.crop || '');
   }
   for (const p of products) {
     p.images = byProduct.get(p.id) || [];
     p.image = p.images[0] || null;
+    p.image_crop = cropByProduct.get(p.id) || '';
     p.has_variants = variantIds.has(p.id);
   }
   return products;
@@ -119,12 +122,12 @@ router.get('/:slug', async (req, res, next) => {
         [product.id]
       ),
       query(
-        `SELECT url, code, a_value FROM product_images
+        `SELECT url, code, a_value, crop FROM product_images
           WHERE product_id = $1 ORDER BY sort_order, id`,
         [product.id]
       ),
     ]);
-    const image_items = ir.rows.map((r) => ({ url: r.url, code: r.code || '', a_value: r.a_value || '' }));
+    const image_items = ir.rows.map((r) => ({ url: r.url, code: r.code || '', a_value: r.a_value || '', crop: r.crop || '' }));
 
     res.json({ ...product, variants: vr.rows, image_items, related: related.rows });
   } catch (err) {

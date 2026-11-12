@@ -42,7 +42,7 @@
     const slides = items.length
       ? `<div class="gallery-track" id="galTrack">${items.map((it, i) =>
           `<figure class="gal-slide">
-            <img src="${Z.escapeHtml(it.url)}" alt="${Z.escapeHtml(p.name)}${it.code ? ' ' + Z.escapeHtml(it.code) : ''}" ${i === 0 ? '' : 'loading="lazy"'} onerror="this.style.visibility='hidden'">
+            <img src="${Z.escapeHtml(it.url)}"${Z.cropStyle(it.crop)} alt="${Z.escapeHtml(p.name)}${it.code ? ' ' + Z.escapeHtml(it.code) : ''}" ${i === 0 ? '' : 'loading="lazy"'} onerror="this.style.visibility='hidden'">
             ${it.code ? `<figcaption class="gal-code">Item code <strong>${Z.escapeHtml(it.code)}</strong></figcaption>` : ''}
           </figure>`).join('')}</div>
         ${items.length > 1 ? `<button type="button" class="gal-nav prev" id="galPrev" aria-label="Previous image">‹</button><button type="button" class="gal-nav next" id="galNext" aria-label="Next image">›</button><div class="gal-count" id="galCount">1 / ${items.length}</div>` : ''}`
@@ -103,14 +103,14 @@
           </div>
 
           <div class="pdp-trust">
-            <div class="pdp-trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg><span>Islandwide delivery<br><small>Free over Rs. 15,000</small></span></div>
+            <div class="pdp-trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg><span>Islandwide delivery<br><small>Calculated by district</small></span></div>
             <div class="pdp-trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Secure checkout<br><small>KOKO · Cash on Delivery</small></span></div>
             <div class="pdp-trust-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 6L9 17l-5-5"/></svg><span>Cash on Delivery<br><small>Pay when it arrives</small></span></div>
           </div>
 
           <div class="pdp-accordion" id="pdpAccordion">
             <details open><summary>Product details</summary><div>${Z.escapeHtml(p.description || 'A beautiful handcrafted piece from the Zemiki collection.')}${p.sku ? `<div class="acc-sku">SKU: ${Z.escapeHtml(p.sku)}</div>` : ''}</div></details>
-            <details><summary>Delivery &amp; returns</summary><div>Islandwide delivery, calculated by district at checkout. Free delivery on orders over Rs. 15,000. Contact us within 3 days of delivery for any issue with your piece.</div></details>
+            <details><summary>Delivery &amp; returns</summary><div>Islandwide delivery, calculated by district at checkout. Contact us within 3 days of delivery for any issue with your piece.</div></details>
             <details><summary>Care guide</summary><div>Keep your jewelry away from moisture, perfume and direct sunlight. Wipe gently with a soft dry cloth and store in a pouch to keep it shining.</div></details>
           </div>
         </div>

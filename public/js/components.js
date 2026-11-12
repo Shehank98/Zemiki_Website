@@ -5,7 +5,7 @@
   function productCard(p) {
     const img = p.image || (p.images && p.images[0]);
     const media = img
-      ? `<img src="${Z.escapeHtml(img)}" alt="${Z.escapeHtml(p.name)}" loading="lazy" onerror="this.parentNode.innerHTML=Z.placeholder()">`
+      ? `<img src="${Z.escapeHtml(img)}"${Z.cropStyle(p.image_crop)} alt="${Z.escapeHtml(p.name)}" loading="lazy" onerror="this.parentNode.innerHTML=Z.placeholder()">`
       : Z.placeholder();
     const onSale = p.sale_price != null && p.sale_price !== '' && Number(p.sale_price) < Number(p.price);
     const priceHtml = onSale

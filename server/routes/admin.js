@@ -233,10 +233,10 @@ router.delete('/categories/:id', async (req, res, next) => {
 
 async function loadProductImageItems(productId) {
   const { rows } = await query(
-    'SELECT url, code, a_value FROM product_images WHERE product_id=$1 ORDER BY sort_order, id',
+    'SELECT url, code, a_value, crop FROM product_images WHERE product_id=$1 ORDER BY sort_order, id',
     [productId]
   );
-  return rows.map((r) => ({ url: r.url, code: r.code || '', a_value: r.a_value || '' }));
+  return rows.map((r) => ({ url: r.url, code: r.code || '', a_value: r.a_value || '', crop: r.crop || '' }));
 }
 
 async function loadProductImages(productId) {
@@ -303,6 +303,18 @@ function cleanText(v, max) {
   return String(v == null ? '' : v).trim().slice(0, max || 80);
 }
 
+// "tx,ty,zoom" -> normalised string, or null when it is a no-op / invalid.
+function cleanCrop(v) {
+  const m = String(v || '').split(',').map(Number);
+  if (m.length !== 3 || m.some((n) => !Number.isFinite(n))) return null;
+  const z = Math.min(3, Math.max(1, m[2]));
+  const lim = ((z - 1) / 2) * 100;
+  const tx = Math.min(lim, Math.max(-lim, m[0]));
+  const ty = Math.min(lim, Math.max(-lim, m[1]));
+  if (z === 1) return null;
+  return [tx, ty, z].map((n) => Math.round(n * 100) / 100).join(',');
+}
+
 function parsePayload(body) {
   const optA = cleanText(body.option_a_name, 40) || null;
   const optB = optA ? (cleanText(body.option_b_name, 40) || null) : null;
@@ -335,11 +347,12 @@ function parsePayload(body) {
         url: normalizeImageUrl(it && it.url),
         code: cleanText(it && it.code, 60) || null,
         a_value: optA ? (cleanText(it && it.a_value, 60) || null) : null,
+        crop: cleanCrop(it && it.crop),
       }))
       .filter((it) => it.url);
   } else if (Array.isArray(body.images)) {
     imageItems = body.images
-      .map((u) => ({ url: normalizeImageUrl(u), code: null, a_value: null }))
+      .map((u) => ({ url: normalizeImageUrl(u), code: null, a_value: null, crop: null }))
       .filter((it) => it.url);
   }
 
@@ -430,8 +443,8 @@ router.put('/products/:id', async (req, res, next) => {
 async function insertImages(client, productId, items) {
   for (let i = 0; i < items.length; i++) {
     await client.query(
-      'INSERT INTO product_images (product_id, url, sort_order, a_value, code) VALUES ($1,$2,$3,$4,$5)',
-      [productId, items[i].url, i, items[i].a_value, items[i].code]
+      'INSERT INTO product_images (product_id, url, sort_order, a_value, code, crop) VALUES ($1,$2,$3,$4,$5,$6)',
+      [productId, items[i].url, i, items[i].a_value, items[i].code, items[i].crop]
     );
   }
 }

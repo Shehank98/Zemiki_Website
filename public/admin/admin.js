@@ -511,9 +511,62 @@
           <input class="img-code" value="${esc(it.code || '')}" placeholder="Item code e.g. ZM101-RED" maxlength="60">
           <select class="img-a" data-val="${esc(it.a_value || '')}" title="Which colour/design this photo shows"></select>
         </div>
+        <div class="image-crop-row"><button type="button" class="btn btn-outline btn-sm crop-btn">✂ Crop / zoom</button><span class="crop-note">${it.crop ? 'Cropped' : ''}</span><input type="hidden" class="img-crop" value="${esc(it.crop || '')}"></div>
       </div>
       <button type="button" class="btn btn-danger btn-sm rm-img">✕</button>
     </div>`;
+  }
+
+  /* ----------------------------- Image crop ---------------------------- */
+  // Images are links (Drive etc.), not uploads, so the crop is saved as a pan
+  // + zoom and applied with CSS on the storefront. Drag to move, slider to zoom.
+  function openCropper(url, current, done) {
+    const raw = normalizeDriveForPreview(url);
+    let [tx, ty, z] = (current || '0,0,1').split(',').map(Number);
+    if (!isFinite(tx) || !isFinite(ty) || !isFinite(z) || z < 1) { tx = 0; ty = 0; z = 1; }
+    const ov = document.createElement('div');
+    ov.className = 'crop-overlay';
+    ov.innerHTML = `<div class="crop-card">
+      <h3>Crop image</h3>
+      <div class="hint" style="margin-bottom:10px">This is how the photo is framed (square) in the shop and on the product page. Drag to move, use the slider to zoom.</div>
+      <div class="crop-frame" id="cropFrame"><img id="cropImg" src="${esc(raw)}" draggable="false" alt=""></div>
+      <label class="crop-zoom">Zoom <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="${z}"></label>
+      <div class="crop-actions">
+        <button type="button" class="btn btn-outline btn-sm" id="cropReset">Reset</button>
+        <span style="flex:1"></span>
+        <button type="button" class="btn btn-outline" id="cropCancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="cropApply">Apply</button>
+      </div></div>`;
+    document.body.appendChild(ov);
+    const frame = ov.querySelector('#cropFrame'), img = ov.querySelector('#cropImg'), zoom = ov.querySelector('#cropZoom');
+    const clamp = () => { const lim = (z - 1) / 2 * 100; tx = Math.max(-lim, Math.min(lim, tx)); ty = Math.max(-lim, Math.min(lim, ty)); };
+    const paint = () => { clamp(); img.style.transform = `translate(${tx}%, ${ty}%) scale(${z})`; };
+    paint();
+    let drag = null;
+    frame.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, tx, ty }; frame.setPointerCapture(e.pointerId); });
+    frame.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const r = frame.getBoundingClientRect();
+      tx = drag.tx + (e.clientX - drag.x) / r.width * 100;
+      ty = drag.ty + (e.clientY - drag.y) / r.height * 100;
+      paint();
+    });
+    const end = () => { drag = null; };
+    frame.addEventListener('pointerup', end); frame.addEventListener('pointercancel', end);
+    zoom.addEventListener('input', () => { z = parseFloat(zoom.value); paint(); });
+    ov.querySelector('#cropReset').addEventListener('click', () => { tx = 0; ty = 0; z = 1; zoom.value = 1; paint(); });
+    const close = () => ov.remove();
+    ov.querySelector('#cropCancel').addEventListener('click', close);
+    ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+    ov.querySelector('#cropApply').addEventListener('click', () => {
+      done(z <= 1 ? '' : [tx, ty, z].map((n) => Math.round(n * 100) / 100).join(','));
+      close();
+    });
+  }
+  // Show Drive share links in the cropper the same way the storefront will.
+  function normalizeDriveForPreview(u) {
+    const m = String(u).match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=)([\w-]{10,})/);
+    return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200` : u;
   }
 
   /* ---------------------------- Variants ---------------------------- */
@@ -685,6 +738,16 @@
       }
     });
     list.addEventListener('click', (e) => {
+      if (e.target.classList.contains('crop-btn')) {
+        const row = e.target.closest('.image-row');
+        const url = row.querySelector('.img-input').value.trim();
+        if (!url) { toast('Paste an image link first', 'error'); return; }
+        openCropper(url, row.querySelector('.img-crop').value, (val) => {
+          row.querySelector('.img-crop').value = val;
+          row.querySelector('.crop-note').textContent = val ? 'Cropped' : '';
+        });
+        return;
+      }
       if (e.target.classList.contains('rm-img')) {
         if (list.children.length > 1) e.target.closest('.image-row').remove();
         else e.target.closest('.image-row').querySelector('.img-input').value = '';
@@ -730,6 +793,7 @@
       url: row.querySelector('.img-input').value.trim(),
       code: row.querySelector('.img-code').value.trim(),
       a_value: has ? row.querySelector('.img-a').value : '',
+      crop: row.querySelector('.img-crop').value,
     })).filter((it) => it.url);
     const optB = has ? $('#pOptB').value.trim() : '';
     return {

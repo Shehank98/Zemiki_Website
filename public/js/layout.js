@@ -69,7 +69,7 @@
       <aside class="drawer" id="drawer">
         <button class="icon-btn drawer-close" id="drawerClose" aria-label="Close">${icon('close')}</button>
         <div class="drawer-brand">${cfg.store_name || 'Zemiki'}</div>
-        ${NAV.map((n) => `<a href="${n.href}">${n.label}</a>`).join('')}
+        ${NAV.filter((n) => !n.href.includes('?category=')).map((n) => `<a href="${n.href}">${n.label}</a>` + (n.href === '/shop' ? '<div class="drawer-cats" id="drawerCats"></div>' : '')).join('')}
         <div class="drawer-cta">
           <a class="btn btn-gold" href="/cart">View Cart</a>
           ${cfg.whatsapp_number ? `<a class="btn btn-whatsapp" style="margin-top:10px" href="${Z.whatsappUrl(cfg.whatsapp_number, 'Hi Zemiki')}" target="_blank" rel="noopener">Chat on WhatsApp</a>` : ''}
@@ -92,6 +92,14 @@
     const backdrop = document.getElementById('drawerBackdrop');
     const openD = () => { drawer.classList.add('open'); backdrop.classList.add('open'); };
     const closeD = () => { drawer.classList.remove('open'); backdrop.classList.remove('open'); };
+    // Categories under "Shop" in the mobile menu (only ones that have products).
+    Z.getJSON('/api/categories').then((cats) => {
+      const box = document.getElementById('drawerCats');
+      if (!box) return;
+      const cur = new URLSearchParams(location.search).get('category');
+      box.innerHTML = cats.filter((c) => (c.product_count || 0) > 0).map((c) =>
+        `<a href="/shop?category=${encodeURIComponent(c.slug)}"${cur === c.slug ? ' class="active"' : ''}>${Z.escapeHtml(c.name)}</a>`).join('');
+    }).catch(() => {});
     document.getElementById('menuToggle').addEventListener('click', openD);
     document.getElementById('drawerClose').addEventListener('click', closeD);
     backdrop.addEventListener('click', closeD);

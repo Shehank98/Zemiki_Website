@@ -3,7 +3,7 @@
 const { query } = require('./db');
 
 const DEFAULT_ANNOUNCEMENT =
-  'Free islandwide delivery on orders over Rs. 15,000 · Pay in 3 with KOKO';
+  'Islandwide delivery across Sri Lanka · Pay in 3 with KOKO';
 
 // Typed settings schema. Each key knows how to coerce and default itself.
 // Text keys may set `max` to allow longer values (default cap 300 chars).
