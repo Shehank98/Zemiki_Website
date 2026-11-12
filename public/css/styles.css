@@ -741,3 +741,8 @@ img.js-fade.loaded { opacity: 1; }
   .footer-bottom span { display: block; }
   .footer-bottom .fb-sep { display: none; }
 }
+
+/* Mobile: drop the trust strip (home) and trust icons (product page) to save space */
+@media (max-width: 640px) {
+  .trust, .pdp-trust { display: none; }
+}
