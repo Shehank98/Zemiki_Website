@@ -8,6 +8,12 @@
   const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const money = (v) => 'Rs. ' + (Number(v) || 0).toLocaleString('en-LK', { maximumFractionDigits: 0 });
   const fmtDate = (s) => new Date(s).toLocaleString('en-LK', { dateStyle: 'medium', timeStyle: 'short' });
+  // Compact "12 Nov, 11:23 PM" for table cells (full date stays in exports).
+  const fmtDateShort = (s) => {
+    const d = new Date(s);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-LK', { hour: 'numeric', minute: '2-digit' });
+  };
+  const IC = (name, size) => (window.AdminIcons ? AdminIcons.svg(name, size) : '');
 
   async function api(path, opts) {
     opts = opts || {};
@@ -39,10 +45,12 @@
   function toast(msg, type) {
     const el = document.createElement('div');
     el.className = 'toast' + (type ? ' ' + type : '');
-    el.textContent = msg;
+    const icon = type === 'success' ? 'check' : type === 'error' ? 'alert' : 'info';
+    el.innerHTML = '<span class="t-ico"><i data-icon="' + icon + '" data-size="16"></i></span><span class="t-msg"></span>';
+    el.querySelector('.t-msg').textContent = msg;
     $('#toastWrap').appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; }, 2600);
-    setTimeout(() => el.remove(), 3000);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(14px)'; el.style.transition = 'opacity .3s, transform .3s'; }, type === 'error' ? 4200 : 2800);
+    setTimeout(() => el.remove(), type === 'error' ? 4600 : 3200);
   }
 
   const ph = '<div class="thumb-ph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.8 7.2 17l.9-5.4L4.2 7.7l5.4-.8z"/></svg></div>';
@@ -67,6 +75,14 @@
   $('#modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') modal.close(); });
 
   /* ------------------------------ auth ------------------------------- */
+  const pwToggle = $('#pwToggle');
+  if (pwToggle) pwToggle.addEventListener('click', () => {
+    const inp = document.querySelector('#loginForm [name=password]');
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    pwToggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  });
+
   function showLogin() { $('#loginScreen').style.display = 'grid'; $('#adminApp').style.display = 'none'; }
   function showApp() { $('#loginScreen').style.display = 'none'; $('#adminApp').style.display = 'grid'; }
 
@@ -102,8 +118,33 @@
     requestAnimationFrame(frame);
   }
 
+  /* ---------------- tables -> stacked cards on phones ---------------- */
+  // Each data table gets the "cardify" class and a data-label on every cell
+  // (from its column header); CSS turns rows into cards on narrow screens.
+  const CARD_TABLES = '#productsTable table, #ordersTable table, #categoriesTable table, #recentOrders table, #enquiriesTable table, #subscribersTable table, #testimonialsTable table';
+  function cardify() {
+    $$(CARD_TABLES).forEach((t) => {
+      if (t.classList.contains('cardify')) return;
+      t.classList.add('cardify');
+      const heads = Array.from(t.querySelectorAll('thead th')).map((h) => h.textContent.trim());
+      t.querySelectorAll('tbody tr').forEach((tr) => {
+        Array.from(tr.children).forEach((td, i) => {
+          td.setAttribute('data-label', heads[i] || '');
+          if (!heads[i] && td.querySelector('button, a.btn')) td.classList.add('td-actions');
+        });
+      });
+    });
+  }
+  new MutationObserver(cardify).observe(document.querySelector('.main') || document.body, { childList: true, subtree: true });
+
   /* --------------------------- navigation ---------------------------- */
   const titles = { dashboard: 'Dashboard', products: 'Products', categories: 'Categories', orders: 'Orders', enquiries: 'Enquiries', marketing: 'Marketing', content: 'Content', settings: 'Settings' };
+  const subtitles = {
+    dashboard: 'Your store at a glance', products: 'Manage your catalogue and stock', categories: 'Organise how customers browse',
+    orders: 'Fulfil, track and manage customer orders', enquiries: 'Messages from your customers',
+    marketing: 'Email your customers and grow your list', content: 'Edit what visitors see on your site',
+    settings: 'Shipping, payments, themes and security',
+  };
   const loaders = {};
   $$('.nav-item[data-view]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -118,6 +159,8 @@
       void active.offsetWidth;
       active.classList.add('view-anim');
       $('#viewTitle').textContent = titles[view];
+      $('#viewSub').textContent = subtitles[view] || '';
+      window.scrollTo({ top: 0 });
       if (loaders[view]) loaders[view]();
       document.querySelector('.admin').classList.remove('nav-open'); // close mobile drawer
     });
@@ -218,11 +261,11 @@
     try {
       const s = await api('/stats');
       const cards = [
-        ['Products', s.products, 0], ['Orders', s.orders, 0],
-        ['Revenue (paid)', s.revenue, 1], ['Open Enquiries', s.open_enquiries, 0],
+        ['Products', s.products, 0, 'box', 's-brand'], ['Orders', s.orders, 0, 'bag', 's-blue'],
+        ['Revenue (paid)', s.revenue, 1, 'coin', 's-green'], ['Open Enquiries', s.open_enquiries, 0, 'mail', 's-gold'],
       ];
-      $('#statGrid').innerHTML = cards.map(([l, v, money0]) =>
-        `<div class="stat"><div class="label">${l}</div><div class="value" data-count="${v}" data-money="${money0}">0</div></div>`).join('');
+      $('#statGrid').innerHTML = cards.map(([l, v, money0, ico, tone]) =>
+        `<div class="stat ${tone}"><div><div class="label">${l}</div><div class="value" data-count="${v}" data-money="${money0}">0</div></div><span class="stat-ico"><i data-icon="${ico}" data-size="22"></i></span></div>`).join('');
       $$('#statGrid .value').forEach(countUp);
 
       const rows = (s.recent_orders || []);
@@ -234,7 +277,7 @@
           <td>${money(o.total)}</td>
           <td>${esc(o.payment_method)} ${payPill(o.payment_status)}</td>
           <td>${statusPill(o.order_status)}</td>
-          <td>${fmtDate(o.created_at)}</td></tr>`).join('')}</tbody></table>`
+          <td class="nowrap">${fmtDateShort(o.created_at)}</td></tr>`).join('')}</tbody></table>`
         : '<div class="empty">No orders yet.</div>';
 
       updateBadges(s.orders, s.open_enquiries);
@@ -262,7 +305,7 @@
     });
     const legend = rows.map((r, i) => {
       const col = colorFor ? colorFor(r.k, i) : PALETTE[i % PALETTE.length];
-      return `<span class="lg"><span class="dot" style="background:${col}"></span>${esc(r.k)} (${r.c})</span>`;
+      return `<span class="lg"><span class="dot" style="background:${col}"></span>${esc((typeof STATUS_LABEL !== 'undefined' && STATUS_LABEL[r.k]) || r.k)} (${r.c})</span>`;
     }).join('');
     return `<svg class="chart-svg" viewBox="0 0 160 160" style="max-width:180px;margin:0 auto">
       ${segs}
@@ -364,8 +407,8 @@
           <td>${c.product_count}</td>
           <td>${c.sort_order}</td>
           <td style="text-align:right;white-space:nowrap">
-            <button class="btn btn-outline btn-sm" data-edit-cat="${c.id}">Edit</button>
-            <button class="btn btn-danger btn-sm" data-del-cat="${c.id}">Delete</button>
+            <div class="row-actions"><button class="btn btn-outline btn-sm" data-edit-cat="${c.id}"><i data-icon="edit"></i> Edit</button>
+            <button class="btn btn-danger btn-sm btn-icon" title="Delete" aria-label="Delete" data-del-cat="${c.id}"><i data-icon="trash"></i></button></div>
           </td></tr>`).join('')}</tbody></table>`
         : '<div class="empty">No categories yet.</div>';
 
@@ -445,12 +488,12 @@
         <td><strong>${esc(p.name)}</strong></td>
         <td>${esc(p.category_name || '-')}</td>
         <td>${p.sale_price != null ? `<strong>${money(p.sale_price)}</strong> <s style="color:#999">${money(p.price)}</s>` : money(p.price)}</td>
-        <td class="${p.stock <= LOW_STOCK ? 'stock-low' : 'stock-ok'}">${p.stock}${p.stock <= LOW_STOCK ? ' ⚠' : ''}${p.variants && p.variants.length ? `<span class="stock-variants">${p.variants.length} variants</span>` : ''}</td>
+        <td class="${p.stock <= LOW_STOCK ? 'stock-low' : 'stock-ok'}">${p.stock}${p.variants && p.variants.length ? `<span class="stock-variants">${p.variants.length} variants</span>` : ''}</td>
         <td>${toggleHtml(p.id, 'featured', p.featured)}</td>
         <td>${toggleHtml(p.id, 'active', p.active)}</td>
         <td style="text-align:right;white-space:nowrap">
-          <button class="btn btn-outline btn-sm" data-edit-prod="${p.id}">Edit</button>
-          <button class="btn btn-danger btn-sm" data-del-prod="${p.id}">Delete</button>
+          <div class="row-actions"><button class="btn btn-outline btn-sm" data-edit-prod="${p.id}"><i data-icon="edit"></i> Edit</button>
+          <button class="btn btn-danger btn-sm btn-icon" title="Delete" aria-label="Delete" data-del-prod="${p.id}"><i data-icon="trash"></i></button></div>
         </td></tr>`).join('')}</tbody></table>`
       : '<div class="empty">No products match your search.</div>';
 
@@ -504,16 +547,16 @@
     it = typeof it === 'string' ? { url: it } : (it || {});
     const url = it.url || '';
     return `<div class="image-row">
-      <img class="image-preview" src="${esc(url)}" onerror="this.style.visibility='hidden'" ${url ? '' : 'style="visibility:hidden"'}>
+      <img class="image-preview" src="${esc(url)}" onerror="this.style.display='none'" ${url ? '' : 'style="display:none"'}>
       <div class="image-fields">
         <input class="img-input" value="${esc(url)}" placeholder="https://drive.google.com/file/d/…">
         <div class="image-meta">
           <input class="img-code" value="${esc(it.code || '')}" placeholder="Item code e.g. ZM101-RED" maxlength="60">
           <select class="img-a" data-val="${esc(it.a_value || '')}" title="Which colour/design this photo shows"></select>
         </div>
-        <div class="image-crop-row"><button type="button" class="btn btn-outline btn-sm crop-btn">✂ Crop / zoom</button><span class="crop-note">${it.crop ? 'Cropped' : ''}</span><input type="hidden" class="img-crop" value="${esc(it.crop || '')}"></div>
+        <div class="image-crop-row"><button type="button" class="btn btn-outline btn-sm crop-btn"><i data-icon="crop"></i> Crop / zoom</button><span class="crop-note">${it.crop ? 'Cropped' : ''}</span><input type="hidden" class="img-crop" value="${esc(it.crop || '')}"></div>
       </div>
-      <button type="button" class="btn btn-danger btn-sm rm-img">✕</button>
+      <button type="button" class="btn btn-danger btn-sm btn-icon rm-img" title="Remove image" aria-label="Remove image"><i data-icon="x" data-size="16"></i></button>
     </div>`;
   }
 
@@ -602,7 +645,7 @@
         <td>${esc(v.a_value)}</td>${nameB ? `<td>${esc(v.b_value || '')}</td>` : ''}
         <td><input class="v-sku" value="${esc(v.sku || '')}" maxlength="60"></td>
         <td><input class="v-stock" type="number" min="0" value="${v.stock != null ? v.stock : 0}"></td>
-        <td><button type="button" class="btn btn-danger btn-sm rm-var">✕</button></td></tr>`).join('')}</tbody></table></div>`;
+        <td><button type="button" class="btn btn-danger btn-sm btn-icon rm-var" title="Remove" aria-label="Remove"><i data-icon="x" data-size="16"></i></button></td></tr>`).join('')}</tbody></table></div>`;
   }
 
   const splitVals = (str) => String(str || '').split(',').map((x) => x.trim()).filter((x, i, a) => x && a.findIndex((y) => y.toLowerCase() === x.toLowerCase()) === i);
@@ -734,7 +777,7 @@
     list.addEventListener('input', (e) => {
       if (e.target.classList.contains('img-input')) {
         const img = e.target.closest('.image-row').querySelector('.image-preview');
-        img.src = e.target.value; img.style.visibility = e.target.value ? 'visible' : 'hidden';
+        img.src = e.target.value; img.style.display = e.target.value ? 'block' : 'none';
       }
     });
     list.addEventListener('click', (e) => {
@@ -873,16 +916,16 @@
     el.innerHTML = list.length ? `<table><thead><tr>
       <th>Order</th><th>Customer</th><th>District</th><th>Total</th><th>Method</th><th>Payment</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>${
       list.map((o) => `<tr>
-        <td><strong>${esc(o.order_number)}</strong>${o.is_gift ? ' <span class="pill gold" title="Gift order">🎁 Gift</span>' : ''}</td>
-        <td>${esc(o.customer_name)}<div style="color:#999;font-size:.8rem">${esc(o.phone)}</div></td>
+        <td><strong>${esc(o.order_number)}</strong>${o.is_gift ? ' <span class="pill gold" title="Gift order">Gift</span>' : ''}</td>
+        <td>${esc(o.customer_name)}<span class="cust-phone">${esc(o.phone)}</span></td>
         <td>${esc(o.district || '-')}</td>
         <td>${money(o.total)}</td>
         <td>${esc(o.payment_method)}</td>
         <td>${payPill(o.payment_status)}</td>
         <td>${statusPill(o.order_status)}</td>
-        <td style="font-size:.82rem">${fmtDate(o.created_at)}</td>
-        <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" data-view-order="${o.id}">View</button>
-          <button class="btn btn-danger btn-sm" data-del-order="${o.id}" data-num="${esc(o.order_number)}">Delete</button></td></tr>`).join('')}</tbody></table>`
+        <td class="nowrap" >${fmtDateShort(o.created_at)}</td>
+        <td><div class="row-actions"><button class="btn btn-outline btn-sm btn-icon" title="View order" aria-label="View order" data-view-order="${o.id}"><i data-icon="eye"></i></button>
+          <button class="btn btn-danger btn-sm btn-icon" title="Delete order" aria-label="Delete order" data-del-order="${o.id}" data-num="${esc(o.order_number)}"><i data-icon="trash"></i></button></div></td></tr>`).join('')}</tbody></table>`
       : '<div class="empty">No orders match.</div>';
 
     $$('[data-view-order]', el).forEach((b) => b.addEventListener('click', () => viewOrder(+b.dataset.viewOrder)));
@@ -924,12 +967,12 @@
       const items = (o.items || []).map((it) => `<tr><td>${esc(it.product_name)}${it.variant_label ? `<div class="it-var">${esc(it.variant_label)}${it.sku ? ' · ' + esc(it.sku) : ''}</div>` : ''}</td><td>${it.qty}</td><td>${money(it.unit_price)}</td><td style="text-align:right">${money(it.unit_price * it.qty)}</td></tr>`).join('');
       const waNum = String(o.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '94');
       const contact =
-        `<a class="btn btn-outline btn-sm" href="tel:${esc(o.phone)}">📞 Call</a> ` +
-        `<a class="btn btn-outline btn-sm" href="https://wa.me/${waNum}" target="_blank" rel="noopener">💬 WhatsApp</a>` +
-        (o.email ? ` <a class="btn btn-outline btn-sm" href="mailto:${esc(o.email)}">✉ Email</a>` : '');
+        `<a class="btn btn-outline btn-sm" href="tel:${esc(o.phone)}"><i data-icon="phone"></i> Call</a> ` +
+        `<a class="btn btn-outline btn-sm" href="https://wa.me/${waNum}" target="_blank" rel="noopener"><i data-icon="chat"></i> WhatsApp</a>` +
+        (o.email ? ` <a class="btn btn-outline btn-sm" href="mailto:${esc(o.email)}"><i data-icon="mail"></i> Email</a>` : '');
 
       const giftBlock = o.is_gift
-        ? `<div class="gift-note-admin">🎁 <strong>Gift order</strong> - anonymous, prices hidden on the delivery note.${o.gift_message ? `<div class="gift-msg">“${esc(o.gift_message)}”</div>` : ''}</div>`
+        ? `<div class="gift-note-admin"><i data-icon="gift"></i> <strong>Gift order</strong> - anonymous, prices hidden on the delivery note.${o.gift_message ? `<div class="gift-msg">“${esc(o.gift_message)}”</div>` : ''}</div>`
         : '';
 
       const statusBtns = ORDER_STATUSES
@@ -944,7 +987,7 @@
             <div class="od-label">Customer</div>
             <div class="od-value"><strong>${esc(o.customer_name)}</strong></div>
             <div class="od-value">${esc(o.phone)}${o.email ? ' · ' + esc(o.email) : ''}</div>
-            ${o.birthday ? `<div class="od-value">🎂 Birthday: ${esc(o.birthday)}</div>` : ''}
+            ${o.birthday ? `<div class="od-value">Birthday: ${esc(o.birthday)}</div>` : ''}
             <div style="margin-top:8px">${contact}</div>
           </div>
           <div>
@@ -974,7 +1017,7 @@
           <div class="field" style="margin:10px 0 0"><label>Courier tracking link (optional)</label><input id="courierUrlInput" value="${esc(o.courier_url || '')}" placeholder="https://..." maxlength="500"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
             <button class="btn btn-outline btn-sm" id="saveTrack">Save details</button>
-            <button class="btn btn-primary btn-sm" id="sendTrack" ${o.email ? '' : 'disabled title="No email on this order"'}>✉ Email update to customer</button>
+            <button class="btn btn-primary btn-sm" id="sendTrack" ${o.email ? '' : 'disabled title="No email on this order"'}><i data-icon="send"></i> Email update to customer</button>
           </div>
           <div class="hint" style="margin-top:6px">Enter the courier details and save <strong>before</strong> setting the status to Dispatched. Dispatched and Delivered email the customer automatically.</div>
           <div class="track-link-row">
@@ -983,9 +1026,9 @@
           </div>
           ${hist ? `<div class="od-label" style="margin-top:14px">History</div><ul class="order-hist">${hist}</ul>` : ''}
         </div>`,
-        `<button class="btn btn-outline" id="printSlip">🖨 Packing slip</button>
-         <button class="btn btn-gold" id="resendInv" ${o.email ? '' : 'disabled title="No email on this order"'}>✉ Resend invoice</button>
-         <button class="btn btn-danger" id="delOrder">🗑 Delete</button>
+        `<button class="btn btn-outline" id="printSlip"><i data-icon="print"></i> Packing slip</button>
+         <button class="btn btn-gold" id="resendInv" ${o.email ? '' : 'disabled title="No email on this order"'}><i data-icon="send"></i> Resend invoice</button>
+         <button class="btn btn-danger" id="delOrder"><i data-icon="trash"></i> Delete</button>
          <button class="btn btn-primary" onclick="document.getElementById('modalBackdrop').classList.remove('open')">Close</button>`);
 
       // quick status actions
@@ -1006,7 +1049,7 @@
         const btn = $('#resendInv'); btn.disabled = true; btn.textContent = 'Sending…';
         try { await api('/orders/' + o.id + '/resend-invoice', { method: 'POST' }); toast('Invoice re-sent', 'success'); }
         catch (e) { toast(e.message, 'error'); }
-        btn.disabled = false; btn.textContent = '✉ Resend invoice';
+        btn.disabled = false; btn.innerHTML = '<i data-icon="send"></i> Resend invoice';
       });
       $('#printSlip') && $('#printSlip').addEventListener('click', () => printPackingSlip(o));
       $('#delOrder') && $('#delOrder').addEventListener('click', () => deleteOrder(o.id, o.order_number));
@@ -1037,7 +1080,7 @@
           await api('/orders/' + o.id + '/send-tracking', { method: 'POST' });
           toast('Update emailed to the customer', 'success');
         } catch (e) { toast(e.message, 'error'); }
-        btn.disabled = false; btn.textContent = '✉ Email update to customer';
+        btn.disabled = false; btn.innerHTML = '<i data-icon="send"></i> Email update to customer';
       });
       $('#copyTrackLink') && $('#copyTrackLink').addEventListener('click', () => {
         const v = $('#trackLink').value;
@@ -1188,7 +1231,7 @@
           <td style="font-size:.85rem">${esc(e.phone || '')}<br>${esc(e.email || '')}</td>
           <td style="max-width:320px">${esc(e.message)}</td>
           <td>${esc(e.product_name || '-')}</td>
-          <td style="font-size:.82rem">${fmtDate(e.created_at)}</td>
+          <td class="nowrap" >${fmtDateShort(e.created_at)}</td>
           <td><button class="btn btn-outline btn-sm" data-toggle-enq="${e.id}" data-handled="${e.handled}">${e.handled ? 'Reopen' : 'Mark done'}</button></td></tr>`).join('')}</tbody></table>`
         : '<div class="empty">No enquiries yet.</div>';
       $$('[data-toggle-enq]', el).forEach((b) => b.addEventListener('click', async () => {
@@ -1213,8 +1256,8 @@
       el.innerHTML = subs.length ? `<table><thead><tr><th>Email</th><th>Subscribed</th><th></th></tr></thead><tbody>${
         subs.map((s) => `<tr>
           <td><strong>${esc(s.email)}</strong></td>
-          <td style="font-size:.82rem">${fmtDate(s.created_at)}</td>
-          <td style="text-align:right"><button class="btn btn-danger btn-sm" data-del-sub="${s.id}">Remove</button></td>
+          <td class="nowrap" >${fmtDateShort(s.created_at)}</td>
+          <td><div class="row-actions"><button class="btn btn-danger btn-sm" data-del-sub="${s.id}"><i data-icon="trash"></i> Remove</button></div></td>
         </tr>`).join('')}</tbody></table>`
         : '<div class="empty">No subscribers yet. The newsletter signup on the storefront feeds this list.</div>';
       $$('[data-del-sub]', el).forEach((b) => b.addEventListener('click', async () => {
@@ -1234,7 +1277,7 @@
     try {
       await api('/mail-test', { method: 'POST', body: { to } });
       toast('Test email sent', 'success');
-      if (out) out.innerHTML = '<div style="background:#e7f4ec;color:#2f6b45;border:1px solid #b8e0c6;border-radius:9px;padding:12px 14px;font-size:.9rem">✓ Sent successfully. Check the inbox for <strong>' + esc(to) + '</strong> (including spam). Your invoices, tracking and promo emails will all work.</div>';
+      if (out) out.innerHTML = '<div style="background:#e6f4ec;color:#2a6b49;border:1px solid #b8e0c6;border-radius:10px;padding:12px 14px;font-size:.88rem">Sent successfully. Check the inbox for <strong>' + esc(to) + '</strong> (including spam). Your invoices, tracking and promo emails will all work.</div>';
     } catch (e) {
       if (out) out.innerHTML = '<div style="background:#fdeef0;color:#b23a48;border:1px solid #f3c9cf;border-radius:9px;padding:12px 14px;font-size:.9rem"><strong>Could not send.</strong> Reason:<br>' + esc(e.message) + '</div>';
       else toast(e.message, 'error');
@@ -1396,8 +1439,8 @@
           <td style="max-width:320px">${esc(t.quote)}</td>
           <td>${t.active ? '<span class="pill green">Shown</span>' : '<span class="pill grey">Hidden</span>'}</td>
           <td style="text-align:right;white-space:nowrap">
-            <button class="btn btn-outline btn-sm" data-edit-tst="${t.id}">Edit</button>
-            <button class="btn btn-danger btn-sm" data-del-tst="${t.id}">Delete</button>
+            <div class="row-actions"><button class="btn btn-outline btn-sm" data-edit-tst="${t.id}"><i data-icon="edit"></i> Edit</button>
+            <button class="btn btn-danger btn-sm btn-icon" title="Delete" aria-label="Delete" data-del-tst="${t.id}"><i data-icon="trash"></i></button></div>
           </td></tr>`).join('')}</tbody></table>`
         : '<div class="empty">No testimonials yet. Add one to show it on the home page.</div>';
       window.__testimonials = list;

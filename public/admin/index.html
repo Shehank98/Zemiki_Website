@@ -13,16 +13,32 @@
 <body>
   <!-- Login screen -->
   <div class="login-wrap" id="loginScreen" style="display:none">
-    <div class="login-card">
-      <img class="login-logo" src="/assets/logo.png" alt="Zemiki" onerror="this.remove()">
-      <h1>Zemiki Admin</h1>
-      <p>Sign in to manage your store</p>
-      <div class="err" id="loginErr"></div>
-      <form id="loginForm">
-        <div class="field"><label>Username</label><input name="username" autocomplete="username" required></div>
-        <div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
-        <button class="btn btn-primary btn-block" type="submit" style="margin-top:6px;padding:.7rem">Sign In</button>
-      </form>
+    <div class="login-art">
+      <img class="login-art-logo" src="/assets/logo.png" alt="Zemiki" onerror="this.remove()">
+      <h2>Run your store with confidence</h2>
+      <p>Everything you need to manage products, orders and customers in one place.</p>
+      <ul class="login-points">
+        <li><i data-icon="box"></i><span>Products, variants and live stock</span></li>
+        <li><i data-icon="truck"></i><span>Orders with customer tracking links</span></li>
+        <li><i data-icon="megaphone"></i><span>Email offers to your customers</span></li>
+        <li><i data-icon="sparkle"></i><span>Seasonal themes for every festival</span></li>
+      </ul>
+    </div>
+    <div class="login-panel">
+      <div class="login-card">
+        <img class="login-logo" src="/assets/logo.png" alt="Zemiki" onerror="this.remove()">
+        <h1>Welcome back</h1>
+        <p>Sign in to your admin panel</p>
+        <div class="err" id="loginErr"></div>
+        <form id="loginForm">
+          <div class="field"><label>Username</label><input name="username" autocomplete="username" required autofocus></div>
+          <div class="field"><label>Password</label>
+            <div class="pw-wrap"><input type="password" name="password" autocomplete="current-password" required><button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password"><i data-icon="eye"></i></button></div>
+          </div>
+          <button class="btn btn-primary btn-block btn-lg" type="submit">Sign in</button>
+        </form>
+        <a class="login-back" href="/" target="_blank" rel="noopener">Visit storefront <i data-icon="external" data-size="14"></i></a>
+      </div>
     </div>
   </div>
 
@@ -32,48 +48,56 @@
       <div class="sidebar-head">
         <a class="logo" href="/" target="_blank" rel="noopener" title="View storefront">
           <img class="logo-img" src="/assets/logo.png" alt="Zemiki" onerror="this.remove();var f=this.parentNode.querySelector('.logo-txt');if(f)f.hidden=false">
-          <span class="logo-txt" hidden>✦ Zem<b>iki</b></span>
+          <span class="logo-txt" hidden>Zem<b>iki</b></span>
         </a>
-        <button class="collapse-btn" id="collapseBtn" aria-label="Collapse menu" title="Collapse menu">«</button>
+        <button class="collapse-btn" id="collapseBtn" aria-label="Collapse menu" title="Collapse menu"><i data-icon="sidebar" data-size="18"></i></button>
       </div>
       <nav class="nav">
-        <button class="nav-item active" data-view="dashboard" title="Dashboard"><span class="ni-ico">▤</span><span class="ni-label">Dashboard</span></button>
-        <button class="nav-item" data-view="products" title="Products"><span class="ni-ico">◆</span><span class="ni-label">Products</span></button>
-        <button class="nav-item" data-view="categories" title="Categories"><span class="ni-ico">☰</span><span class="ni-label">Categories</span></button>
-        <button class="nav-item" data-view="orders" title="Orders"><span class="ni-ico">🛍</span><span class="ni-label">Orders</span><span class="badge" id="ordersBadge" hidden></span></button>
-        <button class="nav-item" data-view="enquiries" title="Enquiries"><span class="ni-ico">✉</span><span class="ni-label">Enquiries</span><span class="badge" id="enqBadge" hidden></span></button>
-        <button class="nav-item" data-view="marketing" title="Marketing"><span class="ni-ico">📣</span><span class="ni-label">Marketing</span></button>
-        <button class="nav-item" data-view="content" title="Content"><span class="ni-ico">✎</span><span class="ni-label">Content</span></button>
-        <button class="nav-item" data-view="settings" title="Settings"><span class="ni-ico">⚙</span><span class="ni-label">Settings</span></button>
+        <div class="nav-group">Overview</div>
+        <button class="nav-item active" data-view="dashboard" title="Dashboard"><i class="ni-ico" data-icon="dashboard"></i><span class="ni-label">Dashboard</span></button>
+        <div class="nav-group">Store</div>
+        <button class="nav-item" data-view="products" title="Products"><i class="ni-ico" data-icon="box"></i><span class="ni-label">Products</span></button>
+        <button class="nav-item" data-view="categories" title="Categories"><i class="ni-ico" data-icon="layers"></i><span class="ni-label">Categories</span></button>
+        <button class="nav-item" data-view="orders" title="Orders"><i class="ni-ico" data-icon="bag"></i><span class="ni-label">Orders</span><span class="badge" id="ordersBadge" hidden></span></button>
+        <button class="nav-item" data-view="enquiries" title="Enquiries"><i class="ni-ico" data-icon="mail"></i><span class="ni-label">Enquiries</span><span class="badge" id="enqBadge" hidden></span></button>
+        <div class="nav-group">Growth</div>
+        <button class="nav-item" data-view="marketing" title="Marketing"><i class="ni-ico" data-icon="megaphone"></i><span class="ni-label">Marketing</span></button>
+        <button class="nav-item" data-view="content" title="Content"><i class="ni-ico" data-icon="edit"></i><span class="ni-label">Content</span></button>
+        <div class="nav-group">System</div>
+        <button class="nav-item" data-view="settings" title="Settings"><i class="ni-ico" data-icon="cog"></i><span class="ni-label">Settings</span></button>
       </nav>
       <div class="sidebar-foot">
-        <button class="btn btn-outline btn-block" id="logoutBtn"><span class="ni-ico">⏻</span><span class="ni-label">Sign Out</span></button>
+        <div class="user-card"><span class="avatar">A</span><div class="uc-txt"><strong>Admin</strong><small>Store owner</small></div></div>
+        <button class="logout-btn" id="logoutBtn" title="Sign out"><i class="ni-ico" data-icon="logout"></i><span class="ni-label">Sign out</span></button>
       </div>
     </aside>
 
     <main class="main">
-      <div class="topbar">
+      <header class="topbar">
         <div class="topbar-left">
-          <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
-          <h1 id="viewTitle">Dashboard</h1>
+          <button class="menu-btn" id="menuBtn" aria-label="Menu"><i data-icon="menu" data-size="22"></i></button>
+          <div class="topbar-title"><h1 id="viewTitle">Dashboard</h1><p id="viewSub">Your store at a glance</p></div>
         </div>
-        <a class="view-site" href="/" target="_blank" rel="noopener">View storefront ↗</a>
-      </div>
+        <div class="topbar-right">
+          <a class="btn btn-outline btn-sm view-site" href="/" target="_blank" rel="noopener"><i data-icon="store"></i><span>View store</span></a>
+          <span class="avatar" title="Admin">A</span>
+        </div>
+      </header>
 
       <!-- Dashboard -->
       <section class="view active" id="view-dashboard">
         <div class="stat-grid" id="statGrid"></div>
         <div class="quick-actions">
-          <button class="qa" data-goto="products" data-add="1"><span class="qa-ico">＋</span><span class="qa-txt"><strong>Add product</strong><small>Create a new listing</small></span></button>
-          <button class="qa" data-goto="orders"><span class="qa-ico">🛍</span><span class="qa-txt"><strong>View orders</strong><small>Fulfil &amp; update status</small></span></button>
-          <button class="qa" data-goto="marketing"><span class="qa-ico">📣</span><span class="qa-txt"><strong>Send an offer</strong><small>Email your customers</small></span></button>
-          <button class="qa" data-goto="settings"><span class="qa-ico">⚙</span><span class="qa-txt"><strong>Settings</strong><small>Shipping, payments, more</small></span></button>
+          <button class="qa" data-goto="products" data-add="1"><span class="qa-ico"><i data-icon="plus" data-size="22"></i></span><span class="qa-txt"><strong>Add product</strong><small>Create a new listing</small></span></button>
+          <button class="qa" data-goto="orders"><span class="qa-ico"><i data-icon="bag" data-size="22"></i></span><span class="qa-txt"><strong>View orders</strong><small>Fulfil &amp; update status</small></span></button>
+          <button class="qa" data-goto="marketing"><span class="qa-ico"><i data-icon="megaphone" data-size="22"></i></span><span class="qa-txt"><strong>Send an offer</strong><small>Email your customers</small></span></button>
+          <button class="qa" data-goto="settings"><span class="qa-ico"><i data-icon="cog" data-size="22"></i></span><span class="qa-txt"><strong>Settings</strong><small>Shipping, payments, more</small></span></button>
         </div>
         <div class="charts-grid" id="chartsGrid"></div>
         <div class="panel">
           <div class="panel-head">
-            <h2>Recent Orders</h2>
-            <button class="btn btn-outline btn-sm" id="exportOrdersDash">⤓ Export CSV</button>
+            <div class="ph-title"><span class="ph-ico"><i data-icon="bag"></i></span><div><h2>Recent Orders</h2><p>Latest activity across your store</p></div></div>
+            <button class="btn btn-outline btn-sm" id="exportOrdersDash"><i data-icon="download"></i> Export CSV</button>
           </div>
           <div id="recentOrders"><div class="empty">Loading…</div></div>
         </div>
@@ -83,11 +107,11 @@
       <section class="view" id="view-products">
         <div class="panel">
           <div class="panel-head">
-            <h2>Products</h2>
+            <div class="ph-title"><span class="ph-ico"><i data-icon="box"></i></span><div><h2>Products</h2><p>Add, edit and track stock for every product</p></div></div>
             <div class="head-actions">
-              <input id="productSearch" class="admin-search" type="search" placeholder="Search products…">
-              <button class="btn btn-outline" id="exportProducts">⤓ Export</button>
-              <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
+              <label class="search-box"><i data-icon="search"></i><input id="productSearch" class="admin-search" type="search" placeholder="Search products…"></label>
+              <button class="btn btn-outline" id="exportProducts"><i data-icon="download"></i> Export</button>
+              <button class="btn btn-primary" id="addProductBtn"><i data-icon="plus"></i> Add Product</button>
             </div>
           </div>
           <div id="productsTable"><div class="empty">Loading…</div></div>
@@ -98,8 +122,8 @@
       <section class="view" id="view-categories">
         <div class="panel">
           <div class="panel-head">
-            <h2>Categories</h2>
-            <button class="btn btn-primary" id="addCategoryBtn">+ Add Category</button>
+            <div class="ph-title"><span class="ph-ico"><i data-icon="layers"></i></span><div><h2>Categories</h2><p>Organise your catalogue</p></div></div>
+            <button class="btn btn-primary" id="addCategoryBtn"><i data-icon="plus"></i> Add Category</button>
           </div>
           <div id="categoriesTable"><div class="empty">Loading…</div></div>
         </div>
@@ -110,9 +134,9 @@
         <div id="orderSummary" class="order-summary"></div>
         <div class="panel">
           <div class="panel-head">
-            <h2>Orders</h2>
+            <div class="ph-title"><span class="ph-ico"><i data-icon="bag"></i></span><div><h2>Orders</h2><p>Fulfil orders, track payments and dispatch</p></div></div>
             <div class="head-actions">
-              <input id="orderSearch" class="admin-search" type="search" placeholder="Search order #, name, phone…">
+              <label class="search-box"><i data-icon="search"></i><input id="orderSearch" class="admin-search" type="search" placeholder="Search order #, name, phone…"></label>
               <select id="orderStatusFilter">
                 <option value="">All statuses</option>
                 <option value="new">New</option>
@@ -122,7 +146,7 @@
                 <option value="delivered">Delivered</option>
                 <option value="cancelled">Cancelled</option>
               </select>
-              <button class="btn btn-outline" id="exportOrders">⤓ Export</button>
+              <button class="btn btn-outline" id="exportOrders"><i data-icon="download"></i> Export</button>
             </div>
           </div>
           <div id="ordersTable"><div class="empty">Loading…</div></div>
@@ -132,7 +156,7 @@
       <!-- Enquiries -->
       <section class="view" id="view-enquiries">
         <div class="panel">
-          <div class="panel-head"><h2>Enquiries</h2></div>
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="mail"></i></span><div><h2>Enquiries</h2><p>Messages from your contact form</p></div></div></div>
           <div id="enquiriesTable"><div class="empty">Loading…</div></div>
         </div>
       </section>
@@ -140,8 +164,8 @@
       <!-- Marketing -->
       <section class="view" id="view-marketing">
         <div class="panel">
-          <div class="panel-head"><h2>Email Delivery Test</h2></div>
-          <div style="padding:22px;max-width:640px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="send"></i></span><div><h2>Email Delivery Test</h2><p>Check that your email service is connected</p></div></div></div>
+          <div class="panel-body">
             <div class="hint" style="margin-bottom:12px">Send a test email to check your Apps Script relay is set up. If it fails, the exact reason is shown so you can fix it (usually the secret or the deployment access).</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
               <input id="mailTestTo" type="email" placeholder="your@email.com" style="flex:1;min-width:220px">
@@ -151,8 +175,8 @@
           </div>
         </div>
         <div class="panel">
-          <div class="panel-head"><h2>Send an Offer Email</h2></div>
-          <div style="padding:22px;max-width:640px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="megaphone"></i></span><div><h2>Send an Offer Email</h2><p>Announce new arrivals and offers to your customers</p></div></div></div>
+          <div class="panel-body">
             <div class="hint" style="margin-bottom:14px">Emails go to all newsletter subscribers plus everyone who has placed an order. Requires the email service to be connected (APPSCRIPT_URL).</div>
             <div class="field"><label>Subject *</label><input id="bcSubject" placeholder="e.g. New Bridal Collection just dropped ✨"></div>
             <div class="field"><label>Heading</label><input id="bcHeading" placeholder="Big, bold headline inside the email"></div>
@@ -167,10 +191,10 @@
         </div>
         <div class="panel">
           <div class="panel-head">
-            <h2>Subscribers</h2>
+            <div class="ph-title"><span class="ph-ico"><i data-icon="users"></i></span><div><h2>Subscribers</h2><p>People who signed up on your site</p></div></div>
             <div class="head-actions">
               <span id="subCount" class="pill blue"></span>
-              <button class="btn btn-outline btn-sm" id="exportSubs">⤓ Export</button>
+              <button class="btn btn-outline btn-sm" id="exportSubs"><i data-icon="download"></i> Export</button>
             </div>
           </div>
           <div id="subscribersTable"><div class="empty">Loading…</div></div>
@@ -178,10 +202,10 @@
       </section>
 
       <!-- Content -->
-      <section class="view" id="view-content">
+      <section class="view cards-grid" id="view-content">
         <div class="panel">
-          <div class="panel-head"><h2>Store Details</h2></div>
-          <div style="padding:22px;max-width:560px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="store"></i></span><div><h2>Store Details</h2><p>Name, WhatsApp number and logo</p></div></div></div>
+          <div class="panel-body">
             <div class="field"><label>Store name</label><input id="cStoreName" placeholder="Zemiki"></div>
             <div class="field"><label>WhatsApp number</label><input id="cWhatsapp" placeholder="94771234567"><div class="hint">Country code + number, no spaces or +. Used for all WhatsApp links.</div></div>
             <div class="field"><label>Logo image URL</label><input id="cLogo" placeholder="https://... or a Google Drive link"><div class="hint">Paste a link to your logo (or a Drive share link). Leave blank to use the uploaded /assets/logo.png.</div></div>
@@ -190,8 +214,8 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h2>Hero Banner (home page)</h2></div>
-          <div style="padding:22px;max-width:640px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="image"></i></span><div><h2>Hero Banner (home page)</h2><p>The first thing visitors see on the home page</p></div></div></div>
+          <div class="panel-body">
             <div class="field"><label>Small label (eyebrow)</label><input id="cHeroEyebrow" placeholder="Elegant jewelry in Sri Lanka"></div>
             <div class="field"><label>Headline</label><input id="cHeroTitle" placeholder="Jewelry that tells your story"><div class="hint">The last two words are highlighted in gold automatically.</div></div>
             <div class="field"><label>Subtitle</label><textarea id="cHeroSubtitle" rows="2"></textarea></div>
@@ -206,8 +230,8 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h2>About Page</h2></div>
-          <div style="padding:22px;max-width:640px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="edit"></i></span><div><h2>About Page</h2><p>Tell your brand story</p></div></div></div>
+          <div class="panel-body">
             <div class="field"><label>Title</label><input id="cAboutTitle" placeholder="Timeless design, honest craft"></div>
             <div class="field"><label>Body text</label><textarea id="cAboutBody" rows="6" placeholder="Tell your story… leave a blank line between paragraphs."></textarea></div>
             <div class="field"><label>About image URL</label><input id="cAboutImage" placeholder="https://... image link"></div>
@@ -216,8 +240,8 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h2>Contact Page</h2></div>
-          <div style="padding:22px;max-width:640px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="phone"></i></span><div><h2>Contact Page</h2><p>How customers reach you</p></div></div></div>
+          <div class="panel-body">
             <div class="field"><label>Intro text</label><textarea id="cContactIntro" rows="2"></textarea></div>
             <div class="grid-2">
               <div class="field"><label>Contact email</label><input id="cContactEmail" type="email" placeholder="hello@zemiki.lk"></div>
@@ -228,17 +252,17 @@
           </div>
         </div>
 
-        <div class="panel">
+        <div class="panel span-full">
           <div class="panel-head">
-            <h2>Testimonials</h2>
-            <button class="btn btn-primary" id="addTestimonialBtn">+ Add Testimonial</button>
+            <div class="ph-title"><span class="ph-ico"><i data-icon="star"></i></span><div><h2>Testimonials</h2><p>Reviews shown on the home page</p></div></div>
+            <button class="btn btn-primary" id="addTestimonialBtn"><i data-icon="plus"></i> Add Testimonial</button>
           </div>
           <div id="testimonialsTable"><div class="empty">Loading…</div></div>
         </div>
 
-        <div class="panel">
-          <div class="panel-head"><h2>Instagram / Lookbook Strip</h2></div>
-          <div style="padding:22px;max-width:640px">
+        <div class="panel span-full">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="image"></i></span><div><h2>Instagram / Lookbook Strip</h2><p>Photo tiles under "Follow Our Journey"</p></div></div></div>
+          <div class="panel-body">
             <div class="field">
               <label>Image tiles</label>
               <textarea id="cInstagram" rows="6" placeholder="One per line: image URL, optionally followed by | and a link&#10;https://.../photo1.jpg | https://instagram.com/p/xxxx&#10;https://.../photo2.jpg"></textarea>
@@ -250,14 +274,14 @@
       </section>
 
       <!-- Settings -->
-      <section class="view" id="view-settings">
+      <section class="view cards-grid" id="view-settings">
         <div class="panel">
-          <div class="panel-head"><h2>Announcement Bar</h2></div>
-          <div style="padding:22px;max-width:640px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="bell"></i></span><div><h2>Announcement Bar</h2><p>A short message at the very top of every page</p></div></div></div>
+          <div class="panel-body">
             <div class="check-row"><label class="toggle"><input type="checkbox" id="annEnabled"><span class="track"></span></label><label for="annEnabled" style="margin:0">Show the announcement bar at the top of every page</label></div>
             <div class="field">
               <label>Announcement text</label>
-              <input id="annText" type="text" maxlength="200" placeholder="e.g. Free islandwide delivery on orders over Rs. 15,000">
+              <input id="annText" type="text" maxlength="200" placeholder="e.g. Islandwide delivery across Sri Lanka">
               <div class="hint">Shown as a single line at the very top of the site. Keep it short.</div>
             </div>
             <button class="btn btn-primary" id="saveAnnouncement">Save Announcement</button>
@@ -265,8 +289,8 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h2>Seasonal Theme</h2></div>
-          <div style="padding:22px;max-width:720px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="sparkle"></i></span><div><h2>Seasonal Theme</h2><p>Festive effects across the storefront</p></div></div></div>
+          <div class="panel-body">
             <div class="hint" style="margin:0 0 12px">Pick a festive effect that plays softly over the whole site. Visitors can switch it off with a small button. Choose "None" when the season ends.</div>
             <div class="season-grid" id="seasonGrid">
               <label class="season-opt"><input type="radio" name="season" value="none"><span><b>🚫</b>None</span></label>
@@ -282,8 +306,8 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h2>Shipping &amp; Delivery</h2></div>
-          <div style="padding:22px;max-width:520px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="truck"></i></span><div><h2>Shipping &amp; Delivery</h2><p>Flat fee and free-shipping threshold</p></div></div></div>
+          <div class="panel-body">
             <div class="field">
               <label>Flat shipping fee (Rs.)</label>
               <input id="setFlat" type="number" min="0" step="1">
@@ -299,8 +323,8 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h2>International Delivery</h2></div>
-          <div style="padding:22px;max-width:520px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="globe"></i></span><div><h2>International Delivery</h2><p>Accept orders from outside Sri Lanka</p></div></div></div>
+          <div class="panel-body">
             <div class="check-row"><label class="toggle"><input type="checkbox" id="intlEnabled"><span class="track"></span></label><label for="intlEnabled" style="margin:0">Accept orders from outside Sri Lanka</label></div>
             <div class="field">
               <label>International shipping fee (Rs.)</label>
@@ -312,8 +336,8 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h2>Store Links (Social)</h2></div>
-          <div style="padding:22px;max-width:560px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="link"></i></span><div><h2>Store Links (Social)</h2><p>Icons shown in your site footer</p></div></div></div>
+          <div class="panel-body">
             <div class="field"><label>Instagram page URL</label><input id="linkInstagram" type="url" placeholder="https://instagram.com/yourpage"></div>
             <div class="field"><label>TikTok page URL</label><input id="linkTiktok" type="url" placeholder="https://tiktok.com/@yourpage"></div>
             <div class="field"><label>Facebook page URL</label><input id="linkFacebook" type="url" placeholder="https://facebook.com/yourpage"></div>
@@ -322,9 +346,9 @@
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-head"><h2>Bank Transfer Accounts</h2></div>
-          <div style="padding:22px;max-width:640px">
+        <div class="panel span-full">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="card"></i></span><div><h2>Bank Transfer Accounts</h2><p>Shown to customers who pay by bank transfer</p></div></div></div>
+          <div class="panel-body">
             <div class="hint" style="margin-bottom:14px">Add one or two accounts. These show to customers who choose "Bank Transfer" at checkout and on their order confirmation. Turn the Bank Transfer method on below in Payment Methods. Leave an account's fields blank to hide it.</div>
             <h3 style="font-family:'Playfair Display',serif;color:var(--maroon);font-size:1.05rem;margin:0 0 10px">Account 1</h3>
             <div class="grid-2">
@@ -351,8 +375,8 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h2>KOKO Payment (Pay in 3)</h2><span id="kokoStatus" class="pill grey">-</span></div>
-          <div style="padding:22px;max-width:560px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="card"></i></span><div><h2>KOKO Payment (Pay in 3)</h2><p>Connect KOKO online payments</p></div></div><span id="kokoStatus" class="pill grey">-</span></div>
+          <div class="panel-body">
             <div class="hint" style="margin-bottom:14px">Enter the credentials KOKO gives you when your merchant account is approved. KOKO online payment goes live once both are saved.</div>
             <div class="field"><label>KOKO Merchant ID</label><input id="kokoMerchant" placeholder="Your KOKO merchant ID"></div>
             <div class="field"><label>KOKO API Key / Secret</label><input id="kokoKey" type="password" placeholder="Leave blank to keep the saved key"><div class="hint">Stored securely and never shown again. Enter a value only to set or replace it.</div></div>
@@ -361,8 +385,8 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h2>Admin Password</h2></div>
-          <div style="padding:22px;max-width:520px">
+          <div class="panel-head"><div class="ph-title"><span class="ph-ico"><i data-icon="lock"></i></span><div><h2>Admin Password</h2><p>Keep your admin account secure</p></div></div></div>
+          <div class="panel-body">
             <div class="field"><label>Current password</label><input id="pwCurrent" type="password" autocomplete="current-password"></div>
             <div class="grid-2">
               <div class="field"><label>New password</label><input id="pwNew" type="password" autocomplete="new-password"></div>
@@ -373,21 +397,21 @@
           </div>
         </div>
 
-        <div class="panel">
+        <div class="panel span-full">
           <div class="panel-head">
-            <h2>Payment Methods</h2>
+            <div class="ph-title"><span class="ph-ico"><i data-icon="card"></i></span><div><h2>Payment Methods</h2><p>Choose what customers can use at checkout</p></div></div>
             <button class="btn btn-primary" id="savePayments">Save Payment Methods</button>
           </div>
-          <div style="padding:14px 20px 4px"><div class="hint">Turn a method on to show it to customers at checkout. KOKO goes live once you add its API keys above.</div></div>
+          <div class="panel-note"><div class="hint">Turn a method on to show it to customers at checkout. KOKO goes live once you add its API keys above.</div></div>
           <div id="paymentsTable"><div class="empty">Loading…</div></div>
         </div>
 
-        <div class="panel">
+        <div class="panel span-full">
           <div class="panel-head">
-            <h2>Delivery by District</h2>
+            <div class="ph-title"><span class="ph-ico"><i data-icon="truck"></i></span><div><h2>Delivery by District</h2><p>A delivery fee for each district</p></div></div>
             <button class="btn btn-primary" id="saveDistricts">Save District Rates</button>
           </div>
-          <div style="padding:14px 20px 4px"><div class="hint">Set a delivery fee for each district. Uncheck "Active" to hide a district at checkout. The free-shipping threshold above still overrides these.</div></div>
+          <div class="panel-note"><div class="hint">Set a delivery fee for each district. Uncheck "Active" to hide a district at checkout. The free-shipping threshold above still overrides these.</div></div>
           <div id="districtsTable"><div class="empty">Loading…</div></div>
         </div>
       </section>
@@ -398,7 +422,7 @@
   <!-- Modal -->
   <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal">
-      <div class="modal-head"><h2 id="modalTitle">Edit</h2><button class="x-btn" id="modalClose">×</button></div>
+      <div class="modal-head"><h2 id="modalTitle">Edit</h2><button class="x-btn" id="modalClose" aria-label="Close"><i data-icon="x" data-size="20"></i></button></div>
       <div class="modal-body" id="modalBody"></div>
       <div class="modal-foot" id="modalFoot"></div>
     </div>
@@ -406,6 +430,7 @@
 
   <div class="toast-wrap" id="toastWrap"></div>
 
+  <script src="/admin/icons.js"></script>
   <script src="/admin/admin.js"></script>
 </body>
 </html>
