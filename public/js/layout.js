@@ -154,12 +154,13 @@
           ${wa}
           <a href="/privacy">Privacy Policy</a>
         </div>
-        <div>
+        <div class="footer-pay">
           <h4>Pay Your Way</h4>
-          <p style="font-size:.9rem">Split your purchase into 3 interest-free payments with <strong style="color:#e3c988">KOKO</strong>, pay by <strong style="color:#e3c988">Bank Transfer</strong>, or choose Cash on Delivery.</p>
+          <p class="pay-text" style="font-size:.9rem">Split your purchase into 3 interest-free payments with <strong style="color:#e3c988">KOKO</strong>, pay by <strong style="color:#e3c988">Bank Transfer</strong>, or choose Cash on Delivery.</p>
+          <div class="pay-chips"><span>KOKO</span><span>Bank Transfer</span><span>Cash on Delivery</span></div>
         </div>
       </div>
-      <div class="footer-bottom">© ${year} ${cfg.store_name || 'Zemiki'}. All rights reserved. · Crafted with love in Sri Lanka</div>`;
+      <div class="footer-bottom"><span>© ${year} ${cfg.store_name || 'Zemiki'}. All rights reserved.</span><span class="fb-sep"> · </span><span>Crafted with love in Sri Lanka</span></div>`;
     document.body.appendChild(footer);
 
     const nf = document.getElementById('newsletterForm');

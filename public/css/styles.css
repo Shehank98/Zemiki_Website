@@ -712,3 +712,32 @@ img.js-fade.loaded { opacity: 1; }
   .marquee-track { animation: none; }
   .testimonials.marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
 }
+
+/* ------------------------- Footer: mobile layout ------------------------- */
+.pay-chips { display: none; }
+@media (max-width: 640px) {
+  .site-footer { margin-top: 40px; }
+  /* compact newsletter band */
+  .newsletter-copy p { display: none; }
+  .newsletter-inner { padding: 22px 16px; gap: 12px; }
+  .newsletter-copy h3 { font-size: 1.2rem; }
+  .newsletter-form { min-width: 0; gap: 8px; }
+  .newsletter-form input { min-width: 0; padding: 11px 14px; }
+  .newsletter-form .btn { padding: 11px 16px; }
+  /* brand on top, Shop + Help side by side, payments as chips */
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 22px 18px; padding: 30px 20px 18px; }
+  .footer-brand { grid-column: 1 / -1; text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .footer-brand .brand { justify-content: center; margin: 0 auto .5rem; }
+  .footer-brand p { margin: 0 auto 14px; max-width: 300px; font-size: .86rem; line-height: 1.55; }
+  .footer-logo { height: 50px; margin: 0 auto; }
+  .social-row { justify-content: center; }
+  .site-footer h4 { font-size: .78rem; margin-bottom: .45rem; color: var(--gold-soft); }
+  .site-footer .footer-grid a:not(.brand) { padding: 6px 0; font-size: .9rem; }
+  .footer-pay { grid-column: 1 / -1; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.12); text-align: center; }
+  .footer-pay .pay-text { display: none; }
+  .pay-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .pay-chips span { border: 1px solid rgba(227,201,136,.45); color: var(--gold-soft); border-radius: 999px; padding: 5px 13px; font-size: .78rem; }
+  .footer-bottom { padding: 14px 16px; font-size: .75rem; line-height: 1.6; }
+  .footer-bottom span { display: block; }
+  .footer-bottom .fb-sep { display: none; }
+}
