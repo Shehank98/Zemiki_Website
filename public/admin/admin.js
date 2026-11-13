@@ -1597,7 +1597,22 @@
     } catch (e) { /* keep defaults */ }
   }
 
+  // Show who is signed in (sidebar card + top-right avatar).
+  async function showWho() {
+    try {
+      const me = await api('/me');
+      const name = (me && me.username) || 'Admin';
+      const initial = name.trim().charAt(0).toUpperCase() || 'A';
+      $$('.avatar').forEach((a) => { a.textContent = initial; });
+      const strong = document.querySelector('.user-card .uc-txt strong');
+      if (strong) strong.textContent = name;
+      const av = document.querySelector('.topbar-right .avatar');
+      if (av) av.title = 'Signed in as ' + name;
+    } catch (e) {}
+  }
+
   async function boot() {
+    showWho();
     loadSiteConfig();
     loaders.dashboard();
     refreshBadges();
