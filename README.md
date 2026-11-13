@@ -50,7 +50,8 @@ from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 
 > **Admin password:** the admin login is kept in sync with `ADMIN_PASSWORD` on every boot.
 > If you change `ADMIN_PASSWORD` (e.g. in Railway Variables) and redeploy, the new password
-> takes effect automatically. If you never set it, the default is **`admin` / `admin123`** -
+> takes effect automatically. The same applies to the optional second admin (`ADMIN2_USERNAME` /
+> `ADMIN2_PASSWORD`): its password always follows the variable. If you never set it, the default is **`admin` / `admin123`** -
 > change it for production.
 
 ---
@@ -77,6 +78,8 @@ from `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 | `JWT_SECRET` | ✅ | Long random string for admin sessions |
 | `ADMIN_USERNAME` | ✅ | Admin login username |
 | `ADMIN_PASSWORD` | ✅ | Admin login password (set a strong one!) |
+| `ADMIN2_USERNAME` | – | Optional second admin login (must differ from `ADMIN_USERNAME`) |
+| `ADMIN2_PASSWORD` | – | Password for the second admin. Set both `ADMIN2_*` variables or neither |
 | `WHATSAPP_NUMBER` | ✅ | International format, no `+`, e.g. `94771234567` |
 | `STORE_NAME` | – | Defaults to `Zemiki` |
 | `PUBLIC_BASE_URL` | – | Your public site URL (e.g. `https://www.zemiki.com`). Used for payment return URLs and the customer tracking links in emails |

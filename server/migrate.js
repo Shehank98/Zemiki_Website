@@ -282,45 +282,65 @@ async function seedSampleProducts() {
   );
 }
 
-async function seedAdmin() {
-  const username = process.env.ADMIN_USERNAME || 'admin';
-  const password = process.env.ADMIN_PASSWORD || 'admin123';
-  const passwordExplicit = Boolean(process.env.ADMIN_PASSWORD);
-
+/**
+ * Create one admin account from environment variables, and keep its password in
+ * sync with the variable on every boot (the variable is the source of truth,
+ * so changing it in Railway and redeploying updates the login).
+ * Returns the username that was handled, or null if skipped.
+ */
+async function seedAdminUser(label, username, password, passwordExplicit) {
+  if (!username) return null;
   const { rows } = await query(
     'SELECT id, password_hash FROM admin_users WHERE username = $1',
     [username]
   );
 
-  // New install - create the admin user.
+  // New account - create it.
   if (rows.length === 0) {
     const hash = await bcrypt.hash(password, 10);
     await query(
       'INSERT INTO admin_users (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
       [username, hash]
     );
-    console.log(`[migrate] Seeded admin user "${username}".`);
+    console.log(`[migrate] Seeded ${label} "${username}".`);
     if (!passwordExplicit) {
-      console.warn(
-        '[migrate] WARNING: ADMIN_PASSWORD not set - using default "admin123". Change it!'
-      );
+      console.warn(`[migrate] WARNING: password for ${label} not set - using default. Change it!`);
     }
-    return;
+    return username;
   }
 
-  // Admin already exists. Keep the password in sync with ADMIN_PASSWORD so the
-  // deployment's env var is the single source of truth - changing it and
-  // redeploying updates the login. Only rehash/write when it actually differs
-  // (keeps boot idempotent).
+  // Already exists: update the password only when it actually differs (idempotent boot).
   if (passwordExplicit) {
     const matches = await bcrypt.compare(password, rows[0].password_hash);
     if (!matches) {
       const hash = await bcrypt.hash(password, 10);
-      await query('UPDATE admin_users SET password_hash = $1 WHERE username = $2', [
-        hash,
-        username,
-      ]);
-      console.log('[migrate] Updated admin password from ADMIN_PASSWORD.');
+      await query('UPDATE admin_users SET password_hash = $1 WHERE username = $2', [hash, username]);
+      console.log(`[migrate] Updated password for ${label} "${username}" from its variable.`);
+    }
+  }
+  return username;
+}
+
+async function seedAdmin() {
+  // Admin 1: ADMIN_USERNAME / ADMIN_PASSWORD (defaults kept for first-time setups).
+  const u1 = process.env.ADMIN_USERNAME || 'admin';
+  await seedAdminUser(
+    'admin 1', u1,
+    process.env.ADMIN_PASSWORD || 'admin123',
+    Boolean(process.env.ADMIN_PASSWORD)
+  );
+
+  // Admin 2 (optional): ADMIN2_USERNAME / ADMIN2_PASSWORD. Both are required,
+  // and the usernames must differ.
+  const u2 = (process.env.ADMIN2_USERNAME || '').trim();
+  const p2 = process.env.ADMIN2_PASSWORD || '';
+  if (u2 || p2) {
+    if (!u2 || !p2) {
+      console.warn('[migrate] Admin 2 skipped: set BOTH ADMIN2_USERNAME and ADMIN2_PASSWORD.');
+    } else if (u2 === u1) {
+      console.warn('[migrate] Admin 2 skipped: ADMIN2_USERNAME must be different from ADMIN_USERNAME.');
+    } else {
+      await seedAdminUser('admin 2', u2, p2, true);
     }
   }
 }
